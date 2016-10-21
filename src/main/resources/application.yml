@@ -1,0 +1,21 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/atp
+        username: atpuser
+        password: askthepeople
+        driver-class-name: org.postgresql.Driver
+    jackson:
+        serialization.write_dates_as_timestamps: false
+        mapper.default-view-inclusion: true
+
+jwt.secret: ${jwt_appsecret:thisissecret}
+jwt.web.secret: ${jwt_websecret:alocaljwtsecret}
+
+---
+
+spring:
+    profiles: prod
+    datasource:
+        url: jdbc:postgresql://atp-db/atp
+        username: atp-user
+        password: mcks89w3jkdlwcmdsklslld
