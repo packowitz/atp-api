@@ -6,7 +6,7 @@ services:
   - docker
 
 script:
-  - mvn clean package build:docker
+  - mvn clean package docker:build
 
 after_success:
   - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USER" -p="$DOCKER_PASS"
