@@ -67,10 +67,10 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
     @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' order by started_date desc limit 3", nativeQuery = true)
     List<Survey> findMyLast3Surveys(@Param("userid") long userId);
 
-    @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' and (status = 'ACTIVE' or started_date > DATE_SUB(NOW(), INTERVAL 2 WEEK)) order by started_date desc", nativeQuery = true)
+    @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' and (status = 'ACTIVE' or started_date > NOW() - INTERVAL '2 WEEK') order by started_date desc", nativeQuery = true)
     List<Survey> findCurrentSurveys(@Param("userid") long userId);
 
-    @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' and (status != 'ACTIVE' and started_date <= DATE_SUB(NOW(), INTERVAL 2 WEEK)) order by started_date desc", nativeQuery = true)
+    @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' and (status != 'ACTIVE' and started_date <= NOW() - INTERVAL '2 WEEK') order by started_date desc", nativeQuery = true)
     List<Survey> findArchivedSurveys(@Param("userid") long userId);
 
     @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' order by started_date desc", nativeQuery = true)
