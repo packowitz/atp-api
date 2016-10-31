@@ -35,11 +35,11 @@ public interface UserRepository extends CrudRepository<User, Long> {
 
     @Modifying
     @Transactional
-    @Query(value="UPDATE user SET surveys_answered_week = 0 WHERE surveys_answered_week > 0", nativeQuery = true)
+    @Query(value="UPDATE \"user\" SET surveys_answered_week = 0 WHERE surveys_answered_week > 0", nativeQuery = true)
     int resetWeeklyAnsweredStats();
 
     @Modifying
     @Transactional
-    @Query(value="UPDATE user SET surveys_started_week = 0 WHERE surveys_started_week > 0", nativeQuery = true)
+    @Query(value="UPDATE \"user\" SET surveys_started_week = 0 WHERE surveys_started_week > 0", nativeQuery = true)
     int resetWeeklyStartedStats();
 }
