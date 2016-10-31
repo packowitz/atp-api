@@ -14,7 +14,7 @@ public class ResetWeeklyStats {
     @Autowired
     private UserRepository userRepository;
 
-    @Scheduled(cron = "0 0 7 * * MON")
+    @Scheduled(cron = "0 0 0 * * MON")
     public void runJob() {
         try {
             int answered = userRepository.resetWeeklyAnsweredStats();
