@@ -24,9 +24,4 @@ public class ResetWeeklyStats {
             logger.error(e.getMessage(), e);
         }
     }
-
-    @Scheduled(cron = "0 * * * * *")
-    public void testScheduler() {
-        logger.info("This is a test logging");
-    }
 }
