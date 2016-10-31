@@ -14,6 +14,7 @@ public enum AchievementType {
     }
 
     AchievementType(int step1reward, int step2reward, int step3reward) {
+        this.step = 1;
         this.step1reward = step1reward;
         this.step2reward = step2reward;
         this.step3reward = step3reward;
