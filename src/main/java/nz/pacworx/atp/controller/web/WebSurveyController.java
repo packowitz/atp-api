@@ -130,6 +130,21 @@ public class WebSurveyController {
     }
 
     @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteSurvey(@ModelAttribute("webuser") User webuser, @PathVariable long id) {
+        Survey survey = surveyRepository.findOne(id);
+        if(survey == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if(survey.getUserId() != webuser.getId()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        answerRepository.deleteBySurveyId(survey.getId());
+        surveyRepository.delete(survey);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ResponseEntity<List<Survey>> listMySurveys(@ModelAttribute("webuser") User webuser) {
         return new ResponseEntity<>(surveyRepository.findMySurveys(webuser.getId()), HttpStatus.OK);

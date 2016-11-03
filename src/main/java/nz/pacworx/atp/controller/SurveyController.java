@@ -178,6 +178,21 @@ public class SurveyController {
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteSurvey(@ModelAttribute("user") User user, @PathVariable long id) {
+        Survey survey = surveyRepository.findOne(id);
+        if(survey == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if(survey.getUserId() != user.getId()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        answerRepository.deleteBySurveyId(survey.getId());
+        surveyRepository.delete(survey);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     private boolean showSecurityAtp(int reliableScore) {
         //150+ -> 5%    100 -> 10%     50- -> 50%
         double chance;
