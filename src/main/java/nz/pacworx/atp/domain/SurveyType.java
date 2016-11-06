@@ -1,18 +1,30 @@
 package nz.pacworx.atp.domain;
 
 public enum SurveyType {
-    NUMBER100(100, 2), NUMBER250(250, 2), NUMBER500(500, 3), NUMBER1000(1000, 4), PERMANENT(-1, 5), SECURITY(-1, -1);
+    NUMBER100(100, 1000, 5, 2), NUMBER300(300, 3000, 5, 2), NUMBER1000(1000, 10000, 5, 4), PERMANENT(-1, 0, 2, 10), SECURITY(-1, 0, 2, -1);
 
     private final int maxAnswers;
+    private final int creationCosts;
+    private final int answerReward;
     private final int maxAbuse;
 
-    SurveyType(int maxAnswers, int maxAbuse) {
+    SurveyType(int maxAnswers, int creationCosts, int answerReward, int maxAbuse) {
         this.maxAnswers = maxAnswers;
+        this.creationCosts = creationCosts;
+        this.answerReward = answerReward;
         this.maxAbuse = maxAbuse;
     }
 
     public int getMaxAnswers() {
         return maxAnswers;
+    }
+
+    public int getCreationCosts() {
+        return creationCosts;
+    }
+
+    public int getAnswerReward() {
+        return answerReward;
     }
 
     public int getMaxAbuse() {

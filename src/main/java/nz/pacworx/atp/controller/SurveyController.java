@@ -85,7 +85,7 @@ public class SurveyController {
         survey.setExpectedAnswer(null);
         survey.setStartedDate(ZonedDateTime.now());
         survey.setStatus(SurveyStatus.ACTIVE);
-        user.addCredits(-10);
+        user.addCredits(0 - request.type.getCreationCosts());
         user.incSurveysStarted();
         if(request.saveAsDefault) {
             user.setSurveyMale(survey.isMale());
@@ -112,7 +112,7 @@ public class SurveyController {
                 user.incReliableScore(-2);
             }
         }
-        if(surveyRepository.saveAnswer(resultRequest.surveyId, resultRequest.answer)) {
+        if(user.getReliableScore() > 50 && surveyRepository.saveAnswer(resultRequest.surveyId, resultRequest.answer)) {
             Answer answer = new Answer();
             answer.setUserId(user.getId());
             answer.setSurveyId(resultRequest.surveyId);
@@ -122,7 +122,7 @@ public class SurveyController {
             answer.setMale(user.isMale());
             answerRepository.save(answer);
 
-            user.addCredits(1);
+            user.addCredits(user.getSurveyType().getAnswerReward());
             user.incSurveysAnswered();
         }
         return getAnswerable(user);

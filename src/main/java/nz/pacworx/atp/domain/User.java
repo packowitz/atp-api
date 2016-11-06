@@ -25,7 +25,7 @@ public class User {
     private Integer yearOfBirth;
     private String country;
     private Boolean male;
-    private int credits = 500;
+    private int credits = 2000;
     @JsonView(Views.WebView.class)
     private int reliableScore = 100;
     private long surveysAnswered = 0;
