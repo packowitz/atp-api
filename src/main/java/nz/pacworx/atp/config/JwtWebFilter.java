@@ -3,6 +3,8 @@ package nz.pacworx.atp.config;
 import io.jsonwebtoken.Jwts;
 import nz.pacworx.atp.domain.User;
 import nz.pacworx.atp.domain.UserRepository;
+import nz.pacworx.atp.domain.UserRights;
+import nz.pacworx.atp.domain.UserRightsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,9 @@ public class JwtWebFilter extends OncePerRequestFilter {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserRightsRepository userRightsRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
@@ -36,6 +41,11 @@ public class JwtWebFilter extends OncePerRequestFilter {
                     throw new IllegalArgumentException();
                 }
                 request.setAttribute("webuser", user);
+                UserRights rights = userRightsRepository.findOne(user.getId());
+                if(rights == null) {
+                    rights = new UserRights(user.getId());
+                }
+                request.setAttribute("userRights", rights);
                 chain.doFilter(request, response);
                 return;
             }

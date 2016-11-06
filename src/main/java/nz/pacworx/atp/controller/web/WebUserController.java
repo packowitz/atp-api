@@ -2,6 +2,7 @@ package nz.pacworx.atp.controller.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import nz.pacworx.atp.domain.User;
+import nz.pacworx.atp.domain.UserRights;
 import nz.pacworx.atp.domain.Views;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,18 @@ public class WebUserController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public ResponseEntity<User> getMe(@ModelAttribute("webuser") User webuser) {
-        return new ResponseEntity<>(webuser, HttpStatus.OK);
+    public ResponseEntity<UserWithRightsResponse> getMe(@ModelAttribute("webuser") User webuser,
+                                      @ModelAttribute("userRights") UserRights rights) {
+        return new ResponseEntity<>(new UserWithRightsResponse(webuser, rights), HttpStatus.OK);
+    }
+
+    private static final class UserWithRightsResponse {
+        public User webuser;
+        public UserRights userRights;
+
+        public UserWithRightsResponse(User user, UserRights userRights) {
+            this.webuser = user;
+            this.userRights = userRights;
+        }
     }
 }

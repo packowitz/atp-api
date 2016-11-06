@@ -1,17 +1,7 @@
 package nz.pacworx.atp.controller.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import nz.pacworx.atp.domain.Announcement;
-import nz.pacworx.atp.domain.AnnouncementRepository;
-import nz.pacworx.atp.domain.Feedback;
-import nz.pacworx.atp.domain.FeedbackAnswer;
-import nz.pacworx.atp.domain.FeedbackAnswerRepository;
-import nz.pacworx.atp.domain.FeedbackRepository;
-import nz.pacworx.atp.domain.FeedbackStatus;
-import nz.pacworx.atp.domain.FeedbackType;
-import nz.pacworx.atp.domain.User;
-import nz.pacworx.atp.domain.UserRepository;
-import nz.pacworx.atp.domain.Views;
+import nz.pacworx.atp.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +38,9 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/open-count", method = RequestMethod.GET)
-    public ResponseEntity<Map<FeedbackType, Long>> getOpenCountMap(@ModelAttribute("webuser") User webuser) {
-        if(!webuser.isRightCallcenter()) {
+    public ResponseEntity<Map<FeedbackType, Long>> getOpenCountMap(@ModelAttribute("webuser") User webuser,
+                                                                   @ModelAttribute("userRights") UserRights rights) {
+        if(!rights.isCallcenter()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Map<FeedbackType, Long> openFeedbacks = new HashMap<>();
@@ -61,8 +52,11 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/list/feedback/{type}/{status}", method = RequestMethod.GET)
-    public ResponseEntity<List<Feedback>> listOpenFeedback(@ModelAttribute("webuser") User webuser, @PathVariable FeedbackType type, @PathVariable FeedbackStatus status) {
-        if(!webuser.isRightCallcenter()) {
+    public ResponseEntity<List<Feedback>> listOpenFeedback(@ModelAttribute("webuser") User webuser,
+                                                           @ModelAttribute("userRights") UserRights rights,
+                                                           @PathVariable FeedbackType type,
+                                                           @PathVariable FeedbackStatus status) {
+        if(!rights.isCallcenter()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         List<Feedback> feedbackList = feedbackRepository.findByTypeAndStatusOrderByLastActionDateDesc(type, status);
@@ -71,8 +65,10 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/conversation/{id}", method = RequestMethod.GET)
-    public ResponseEntity<FeedbackConversation> getConversation(@ModelAttribute("webuser") User webuser, @PathVariable Long id) {
-        if(!webuser.isRightCallcenter()) {
+    public ResponseEntity<FeedbackConversation> getConversation(@ModelAttribute("webuser") User webuser,
+                                                                @ModelAttribute("userRights") UserRights rights,
+                                                                @PathVariable Long id) {
+        if(!rights.isCallcenter()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Feedback feedback = feedbackRepository.findOne(id);
@@ -94,8 +90,10 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/feedback/answer", method = RequestMethod.POST)
-    public ResponseEntity<Feedback> answerFeedback(@ModelAttribute("webuser") User webuser, @RequestBody @Valid AnswerFeedbackRequest request) {
-        if(!webuser.isRightCallcenter()) {
+    public ResponseEntity<Feedback> answerFeedback(@ModelAttribute("webuser") User webuser,
+                                                   @ModelAttribute("userRights") UserRights rights,
+                                                   @RequestBody @Valid AnswerFeedbackRequest request) {
+        if(!rights.isCallcenter()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Feedback feedback = feedbackRepository.findOne(request.feedbackId);
@@ -118,8 +116,9 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/announcement/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Announcement>> getAnnouncements(@ModelAttribute("webuser") User webuser) {
-        if(!webuser.isRightMarketing()) {
+    public ResponseEntity<List<Announcement>> getAnnouncements(@ModelAttribute("webuser") User webuser,
+                                                               @ModelAttribute("userRights") UserRights rights) {
+        if(!rights.isMarketing()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         return new ResponseEntity<>(announcementRepository.findByOrderBySendDateDesc(), HttpStatus.OK);
@@ -127,8 +126,10 @@ public class WebCommCenterController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/announcement", method = RequestMethod.POST)
-    public ResponseEntity<Announcement> postAnnouncement(@ModelAttribute("webuser") User webuser, @RequestBody @Valid Announcement announcement) {
-        if(!webuser.isRightMarketing()) {
+    public ResponseEntity<Announcement> postAnnouncement(@ModelAttribute("webuser") User webuser,
+                                                         @ModelAttribute("userRights") UserRights rights,
+                                                         @RequestBody @Valid Announcement announcement) {
+        if(!rights.isMarketing()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         announcement.setAdminId(webuser.getId());

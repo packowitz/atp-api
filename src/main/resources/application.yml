@@ -7,6 +7,8 @@ spring:
     jackson:
         serialization.write_dates_as_timestamps: false
         mapper.default-view-inclusion: true
+    jpa:
+      show-sql: false
 
 jwt.secret: ${jwt_appsecret:thisissecret}
 jwt.web.secret: ${jwt_websecret:alocaljwtsecret}

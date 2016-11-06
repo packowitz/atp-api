@@ -1,14 +1,7 @@
 package nz.pacworx.atp.controller.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import nz.pacworx.atp.domain.AnswerRepository;
-import nz.pacworx.atp.domain.Survey;
-import nz.pacworx.atp.domain.SurveyRepository;
-import nz.pacworx.atp.domain.SurveyStatus;
-import nz.pacworx.atp.domain.SurveyType;
-import nz.pacworx.atp.domain.User;
-import nz.pacworx.atp.domain.UserRepository;
-import nz.pacworx.atp.domain.Views;
+import nz.pacworx.atp.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +32,9 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public ResponseEntity<Survey> createSurvey(@ModelAttribute("webuser") User webuser, @RequestBody @Valid Survey survey, BindingResult bindingResult) {
+    public ResponseEntity<Survey> createSurvey(@ModelAttribute("webuser") User webuser,
+                                               @RequestBody @Valid Survey survey,
+                                               BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -48,7 +43,7 @@ public class WebSurveyController {
         survey.setExpectedAnswer(null);
         survey.setStartedDate(ZonedDateTime.now());
         survey.setStatus(SurveyStatus.ACTIVE);
-        webuser.addCredits(-10);
+        webuser.addCredits(0 - survey.getType().getCreationCosts());
         webuser.incSurveysStarted();
         surveyRepository.save(survey);
         userRepository.save(webuser);
@@ -57,8 +52,11 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/security", method = RequestMethod.POST)
-    public ResponseEntity<Survey> createSecuritySurvey(@ModelAttribute("webuser") User webuser, @RequestBody @Valid Survey survey, BindingResult bindingResult) {
-        if(!webuser.isRightSecurity()) {
+    public ResponseEntity<Survey> createSecuritySurvey(@ModelAttribute("webuser") User webuser,
+                                                       @ModelAttribute("userRights") UserRights rights,
+                                                       @RequestBody @Valid Survey survey,
+                                                       BindingResult bindingResult) {
+        if(!rights.isSecurity()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         if(bindingResult.hasErrors() ||
@@ -77,8 +75,9 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/security/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Survey>> listSecuritySurveys(@ModelAttribute("webuser") User webuser) {
-        if(!webuser.isRightSecurity()) {
+    public ResponseEntity<List<Survey>> listSecuritySurveys(@ModelAttribute("webuser") User webuser,
+                                                            @ModelAttribute("userRights") UserRights rights) {
+        if(!rights.isSecurity()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         return new ResponseEntity<>(surveyRepository.findByTypeOrderByStartedDateDesc(SurveyType.SECURITY), HttpStatus.OK);
@@ -86,8 +85,10 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/security/activate/{id}", method = RequestMethod.PUT)
-    public ResponseEntity<Survey> activateSecuritySurvey(@ModelAttribute("webuser") User webuser, @PathVariable long id) {
-        if(!webuser.isRightSecurity()) {
+    public ResponseEntity<Survey> activateSecuritySurvey(@ModelAttribute("webuser") User webuser,
+                                                         @ModelAttribute("userRights") UserRights rights,
+                                                         @PathVariable long id) {
+        if(!rights.isSecurity()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Survey survey = surveyRepository.findOne(id);
@@ -101,8 +102,10 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/security/deactivate/{id}", method = RequestMethod.PUT)
-    public ResponseEntity<Survey> deactivateSecuritySurvey(@ModelAttribute("webuser") User webuser, @PathVariable long id) {
-        if(!webuser.isRightSecurity()) {
+    public ResponseEntity<Survey> deactivateSecuritySurvey(@ModelAttribute("webuser") User webuser,
+                                                           @ModelAttribute("userRights") UserRights rights,
+                                                           @PathVariable long id) {
+        if(!rights.isSecurity()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Survey survey = surveyRepository.findOne(id);
@@ -116,8 +119,10 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/security/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity deleteSecuritySurvey(@ModelAttribute("webuser") User webuser, @PathVariable long id) {
-        if(!webuser.isRightSecurity()) {
+    public ResponseEntity deleteSecuritySurvey(@ModelAttribute("webuser") User webuser,
+                                               @ModelAttribute("userRights") UserRights rights,
+                                               @PathVariable long id) {
+        if(!rights.isSecurity()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Survey survey = surveyRepository.findOne(id);

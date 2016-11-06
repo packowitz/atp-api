@@ -61,14 +61,6 @@ public class User {
     private Integer surveyMaxAge;
     @JsonView(Views.AppView.class)
     private String surveyCountry;
-    @JsonView(Views.WebView.class)
-    private boolean rightCallcenter;
-    @JsonView(Views.WebView.class)
-    private boolean rightMarketing;
-    @JsonView(Views.WebView.class)
-    private boolean rightUserAdmin;
-    @JsonView(Views.WebView.class)
-    private boolean rightSecurity;
 
     public void setPassword(String password) throws Exception {
         this.password = getHash(password);
@@ -283,37 +275,5 @@ public class User {
 
     public void setSurveyCountry(String surveyCountry) {
         this.surveyCountry = surveyCountry;
-    }
-
-    public boolean isRightCallcenter() {
-        return rightCallcenter;
-    }
-
-    public void setRightCallcenter(boolean rightCallcenter) {
-        this.rightCallcenter = rightCallcenter;
-    }
-
-    public boolean isRightMarketing() {
-        return rightMarketing;
-    }
-
-    public void setRightMarketing(boolean rightMarketing) {
-        this.rightMarketing = rightMarketing;
-    }
-
-    public boolean isRightUserAdmin() {
-        return rightUserAdmin;
-    }
-
-    public void setRightUserAdmin(boolean rightUserAdmin) {
-        this.rightUserAdmin = rightUserAdmin;
-    }
-
-    public boolean isRightSecurity() {
-        return rightSecurity;
-    }
-
-    public void setRightSecurity(boolean rightSecurity) {
-        this.rightSecurity = rightSecurity;
     }
 }
