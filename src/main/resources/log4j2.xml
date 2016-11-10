@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="atp-api" packages="">
+    <Appenders>
+        <Syslog name="bsd" host="${env:LOGGLY_PORT_514_UDP_ADDR}" port="${env:LOGGLY_PORT_514_UDP_PORT}" protocol="UDP"/>
+    </Appenders>
+    <Loggers>
+        <Root level="warn">
+            <AppenderRef ref="bsd"/>
+        </Root>
+    </Loggers>
+</Configuration>

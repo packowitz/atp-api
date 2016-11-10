@@ -42,7 +42,8 @@ public class JwtFilter extends OncePerRequestFilter {
             }
             catch (Exception e) {}
         }
-        if(request.getMethod().equals("OPTIONS")) {
+
+        if (request.getMethod().equals("OPTIONS")) {
             chain.doFilter(request, response);
         } else {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

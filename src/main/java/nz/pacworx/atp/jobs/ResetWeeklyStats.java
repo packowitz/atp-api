@@ -1,15 +1,15 @@
 package nz.pacworx.atp.jobs;
 
 import nz.pacworx.atp.domain.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ResetWeeklyStats {
-    private static final Logger logger = LoggerFactory.getLogger(ResetWeeklyStats.class);
+    private static final Logger logger = LogManager.getLogger(ResetWeeklyStats.class);
 
     @Autowired
     private UserRepository userRepository;
