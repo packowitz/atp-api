@@ -6,6 +6,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import nz.pacworx.atp.domain.User;
 import nz.pacworx.atp.domain.UserRepository;
 import nz.pacworx.atp.domain.Views;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -23,15 +25,20 @@ import javax.validation.constraints.NotNull;
 @RequestMapping("/web/auth")
 public class WebAuthController {
 
+    private static final Logger LOGGER = LogManager.getLogger(WebAuthController.class);
+
     @Autowired
     private UserRepository userRepository;
 
     @Value("${jwt.web.secret}")
     private String secret;
 
+
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) throws Exception {
+        LOGGER.info(request.username + " login attempt");
+
         if(bindingResult.hasErrors()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -39,6 +46,7 @@ public class WebAuthController {
         if(user == null || !user.passwordMatches(request.password)) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user), HttpStatus.OK);
     }
 
