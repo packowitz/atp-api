@@ -28,6 +28,10 @@ public class Coupon {
     private LocalDate endDate;
     private int redeemed = 0;
 
+    public void incRedeemed() {
+        this.redeemed ++;
+    }
+
     public long getId() {
         return id;
     }
@@ -98,9 +102,5 @@ public class Coupon {
 
     public int getRedeemed() {
         return redeemed;
-    }
-
-    public void setRedeemed(int redeemed) {
-        this.redeemed = redeemed;
     }
 }

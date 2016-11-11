@@ -9,4 +9,6 @@ import java.util.List;
 public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     List<Coupon> findByOrderByCreationDateDesc();
+
+    Coupon findByCode(String code);
 }

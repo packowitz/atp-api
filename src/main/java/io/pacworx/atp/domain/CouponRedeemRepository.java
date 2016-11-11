@@ -9,4 +9,6 @@ import java.util.List;
 public interface CouponRedeemRepository extends JpaRepository<CouponRedeem, Long> {
 
     List<CouponRedeem> findByCouponIdOrderByRedeemDateDesc(long couponId);
+
+    CouponRedeem findByCouponIdAndUserId(long couponId, long userId);
 }
