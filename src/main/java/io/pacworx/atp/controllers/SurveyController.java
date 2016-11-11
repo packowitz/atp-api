@@ -1,6 +1,9 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import io.pacworx.atp.controllers.advice.BadRequestException;
+import io.pacworx.atp.controllers.advice.ForbiddenException;
+import io.pacworx.atp.controllers.advice.NotFoundException;
 import io.pacworx.atp.domain.Answer;
 import io.pacworx.atp.domain.ResponseWithUser;
 import io.pacworx.atp.domain.SurveyStatus;
@@ -51,7 +54,7 @@ public class SurveyController {
         if(survey != null) {
             return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new NotFoundException("Survey not found");
         }
     }
 
@@ -66,19 +69,21 @@ public class SurveyController {
         }
         user.setSurveyToAnswer(survey);
         userRepository.save(user);
+
         if (survey != null) {
             return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new NotFoundException("Requested survey couldn't be found");
         }
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/private", method = RequestMethod.POST)
     public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ModelAttribute("user") User user, @RequestBody @Valid StartSurveyRequest request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
         }
+
         Survey survey = request.survey;
         survey.setUserId(user.getId());
         survey.setType(request.type);
@@ -103,8 +108,9 @@ public class SurveyController {
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public ResponseEntity<ResponseWithUser<Survey>> postResult(@ModelAttribute("user") User user, @RequestBody @Valid PostResultRequest resultRequest, BindingResult bindingResult) {
         if(bindingResult.hasErrors() || user.getSurveyIdToAnswer() != resultRequest.surveyId) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
+
         if(user.getSurveyType() == SurveyType.SECURITY) {
             if(resultRequest.answer == user.getSurveyExpectedAnswer()) {
                 user.incReliableScore(2);
@@ -112,6 +118,7 @@ public class SurveyController {
                 user.incReliableScore(-2);
             }
         }
+
         if(user.getReliableScore() > 50 && surveyRepository.saveAnswer(resultRequest.surveyId, resultRequest.answer)) {
             Answer answer = new Answer();
             answer.setUserId(user.getId());
@@ -125,6 +132,7 @@ public class SurveyController {
             user.addCredits(user.getSurveyType().getAnswerReward());
             user.incSurveysAnswered();
         }
+
         return getAnswerable(user);
     }
 
@@ -153,14 +161,17 @@ public class SurveyController {
     @RequestMapping(value = "/details/{id}", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (survey == null) {
+            throw new NotFoundException("Survey not found");
         }
-        if(user.getId() != survey.getUserId()) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+
+        if (user.getId() != survey.getUserId()) {
+            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey user id: [" + survey.getId() + "]");
         }
+
         List<Answer> answers = answerRepository.findBySurveyId(survey.getId());
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, answers);
+
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
@@ -169,7 +180,7 @@ public class SurveyController {
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new NotFoundException("Survey not found");
         }
         if(user.getId() != survey.getUserId()) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);

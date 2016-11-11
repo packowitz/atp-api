@@ -1,8 +1,10 @@
-package io.pacworx.atp.controller.web;
+package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.pacworx.atp.controllers.advice.BadRequestException;
+import io.pacworx.atp.controllers.advice.NotFoundException;
 import io.pacworx.atp.domain.UserRepository;
 import io.pacworx.atp.domain.UserRights;
 import io.pacworx.atp.domain.UserRightsRepository;
@@ -43,17 +45,22 @@ public class WebAuthController {
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                                BindingResult bindingResult) throws Exception {
         LOGGER.info(request.username + " login attempt");
-        if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
         }
+
         User user = userRepository.findByUsername(request.username);
-        if(user == null || !user.passwordMatches(request.password)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (user == null || !user.passwordMatches(request.password)) {
+            throw new NotFoundException("User doesn't exist or password doesn't match");
         }
+
         UserRights rights = userRightsRepository.findOne(user.getId());
-        if(rights == null) {
+
+        if (rights == null) {
             rights = new UserRights(user.getId());
         }
+
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user, rights), HttpStatus.OK);
     }
 

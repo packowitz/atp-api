@@ -1,12 +1,14 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import io.pacworx.atp.domain.Country;
-import io.pacworx.atp.domain.CountryRepository;
+import io.pacworx.atp.domain.Announcement;
+import io.pacworx.atp.domain.AnnouncementRepository;
+import io.pacworx.atp.domain.User;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,17 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/country")
-public class CountryController {
+@RequestMapping("/app/announcement")
+public class AnnouncementController {
 
     @Autowired
-    private CountryRepository countryRepository;
+    private AnnouncementRepository announcementRepository;
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Country>> getCountries() {
-        List<Country> countries = countryRepository.findByActiveTrueOrderByNameEngAsc();
-        return new ResponseEntity<>(countries, HttpStatus.OK);
+    public ResponseEntity<List<Announcement>> getAnnouncements(@ModelAttribute("user") User user) {
+        return new ResponseEntity<>(announcementRepository.findAnnouncements(user.getCountry()), HttpStatus.OK);
     }
-
 }

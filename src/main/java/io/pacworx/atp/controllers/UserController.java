@@ -1,6 +1,7 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import io.pacworx.atp.controllers.advice.NotFoundException;
 import io.pacworx.atp.domain.User;
 import io.pacworx.atp.domain.UserRepository;
 import io.pacworx.atp.domain.Views;
@@ -32,7 +33,7 @@ public class UserController {
         if(user != null) {
             return new ResponseEntity<>(user, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new NotFoundException("User not found");
         }
     }
 

@@ -1,6 +1,7 @@
-package io.pacworx.atp.controller.web;
+package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import io.pacworx.atp.controllers.advice.BadRequestException;
 import io.pacworx.atp.domain.Coupon;
 import io.pacworx.atp.domain.CouponRedeem;
 import io.pacworx.atp.domain.CouponRedeemRepository;
@@ -39,15 +40,18 @@ public class WebCouponController {
                                                @ModelAttribute("userRights") UserRights rights,
                                                @RequestBody @Valid Coupon coupon,
                                                BindingResult bindingResult) {
-        if(!rights.isCoupons()) {
+        if (!rights.isCoupons()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
         }
+
         coupon.setAdminId(webuser.getId());
         coupon.setCreationDate(ZonedDateTime.now());
         couponRepository.save(coupon);
+
         return new ResponseEntity<>(coupon, HttpStatus.OK);
     }
 
@@ -67,11 +71,11 @@ public class WebCouponController {
     public ResponseEntity<List<CouponRedeem>> listRedeem(@ModelAttribute("webuser") User webuser,
                                                          @ModelAttribute("userRights") UserRights rights,
                                                          @PathVariable long couponId) {
-        if(!rights.isCoupons()) {
+        if (!rights.isCoupons()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
+
         List<CouponRedeem> couponRedeems = couponRedeemRepository.findByCouponIdOrderByRedeemDateDesc(couponId);
         return new ResponseEntity<>(couponRedeems, HttpStatus.OK);
     }
-
 }

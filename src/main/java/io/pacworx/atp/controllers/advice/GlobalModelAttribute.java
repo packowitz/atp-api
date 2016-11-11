@@ -1,4 +1,4 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers.advice;
 
 import io.pacworx.atp.domain.User;
 import io.pacworx.atp.domain.UserRights;

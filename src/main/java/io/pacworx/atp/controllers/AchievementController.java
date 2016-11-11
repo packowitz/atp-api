@@ -1,4 +1,4 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import io.pacworx.atp.domain.Achievement;
 import io.pacworx.atp.domain.AchievementRepository;

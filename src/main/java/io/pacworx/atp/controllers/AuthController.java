@@ -1,8 +1,10 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.pacworx.atp.controllers.advice.BadRequestException;
+import io.pacworx.atp.controllers.advice.NotFoundException;
 import io.pacworx.atp.domain.User;
 import io.pacworx.atp.domain.UserRepository;
 import io.pacworx.atp.domain.Views;
@@ -40,13 +42,16 @@ public class AuthController {
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) throws Exception {
-        if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
         }
+
         User user = userRepository.findByUsername(request.username);
-        if(user == null || !user.passwordMatches(request.password)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        if (user == null || !user.passwordMatches(request.password)) {
+            throw new NotFoundException("Login attempt for user that doesn't exist");
         }
+
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user), HttpStatus.OK);
     }
 

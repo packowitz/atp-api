@@ -1,4 +1,4 @@
-package io.pacworx.atp.controller;
+package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.Coupon;

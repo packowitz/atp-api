@@ -1,4 +1,4 @@
-package io.pacworx.atp.controller.web;
+package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.*;

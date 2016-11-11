@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="warn" name="atp-api" packages="">
+<Configuration status="info" name="atp-api" packages="">
     <Appenders>
         <!-- Papertrail syslog config -->
         <Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"
-                protocol="TCP" appName="atp-api" mdcId="mdc"
-                facility="LOCAL0" enterpriseNumber="18060" newLine="true"
-                format="RFC5424" ignoreExceptions="false" exceptionPattern="%throwable{full}">
+                protocol="TCP" appName="atp-api" mdcId="mdc" messageId="Audit" id="API"
+                facility="LOCAL0" enterpriseNumber="18060" newLine="true" format="RFC5424"
+                ignoreExceptions="false" exceptionPattern="%throwable{full}">
         </Syslog>
     </Appenders>
     <Loggers>
-        <Root level="debug">
+        <Root level="info">
             <AppenderRef ref="SYSLOG-TCP"/>
         </Root>
     </Loggers>

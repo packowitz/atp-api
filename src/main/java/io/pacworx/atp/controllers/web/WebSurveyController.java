@@ -1,6 +1,7 @@
-package io.pacworx.atp.controller.web;
+package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import io.pacworx.atp.controllers.advice.BadRequestException;
 import io.pacworx.atp.domain.AnswerRepository;
 import io.pacworx.atp.domain.Survey;
 import io.pacworx.atp.domain.SurveyRepository;
@@ -43,9 +44,10 @@ public class WebSurveyController {
     public ResponseEntity<Survey> createSurvey(@ModelAttribute("webuser") User webuser,
                                                @RequestBody @Valid Survey survey,
                                                BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
         }
+
         survey.setUserId(webuser.getId());
         survey.setType(SurveyType.NUMBER100);
         survey.setExpectedAnswer(null);
@@ -53,8 +55,10 @@ public class WebSurveyController {
         survey.setStatus(SurveyStatus.ACTIVE);
         webuser.addCredits(0 - survey.getType().getCreationCosts());
         webuser.incSurveysStarted();
+
         surveyRepository.save(survey);
         userRepository.save(webuser);
+
         return new ResponseEntity<>(survey, HttpStatus.OK);
     }
 
@@ -71,13 +75,15 @@ public class WebSurveyController {
                 survey.getExpectedAnswer() == null ||
                 survey.getExpectedAnswer() <= 0 ||
                 survey.getExpectedAnswer() > 3) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException("Bad request. Survey answers aren't great.");
         }
+
         survey.setUserId(webuser.getId());
         survey.setType(SurveyType.SECURITY);
         survey.setStartedDate(ZonedDateTime.now());
         survey.setStatus(SurveyStatus.ACTIVE);
         surveyRepository.save(survey);
+
         return new ResponseEntity<>(survey, HttpStatus.OK);
     }
 
@@ -149,11 +155,14 @@ public class WebSurveyController {
         if(survey == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+
         if(survey.getUserId() != webuser.getId()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
+
         answerRepository.deleteBySurveyId(survey.getId());
         surveyRepository.delete(survey);
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
