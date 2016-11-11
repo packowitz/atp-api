@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info" name="atp-api" packages="">
+    <Appenders>
+        <Syslog name="bsd" host="${env:ATP_LOGGLY_PORT_514_UDP_ADDR}" port="${env:ATP_LOGGLY_PORT_514_UDP_PORT}" protocol="UDP"/>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="bsd"/>
+        </Root>
+    </Loggers>
+</Configuration>
