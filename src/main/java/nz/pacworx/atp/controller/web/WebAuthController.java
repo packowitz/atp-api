@@ -5,6 +5,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import nz.pacworx.atp.domain.User;
 import nz.pacworx.atp.domain.UserRepository;
+import nz.pacworx.atp.domain.UserRights;
+import nz.pacworx.atp.domain.UserRightsRepository;
 import nz.pacworx.atp.domain.Views;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

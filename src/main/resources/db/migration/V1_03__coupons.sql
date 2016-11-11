@@ -1,10 +1,14 @@
 CREATE TABLE coupon (
   id SERIAL,
-  code VARCHAR(25) NOT NULL,
+  admin_id BIGINT NOT NULL,
+  creation_date TIMESTAMPTZ NOT NULL,
+  code VARCHAR(25) UNIQUE NOT NULL,
+  active BOOLEAN NOT NULL,
   reward INT NOT NULL,
   single_use BOOLEAN NOT NULL,
-  start_date TIMESTAMPTZ NOT NULL,
-  end_date TIMESTAMPTZ NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  redeemed INT NOT NULL,
   PRIMARY KEY(id)
 );
 
