@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="info" name="atp-api" packages="">
+<Configuration status="warn" name="atp-api" packages="">
     <Appenders>
-        <Syslog name="bsd" host="${env:ATP_LOGGLY_PORT_514_UDP_ADDR}" port="${env:ATP_LOGGLY_PORT_514_UDP_PORT}" protocol="UDP"/>
+        <!-- Papertrail syslog config -->
+        <Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"
+                protocol="TCP" appName="atp-api" mdcId="mdc"
+                facility="LOCAL0" enterpriseNumber="18060" newLine="true"
+                format="RFC5424" ignoreExceptions="false" exceptionPattern="%throwable{full}">
+        </Syslog>
     </Appenders>
     <Loggers>
-        <Root level="info">
-            <AppenderRef ref="bsd"/>
+        <Root level="debug">
+            <AppenderRef ref="SYSLOG-TCP"/>
         </Root>
     </Loggers>
 </Configuration>
