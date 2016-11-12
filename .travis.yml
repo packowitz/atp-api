@@ -19,4 +19,4 @@ after_success:
   - docker push pacworx/atp-api
 
 notifications:
-  slack: noodle-app:$SLACK_TOKEN
+  slack: noodle-app:M2sZGPNSvxzvLD4XkaUF4oGI
