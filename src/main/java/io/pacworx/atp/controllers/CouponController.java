@@ -56,13 +56,15 @@ public class CouponController {
         couponRepository.save(coupon);
         user.addCredits(coupon.getReward());
         userRepository.save(user);
-        return new ResponseEntity<>(new CouponRedeemResponse(coupon.getReward()), HttpStatus.OK);
+        return new ResponseEntity<>(new CouponRedeemResponse(user, coupon.getReward()), HttpStatus.OK);
     }
 
     private static final class CouponRedeemResponse {
+        public User user;
         public int reward;
 
-        public CouponRedeemResponse(int reward) {
+        public CouponRedeemResponse(User user, int reward) {
+            this.user = user;
             this.reward = reward;
         }
     }
