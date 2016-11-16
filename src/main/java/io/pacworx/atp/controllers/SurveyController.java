@@ -79,9 +79,14 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/private", method = RequestMethod.POST)
-    public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ModelAttribute("user") User user, @RequestBody @Valid StartSurveyRequest request, BindingResult bindingResult) {
+    public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ModelAttribute("user") User user,
+                                                                    @RequestBody @Valid StartSurveyRequest request,
+                                                                    BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             throw new BadRequestException();
+        }
+        if(request.type.getCreationCosts() > user.getCredits()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         Survey survey = request.survey;
