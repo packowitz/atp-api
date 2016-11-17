@@ -1,5 +1,6 @@
-package io.pacworx.atp.domain;
+package io.pacworx.atp.repositories;
 
+import io.pacworx.atp.domain.FeedbackAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,16 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
+public interface FeedbackAnswerRepository extends JpaRepository<FeedbackAnswer, Long> {
 
-    List<Feedback> findByUserIdOrderByLastActionDateDesc(long userId);
+    List<FeedbackAnswer> findByUserIdAndFeedbackIdOrderBySendDateAsc(long userId, long feedbackId);
 
     @Modifying
     @Transactional
-    @Query(value="UPDATE feedback SET unread_answers = 0 WHERE id = :feedbackId and user_id = :userId", nativeQuery = true)
+    @Query(value="UPDATE feedback_answer SET read_answer = true WHERE feedback_id = :feedbackId and user_id = :userId", nativeQuery = true)
     void markAsRead(@Param("userId")long userId, @Param("feedbackId") long feedbackId);
-
-    Long countByTypeAndStatus(FeedbackType type, FeedbackStatus status);
-
-    List<Feedback> findByTypeAndStatusOrderByLastActionDateDesc(FeedbackType type, FeedbackStatus status);
 }

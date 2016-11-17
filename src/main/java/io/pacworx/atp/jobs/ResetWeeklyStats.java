@@ -1,6 +1,6 @@
 package io.pacworx.atp.jobs;
 
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import io.pacworx.atp.controllers.advice.GlobalExceptionHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

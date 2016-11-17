@@ -1,10 +1,10 @@
 package io.pacworx.atp.controllers;
 
 import io.pacworx.atp.domain.Achievement;
-import io.pacworx.atp.domain.AchievementRepository;
+import io.pacworx.atp.repositories.AchievementRepository;
 import io.pacworx.atp.domain.AchievementType;
 import io.pacworx.atp.domain.User;
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

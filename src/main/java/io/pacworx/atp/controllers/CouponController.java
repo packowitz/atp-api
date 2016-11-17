@@ -3,10 +3,10 @@ package io.pacworx.atp.controllers;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.Coupon;
 import io.pacworx.atp.domain.CouponRedeem;
-import io.pacworx.atp.domain.CouponRedeemRepository;
-import io.pacworx.atp.domain.CouponRepository;
+import io.pacworx.atp.repositories.CouponRedeemRepository;
+import io.pacworx.atp.repositories.CouponRepository;
 import io.pacworx.atp.domain.User;
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,23 +38,30 @@ public class CouponController {
     public ResponseEntity<CouponRedeemResponse> redeemCoupon(@ModelAttribute("user") User user, @PathVariable String couponCode) {
         Coupon coupon = couponRepository.findByCode(couponCode);
         LocalDate todayUTC = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate();
-        if(coupon == null || !coupon.isActive() || todayUTC.isBefore(coupon.getStartDate()) || todayUTC.isAfter(coupon.getEndDate())) {
+
+        if (coupon == null || !coupon.isActive() || todayUTC.isBefore(coupon.getStartDate()) || todayUTC.isAfter(coupon.getEndDate())) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        if(couponRedeemRepository.findByCouponIdAndUserId(coupon.getId(), user.getId()) != null) {
+        if (couponRedeemRepository.findByCouponIdAndUserId(coupon.getId(), user.getId()) != null) {
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
+
         CouponRedeem redeem = new CouponRedeem();
         redeem.setCouponId(coupon.getId());
         redeem.setUserId(user.getId());
         redeem.setRedeemDate(ZonedDateTime.now());
+
         couponRedeemRepository.save(redeem);
         coupon.incRedeemed();
+
         if(coupon.isSingleUse()) {
             coupon.setActive(false);
         }
+
         couponRepository.save(coupon);
+
         user.addCredits(coupon.getReward());
+
         userRepository.save(user);
         return new ResponseEntity<>(new CouponRedeemResponse(user, coupon.getReward()), HttpStatus.OK);
     }

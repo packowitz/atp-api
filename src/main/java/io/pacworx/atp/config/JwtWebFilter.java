@@ -2,9 +2,9 @@ package io.pacworx.atp.config;
 
 import io.jsonwebtoken.Jwts;
 import io.pacworx.atp.domain.User;
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import io.pacworx.atp.domain.UserRights;
-import io.pacworx.atp.domain.UserRightsRepository;
+import io.pacworx.atp.repositories.UserRightsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

@@ -3,7 +3,7 @@ package io.pacworx.atp.controllers;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.controllers.advice.NotFoundException;
 import io.pacworx.atp.domain.User;
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

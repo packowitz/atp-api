@@ -2,7 +2,7 @@ package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.Country;
-import io.pacworx.atp.domain.CountryRepository;
+import io.pacworx.atp.repositories.CountryRepository;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

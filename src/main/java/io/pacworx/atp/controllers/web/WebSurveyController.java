@@ -2,13 +2,13 @@ package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.controllers.advice.BadRequestException;
-import io.pacworx.atp.domain.AnswerRepository;
+import io.pacworx.atp.repositories.AnswerRepository;
 import io.pacworx.atp.domain.Survey;
-import io.pacworx.atp.domain.SurveyRepository;
+import io.pacworx.atp.repositories.SurveyRepository;
 import io.pacworx.atp.domain.SurveyStatus;
 import io.pacworx.atp.domain.SurveyType;
 import io.pacworx.atp.domain.User;
-import io.pacworx.atp.domain.UserRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import io.pacworx.atp.domain.UserRights;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,5 +1,6 @@
-package io.pacworx.atp.domain;
+package io.pacworx.atp.repositories;
 
+import io.pacworx.atp.domain.Achievement;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -2,6 +2,10 @@ package io.pacworx.atp.controllers.web;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.*;
+import io.pacworx.atp.repositories.AnnouncementRepository;
+import io.pacworx.atp.repositories.FeedbackAnswerRepository;
+import io.pacworx.atp.repositories.FeedbackRepository;
+import io.pacworx.atp.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

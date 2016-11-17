@@ -2,7 +2,7 @@ package io.pacworx.atp.controllers;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.domain.Announcement;
-import io.pacworx.atp.domain.AnnouncementRepository;
+import io.pacworx.atp.repositories.AnnouncementRepository;
 import io.pacworx.atp.domain.User;
 import io.pacworx.atp.domain.Views;
 import org.springframework.beans.factory.annotation.Autowired;

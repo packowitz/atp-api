@@ -1,5 +1,8 @@
-package io.pacworx.atp.domain;
+package io.pacworx.atp.repositories;
 
+import io.pacworx.atp.domain.Survey;
+import io.pacworx.atp.domain.SurveyType;
+import io.pacworx.atp.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

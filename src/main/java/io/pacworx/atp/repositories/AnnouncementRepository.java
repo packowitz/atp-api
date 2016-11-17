@@ -1,5 +1,6 @@
-package io.pacworx.atp.domain;
+package io.pacworx.atp.repositories;
 
+import io.pacworx.atp.domain.Announcement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
