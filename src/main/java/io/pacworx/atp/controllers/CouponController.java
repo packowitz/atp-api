@@ -13,10 +13,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -34,9 +37,9 @@ public class CouponController {
     private UserRepository userRepository;
 
     @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/redeem/{couponCode}", method = RequestMethod.POST)
-    public ResponseEntity<CouponRedeemResponse> redeemCoupon(@ModelAttribute("user") User user, @PathVariable String couponCode) {
-        Coupon coupon = couponRepository.findByCode(couponCode);
+    @RequestMapping(value = "/redeem", method = RequestMethod.POST)
+    public ResponseEntity<CouponRedeemResponse> redeemCoupon(@ModelAttribute("user") User user, @RequestBody @Valid RedeemRequest redeemRequest) {
+        Coupon coupon = couponRepository.findByCode(redeemRequest.code);
         LocalDate todayUTC = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate();
 
         if (coupon == null || !coupon.isActive() || todayUTC.isBefore(coupon.getStartDate()) || todayUTC.isAfter(coupon.getEndDate())) {
@@ -64,6 +67,11 @@ public class CouponController {
 
         userRepository.save(user);
         return new ResponseEntity<>(new CouponRedeemResponse(user, coupon.getReward()), HttpStatus.OK);
+    }
+
+    private static class RedeemRequest {
+        @NotNull
+        public String code;
     }
 
     private static final class CouponRedeemResponse {

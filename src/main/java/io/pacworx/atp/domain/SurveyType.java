@@ -1,7 +1,7 @@
 package io.pacworx.atp.domain;
 
 public enum SurveyType {
-    NUMBER100(100, 1000, 5, 2), NUMBER300(300, 3000, 5, 2), NUMBER1000(1000, 10000, 5, 4), PERMANENT(-1, 0, 2, 10), SECURITY(-1, 0, 2, -1);
+    NUMBER100(100, 1000, 5, 2), NUMBER300(300, 2900, 5, 2), NUMBER1000(1000, 9000, 5, 4), PERMANENT(-1, 0, 2, 10), SECURITY(-1, 0, 2, -1);
 
     private final int maxAnswers;
     private final int creationCosts;
