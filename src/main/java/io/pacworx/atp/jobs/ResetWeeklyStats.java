@@ -1,7 +1,7 @@
 package io.pacworx.atp.jobs;
 
-import io.pacworx.atp.repositories.UserRepository;
-import io.pacworx.atp.controllers.advice.GlobalExceptionHandler;
+import io.pacworx.atp.user.UserRepository;
+import io.pacworx.atp.exception.GlobalExceptionHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
