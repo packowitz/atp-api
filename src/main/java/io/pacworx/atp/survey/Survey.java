@@ -45,6 +45,10 @@ public class Survey {
     private int maxAbuse;
     @JsonView(Views.WebView.class)
     private Integer expectedAnswer;
+    private Long groupId;
+    private int pic1_id = 1;
+    private int pic2_id = 2;
+    private boolean multiPicture = false;
 
     public long getId() {
         return id;
@@ -182,5 +186,37 @@ public class Survey {
 
     public void setExpectedAnswer(Integer expectedAnswer) {
         this.expectedAnswer = expectedAnswer;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
+
+    public int getPic1_id() {
+        return pic1_id;
+    }
+
+    public void setPic1_id(int pic1_id) {
+        this.pic1_id = pic1_id;
+    }
+
+    public int getPic2_id() {
+        return pic2_id;
+    }
+
+    public void setPic2_id(int pic2_id) {
+        this.pic2_id = pic2_id;
+    }
+
+    public boolean isMultiPicture() {
+        return multiPicture;
+    }
+
+    public void setMultiPicture(boolean multiPicture) {
+        this.multiPicture = multiPicture;
     }
 }

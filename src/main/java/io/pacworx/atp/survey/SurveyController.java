@@ -122,7 +122,18 @@ public class SurveyController {
             Answer answer = new Answer();
             answer.setUserId(user.getId());
             answer.setSurveyId(resultRequest.surveyId);
-            answer.setAnswer(resultRequest.answer);
+            answer.setSurveyGroupId(user.getSurveyGroupId());
+            answer.setPic1_id(user.getSurveyPic1_id());
+            answer.setPic2_id(user.getSurveyPic2_id());
+
+            int answerId = resultRequest.answer;
+            if(answerId == 1) {
+                answerId = user.getSurveyPic1_id();
+            } else if(answerId == 2) {
+                answerId = user.getSurveyPic2_id();
+            }
+            answer.setAnswer(answerId);
+
             answer.setAge(LocalDate.now().getYear() - user.getYearOfBirth());
             answer.setCountry(user.getCountry());
             answer.setMale(user.isMale());
@@ -168,7 +179,7 @@ public class SurveyController {
             throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey user id: [" + survey.getId() + "]");
         }
 
-        List<Answer> answers = answerRepository.findBySurveyId(survey.getId());
+        List<Answer> answers = answerRepository.findBySurveyIdAndAnswerGreaterThanEqual(survey.getId(), 0);
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, answers);
 
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
@@ -226,8 +237,8 @@ public class SurveyController {
         @NotNull
         public long surveyId;
         @NotNull
-        @Min(0)
-        @Max(3)
+        @Min(-1)
+        @Max(2)
         public int answer;
     }
 

@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -33,6 +35,9 @@ public class WebSurveyController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SurveyUtil surveyUtil;
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -55,6 +60,41 @@ public class WebSurveyController {
         userRepository.save(webuser);
 
         return new ResponseEntity<>(survey, HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/multipicture", method = RequestMethod.POST)
+    public ResponseEntity<Survey> createMultiPictureSurvey(@ModelAttribute("webuser") User webuser,
+                                                           @RequestBody @Valid MultiPictureRequest request,
+                                                           BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new BadRequestException();
+        }
+
+        request.survey.setUserId(webuser.getId());
+        request.survey.setType(request.type);
+        request.survey.setStartedDate(ZonedDateTime.now());
+        List<Survey> surveys = surveyUtil.generateMultiPictureSurveys(request.survey, request.pictures, request.eachCountrySeparate);
+        int costs = surveys.size() * request.type.getCreationCosts();
+
+        if(webuser.getCredits() < costs) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        webuser.addCredits(0 - costs);
+        webuser.incSurveysStarted();
+
+        Survey firstSurvey = surveys.get(0);
+        surveyRepository.save(firstSurvey);
+        long groupId = firstSurvey.getId();
+
+        for(Survey survey : surveys) {
+            survey.setGroupId(groupId);
+            surveyRepository.save(survey);
+        }
+        userRepository.save(webuser);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @JsonView(Views.WebView.class)
@@ -165,5 +205,16 @@ public class WebSurveyController {
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ResponseEntity<List<Survey>> listMySurveys(@ModelAttribute("webuser") User webuser) {
         return new ResponseEntity<>(surveyRepository.findMySurveys(webuser.getId()), HttpStatus.OK);
+    }
+
+    private static class MultiPictureRequest {
+        @NotNull
+        public Survey survey;
+        @NotNull
+        public SurveyType type;
+        @NotNull
+        @Size(min = 3)
+        public List<String> pictures;
+        public boolean eachCountrySeparate;
     }
 }

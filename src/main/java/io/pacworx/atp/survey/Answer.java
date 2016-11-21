@@ -16,13 +16,15 @@ public class Answer {
     private long id;
     @JsonIgnore
     private long userId;
-    @JsonIgnore
     private long surveyId;
     private LocalDateTime answerTime = LocalDateTime.now();
     private int answer;
     private int age;
     private String country;
     private boolean male;
+    private Long surveyGroupId;
+    private int pic1_id;
+    private int pic2_id;
 
     public long getId() {
         return id;
@@ -82,5 +84,29 @@ public class Answer {
 
     public void setMale(boolean male) {
         this.male = male;
+    }
+
+    public Long getSurveyGroupId() {
+        return surveyGroupId;
+    }
+
+    public void setSurveyGroupId(Long surveyGroupId) {
+        this.surveyGroupId = surveyGroupId;
+    }
+
+    public int getPic1_id() {
+        return pic1_id;
+    }
+
+    public void setPic1_id(int pic1_id) {
+        this.pic1_id = pic1_id;
+    }
+
+    public int getPic2_id() {
+        return pic2_id;
+    }
+
+    public void setPic2_id(int pic2_id) {
+        this.pic2_id = pic2_id;
     }
 }

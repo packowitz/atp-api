@@ -1,0 +1,25 @@
+ALTER TABLE survey ADD COLUMN group_id BIGINT;
+ALTER TABLE survey ADD COLUMN pic1_id INTEGER;
+ALTER TABLE survey ADD COLUMN pic2_id INTEGER;
+ALTER TABLE survey ADD COLUMN multi_picture BOOLEAN NOT NULL DEFAULT false;
+
+UPDATE survey SET pic1_id = 1, pic2_id = 2;
+
+ALTER TABLE survey ALTER COLUMN pic1_id SET NOT NULL;
+ALTER TABLE survey ALTER COLUMN pic2_id SET NOT NULL;
+
+
+ALTER TABLE answer ADD COLUMN survey_group_id BIGINT;
+ALTER TABLE answer ADD COLUMN pic1_id INTEGER;
+ALTER TABLE answer ADD COLUMN pic2_id INTEGER;
+
+UPDATE answer SET answer = -1 WHERE answer = 3;
+UPDATE answer SET pic1_id = 1, pic2_id = 2;
+
+ALTER TABLE answer ALTER COLUMN pic1_id SET NOT NULL;
+ALTER TABLE answer ALTER COLUMN pic2_id SET NOT NULL;
+
+
+ALTER TABLE "user" ADD COLUMN survey_group_id BIGINT;
+ALTER TABLE "user" ADD COLUMN survey_pic1_id INTEGER;
+ALTER TABLE "user" ADD COLUMN survey_pic2_id INTEGER;

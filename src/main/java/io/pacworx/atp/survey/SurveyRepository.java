@@ -58,7 +58,7 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
             rowsUpdated = incAnsweredPicture1(surveyId);
         } else if (answer == 2) {
             rowsUpdated = incAnsweredPicture2(surveyId);
-        } else if (answer == 3) {
+        } else if (answer == -1) {
             rowsUpdated = incAbuse(surveyId);
         }
         return rowsUpdated == 1;

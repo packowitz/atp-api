@@ -64,6 +64,9 @@ public class User {
     private Integer surveyMaxAge;
     @JsonView(Views.AppView.class)
     private String surveyCountry;
+    private Long surveyGroupId;
+    private Integer surveyPic1_id;
+    private Integer surveyPic2_id;
 
     public void setPassword(String password) throws Exception {
         this.password = getHash(password);
@@ -84,10 +87,23 @@ public class User {
     }
 
     public void setSurveyToAnswer(Survey survey) {
-        this.surveyIdToAnswer = survey != null ? survey.getId() : null;
-        this.surveyAskTime = survey != null ? LocalDateTime.now() : null;
-        this.surveyType = survey != null ? survey.getType() : null;
-        this.surveyExpectedAnswer = survey != null ? survey.getExpectedAnswer() : null;
+        if(survey != null) {
+            this.surveyIdToAnswer = survey.getId();
+            this.surveyAskTime = LocalDateTime.now();
+            this.surveyType = survey.getType();
+            this.surveyExpectedAnswer = survey.getExpectedAnswer();
+            this.surveyGroupId = survey.getGroupId();
+            this.surveyPic1_id = survey.getPic1_id();
+            this.surveyPic2_id = survey.getPic2_id();
+        } else {
+            this.surveyIdToAnswer = null;
+            this.surveyAskTime = null;
+            this.surveyType = null;
+            this.surveyExpectedAnswer = null;
+            this.surveyGroupId = null;
+            this.surveyPic1_id = null;
+            this.surveyPic2_id = null;
+        }
     }
 
     public void addCredits(int add) {
@@ -278,5 +294,29 @@ public class User {
 
     public void setSurveyCountry(String surveyCountry) {
         this.surveyCountry = surveyCountry;
+    }
+
+    public Long getSurveyGroupId() {
+        return surveyGroupId;
+    }
+
+    public void setSurveyGroupId(Long surveyGroupId) {
+        this.surveyGroupId = surveyGroupId;
+    }
+
+    public Integer getSurveyPic1_id() {
+        return surveyPic1_id;
+    }
+
+    public void setSurveyPic1_id(Integer surveyPic1_id) {
+        this.surveyPic1_id = surveyPic1_id;
+    }
+
+    public Integer getSurveyPic2_id() {
+        return surveyPic2_id;
+    }
+
+    public void setSurveyPic2_id(Integer surveyPic2_id) {
+        this.surveyPic2_id = surveyPic2_id;
     }
 }

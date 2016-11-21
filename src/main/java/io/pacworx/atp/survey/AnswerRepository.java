@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
-    List<Answer> findBySurveyId(long surveyId);
+    List<Answer> findBySurveyIdAndAnswerGreaterThanEqual(long surveyId, int answer);
 
     @Transactional
     void deleteBySurveyId(long surveyId);
