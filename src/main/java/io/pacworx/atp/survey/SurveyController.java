@@ -132,7 +132,8 @@ public class SurveyController {
             } else if(answerId == 2) {
                 answerId = user.getSurveyPic2_id();
             }
-            answer.setAnswer(answerId);
+            answer.setAnswerId(answerId);
+            answer.setAnswer(resultRequest.answer);
 
             answer.setAge(LocalDate.now().getYear() - user.getYearOfBirth());
             answer.setCountry(user.getCountry());

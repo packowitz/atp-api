@@ -19,6 +19,7 @@ public class Answer {
     private long surveyId;
     private LocalDateTime answerTime = LocalDateTime.now();
     private int answer;
+    private int answerId;
     private int age;
     private String country;
     private boolean male;
@@ -60,6 +61,14 @@ public class Answer {
 
     public void setAnswer(int answer) {
         this.answer = answer;
+    }
+
+    public int getAnswerId() {
+        return answerId;
+    }
+
+    public void setAnswerId(int answerId) {
+        this.answerId = answerId;
     }
 
     public int getAge() {
