@@ -12,13 +12,21 @@ public class ZonedDateTimeConverter implements AttributeConverter<ZonedDateTime,
 
     @Override
     public java.sql.Timestamp convertToDatabaseColumn(ZonedDateTime entityValue) {
-        return Timestamp.from(entityValue.toInstant());
+        if(entityValue != null) {
+            return Timestamp.from(entityValue.toInstant());
+        } else {
+            return null;
+        }
     }
 
     @Override
     public ZonedDateTime convertToEntityAttribute(java.sql.Timestamp databaseValue) {
-        LocalDateTime localDateTime = databaseValue.toLocalDateTime();
-        return localDateTime.atZone(ZoneId.systemDefault());
+        if(databaseValue != null) {
+            LocalDateTime localDateTime = databaseValue.toLocalDateTime();
+            return localDateTime.atZone(ZoneId.systemDefault());
+        } else {
+            return null;
+        }
     }
 
 }

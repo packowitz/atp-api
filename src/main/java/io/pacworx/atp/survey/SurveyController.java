@@ -24,6 +24,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Random;
@@ -40,17 +41,6 @@ public class SurveyController {
     private SurveyRepository surveyRepository;
     @Autowired
     private AnswerRepository answerRepository;
-
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<Survey>> getSurvey(@ModelAttribute("user") User user, @PathVariable long id) {
-        Survey survey = surveyRepository.findOne(id);
-        if(survey != null) {
-            return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
-        } else {
-            throw new NotFoundException("Survey not found");
-        }
-    }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/answerable", method = RequestMethod.GET)

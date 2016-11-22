@@ -40,6 +40,8 @@ public class Survey {
     private int abuseCount;
     private ZonedDateTime startedDate;
     @JsonIgnore
+    private ZonedDateTime updatedDate;
+    @JsonIgnore
     private int maxAnswers;
     @JsonIgnore
     private int maxAbuse;
@@ -170,6 +172,10 @@ public class Survey {
 
     public void setStartedDate(ZonedDateTime startedDate) {
         this.startedDate = startedDate;
+    }
+
+    public ZonedDateTime getUpdatedDate() {
+        return updatedDate;
     }
 
     public int getMaxAnswers() {
