@@ -23,9 +23,11 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -135,6 +137,33 @@ public class SurveyController {
         }
 
         return getAnswerable(user);
+    }
+
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveys(@ModelAttribute("user") User user) {
+        List<Survey> surveys = surveyRepository.findMySurveys(user.getId());
+        return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
+    }
+
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/list/since/{timestamp}", method = RequestMethod.GET)
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveysSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+        ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
+        List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
+        return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
+    }
+
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/updates/since/{timestamp}", method = RequestMethod.GET)
+    public ResponseEntity<ResponseWithUser<List<SurveyDetailsResponse>>> getUpdatesSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+        ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
+        List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
+        List<SurveyDetailsResponse> details = new ArrayList<>();
+        for(Survey survey : surveys) {
+            details.add(new SurveyDetailsResponse(survey, null));
+        }
+        return new ResponseEntity<>(new ResponseWithUser<>(user, details), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)

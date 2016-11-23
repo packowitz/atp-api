@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Repository
@@ -75,6 +76,11 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' order by started_date desc", nativeQuery = true)
     List<Survey> findMySurveys(@Param("userid") long userId);
+
+    List<Survey> findByUserIdAndTypeNotAndUpdatedDateGreaterThan(long userId, SurveyType type, ZonedDateTime updatedDate);
+    default List<Survey> findMySurveysSince(long userId, ZonedDateTime since) {
+        return findByUserIdAndTypeNotAndUpdatedDateGreaterThan(userId, SurveyType.SECURITY, since);
+    }
 
     List<Survey> findByTypeOrderByStartedDateDesc(SurveyType type);
 }
