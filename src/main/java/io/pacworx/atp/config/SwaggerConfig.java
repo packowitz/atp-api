@@ -37,7 +37,8 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                     .select()
-                    .paths(or (regex("/api.*")))
+                    .paths(or (regex("/api.*"),
+                            regex("/auth.*")))
                     .build()
                 .securitySchemes(Lists.newArrayList(apiKey()))
                 .securityContexts(Lists.newArrayList(securityContext()));
