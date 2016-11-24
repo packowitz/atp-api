@@ -141,29 +141,29 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveys(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<Survey>>>> getSurveys(@ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findMySurveys(user.getId());
-        return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(surveys)), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list/since/{timestamp}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveysSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+    public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<Survey>>>> getSurveysSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
         ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
         List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
-        return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(surveys)), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/updates/since/{timestamp}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<SurveyDetailsResponse>>> getUpdatesSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+    public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<SurveyDetailsResponse>>>> getUpdatesSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
         ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
         List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
         List<SurveyDetailsResponse> details = new ArrayList<>();
         for(Survey survey : surveys) {
             details.add(new SurveyDetailsResponse(survey, null));
         }
-        return new ResponseEntity<>(new ResponseWithUser<>(user, details), HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(details)), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
