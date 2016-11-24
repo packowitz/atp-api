@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ public class CouponController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/redeem", method = RequestMethod.POST)
-    public ResponseEntity<CouponRedeemResponse> redeemCoupon(@ModelAttribute("user") User user, @RequestBody @Valid RedeemRequest redeemRequest) {
+    public ResponseEntity<CouponRedeemResponse> redeemCoupon(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid RedeemRequest redeemRequest) {
         Coupon coupon = couponRepository.findByCode(redeemRequest.code);
         LocalDate todayUTC = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate();
 

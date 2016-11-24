@@ -37,6 +37,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     throw new IllegalArgumentException();
                 }
                 request.setAttribute("user", user);
+
                 chain.doFilter(request, response);
                 return;
             }

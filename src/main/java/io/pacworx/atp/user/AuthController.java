@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
-public class AuthController implements AuthApi{
+public class AuthController implements AuthApi {
 
     @Autowired
     private UserRepository userRepository;

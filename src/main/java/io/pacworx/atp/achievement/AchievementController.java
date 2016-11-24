@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -21,13 +22,13 @@ public class AchievementController {
     private UserRepository userRepository;
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Achievement>> listAchievements(@ModelAttribute("user") User user) {
+    public ResponseEntity<List<Achievement>> listAchievements(@ApiIgnore @ModelAttribute("user") User user) {
         List<Achievement> achievements = getUpdatedAchievements(user);
         return new ResponseEntity<>(achievements, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/claim/{type}", method = RequestMethod.POST)
-    public ResponseEntity<AchievementsWithUserResponse> claimAchievement(@ModelAttribute("user") User user, @PathVariable AchievementType type) {
+    public ResponseEntity<AchievementsWithUserResponse> claimAchievement(@ApiIgnore @ModelAttribute("user") User user, @PathVariable AchievementType type) {
         List<Achievement> achievements = achievementRepository.findByUserId(user.getId());
         Achievement achievement = getOrCreateAchievmentByType(achievements, type, user);
         if(achievement.getAchieved() > achievement.getClaimed()) {
@@ -51,7 +52,7 @@ public class AchievementController {
     }
 
     private Achievement getOrCreateAchievmentByType(List<Achievement> achievements, AchievementType type, User user) {
-        for(Achievement achievement : achievements) {
+        for (Achievement achievement : achievements) {
             if(achievement.getType() == type) {
                 return achievement;
             }

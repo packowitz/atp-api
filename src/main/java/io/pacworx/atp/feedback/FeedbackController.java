@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -28,7 +29,7 @@ public class FeedbackController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/", method = RequestMethod.POST)
-    public ResponseEntity<Feedback> postFeedback(@ModelAttribute("user") User user, @RequestBody Feedback feedback) {
+    public ResponseEntity<Feedback> postFeedback(@ApiIgnore @ModelAttribute("user") User user, @RequestBody Feedback feedback) {
         if(feedback.getType() == null || feedback.getTitle() == null || feedback.getMessage() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
@@ -42,13 +43,13 @@ public class FeedbackController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Feedback>> getFeedbackList(@ModelAttribute("user") User user) {
+    public ResponseEntity<List<Feedback>> getFeedbackList(@ApiIgnore @ModelAttribute("user") User user) {
         return new ResponseEntity<>(feedbackRepository.findByUserIdOrderByLastActionDateDesc(user.getId()), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/answers/{id}", method = RequestMethod.GET)
-    public ResponseEntity<List<FeedbackAnswer>> getFeedbackAnswers(@ModelAttribute("user") User user, @PathVariable long id) {
+    public ResponseEntity<List<FeedbackAnswer>> getFeedbackAnswers(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         List<FeedbackAnswer> answers = feedbackAnswerRepository.findByUserIdAndFeedbackIdOrderBySendDateAsc(user.getId(), id);
         feedbackAnswerRepository.markAsRead(user.getId(), id);
         feedbackRepository.markAsRead(user.getId(), id);
@@ -57,7 +58,7 @@ public class FeedbackController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/answer/{id}", method = RequestMethod.POST)
-    public ResponseEntity<FeedbackAnswerResponse> postAnswer(@ModelAttribute("user") User user, @RequestBody FeedbackAnswer answer, @PathVariable long id) {
+    public ResponseEntity<FeedbackAnswerResponse> postAnswer(@ApiIgnore @ModelAttribute("user") User user, @RequestBody FeedbackAnswer answer, @PathVariable long id) {
         Feedback feedback = feedbackRepository.findOne(id);
         if(feedback == null || feedback.getStatus() != FeedbackStatus.ANSWERED || answer.getMessage() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -77,7 +78,7 @@ public class FeedbackController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/close/{id}", method = RequestMethod.PUT)
-    public ResponseEntity<Feedback> closeFeedback(@ModelAttribute("user") User user, @PathVariable long id) {
+    public ResponseEntity<Feedback> closeFeedback(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Feedback feedback = feedbackRepository.findOne(id);
         if(feedback == null || feedback.getStatus() == FeedbackStatus.CLOSED) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

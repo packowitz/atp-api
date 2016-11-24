@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -46,7 +47,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/answerable", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<Survey>> getAnswerable(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<Survey>> getAnswerable(@ApiIgnore @ModelAttribute("user") User user) {
         Survey survey;
         if(showSecurityAtp(user.getReliableScore())) {
             survey = surveyRepository.findAnswerableSecurity(user);
@@ -65,7 +66,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/private", method = RequestMethod.POST)
-    public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ModelAttribute("user") User user,
+    public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
                                                                     @RequestBody @Valid StartSurveyRequest request,
                                                                     BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -97,7 +98,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/result", method = RequestMethod.POST)
-    public ResponseEntity<ResponseWithUser<Survey>> postResult(@ModelAttribute("user") User user, @RequestBody @Valid PostResultRequest resultRequest, BindingResult bindingResult) {
+    public ResponseEntity<ResponseWithUser<Survey>> postResult(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid PostResultRequest resultRequest, BindingResult bindingResult) {
         if(bindingResult.hasErrors() || user.getSurveyIdToAnswer() != resultRequest.surveyId) {
             throw new BadRequestException();
         }
@@ -141,14 +142,14 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveys(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findMySurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list/since/{timestamp}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveysSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getSurveysSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long timestamp) {
         ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
         List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
@@ -156,7 +157,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/updates/since/{timestamp}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<SurveyDetailsResponse>>> getUpdatesSince(@ModelAttribute("user") User user, @PathVariable long timestamp) {
+    public ResponseEntity<ResponseWithUser<List<SurveyDetailsResponse>>> getUpdatesSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long timestamp) {
         ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
         List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
         List<SurveyDetailsResponse> details = new ArrayList<>();
@@ -168,28 +169,28 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list3", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getLastThreeSurveys(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getLastThreeSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findMyLast3Surveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list/current", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getCurrentSurveys(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getCurrentSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findCurrentSurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list/archived", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<List<Survey>>> getArchivedSurveys(@ModelAttribute("user") User user) {
+    public ResponseEntity<ResponseWithUser<List<Survey>>> getArchivedSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findArchivedSurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/details/{id}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ModelAttribute("user") User user, @PathVariable long id) {
+    public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
             throw new NotFoundException("Survey not found");
@@ -207,7 +208,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/update/{id}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ModelAttribute("user") User user, @PathVariable long id) {
+    public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
             throw new NotFoundException("Survey not found");
@@ -221,7 +222,7 @@ public class SurveyController {
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity deleteSurvey(@ModelAttribute("user") User user, @PathVariable long id) {
+    public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

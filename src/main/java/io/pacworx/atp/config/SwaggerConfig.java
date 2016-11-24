@@ -1,6 +1,7 @@
 package io.pacworx.atp.config;
 
 import com.google.common.collect.Lists;
+import io.pacworx.atp.user.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +38,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                     .select()
-                    .paths(or (regex("/api.*"),
+                    .paths(or (regex("/app.*"),
                             regex("/auth.*")))
                     .build()
                 .securitySchemes(Lists.newArrayList(apiKey()))
