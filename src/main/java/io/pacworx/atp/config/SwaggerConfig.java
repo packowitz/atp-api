@@ -53,7 +53,7 @@ public class SwaggerConfig {
     private SecurityContext securityContext() {
         return SecurityContext.builder()
                 .securityReferences(defaultAuth())
-                .forPaths(or (regex("/api.*")))
+                .forPaths(or (regex("/app.*")))
                 .build();
     }
 
