@@ -148,11 +148,16 @@ public class SurveyController {
     }
 
     @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list/since/{timestamp}", method = RequestMethod.GET)
-    public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<Survey>>>> getSurveysSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long timestamp) {
-        ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
-        List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
-        return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(surveys)), HttpStatus.OK);
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Survey> getSurveysSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
+        Survey survey = surveyRepository.findOne(id);
+        if(survey == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if(survey.getUserId() != user.getId()) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        return new ResponseEntity<>(survey, HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
@@ -272,6 +277,7 @@ public class SurveyController {
     }
 
     private static class SurveyDetailsResponse {
+        public long id;
         public SurveyStatus status;
         public int answered;
         public int noOpinionCount;
@@ -280,6 +286,7 @@ public class SurveyController {
         public List<Answer> answers;
 
         public SurveyDetailsResponse(Survey survey, List<Answer> answers) {
+            this.id = survey.getId();
             this.status = survey.getStatus();
             this.answered = survey.getAnswered();
             this.noOpinionCount = survey.getNoOpinionCount();
