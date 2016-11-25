@@ -148,16 +148,16 @@ public class SurveyController {
     }
 
     @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Survey> getSurveysSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
-        Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @RequestMapping(value = "/list/byids/{ids}", method = RequestMethod.GET)
+    public ResponseEntity<List<Survey>> getSurveysByIds(@ApiIgnore @ModelAttribute("user") User user, @PathVariable String ids) {
+        List<Survey> surveys = new ArrayList<>();
+        for(String idString : ids.split(",")) {
+            Survey survey = surveyRepository.findOne(Long.parseLong(idString));
+            if(survey != null && survey.getUserId() == user.getId()) {
+                surveys.add(survey);
+            }
         }
-        if(survey.getUserId() != user.getId()) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
-        return new ResponseEntity<>(survey, HttpStatus.OK);
+        return new ResponseEntity<>(surveys, HttpStatus.OK);
     }
 
     @JsonView(Views.AppView.class)
