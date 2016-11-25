@@ -32,7 +32,6 @@ public interface AchievementApi {
     @RequestMapping(value = "/claim/{type}", method = RequestMethod.POST)
     ResponseEntity<AchievementsWithUserResponse> claimAchievement(@ApiIgnore @ModelAttribute("user") User user, @PathVariable AchievementType type);
 
-
     class AchievementsWithUserResponse {
         public User user;
         List<Achievement> achievements;

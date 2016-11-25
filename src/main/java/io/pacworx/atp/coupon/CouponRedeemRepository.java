@@ -1,6 +1,5 @@
 package io.pacworx.atp.coupon;
 
-import io.pacworx.atp.coupon.CouponRedeem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

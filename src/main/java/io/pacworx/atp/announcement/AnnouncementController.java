@@ -18,8 +18,12 @@ import java.util.List;
 @RequestMapping("/app/announcement")
 public class AnnouncementController {
 
+    private final AnnouncementRepository announcementRepository;
+
     @Autowired
-    private AnnouncementRepository announcementRepository;
+    public AnnouncementController(AnnouncementRepository announcementRepository) {
+        this.announcementRepository = announcementRepository;
+    }
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/list", method = RequestMethod.GET)

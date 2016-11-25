@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,8 +88,10 @@ public class UserController implements UserApi {
     }
 
     private List<UserForHighscore> transformHighscoreList(User me, List<User> hs) {
-        return hs.stream().map(hsUser ->
-                new UserForHighscore(me, hsUser)).collect(Collectors.toList()
-        );
+        List<UserForHighscore> highscore = new ArrayList<>();
+
+        hs.forEach(hsUser -> highscore.add(new UserForHighscore(me, hsUser)));
+
+        return highscore;
     }
 }
