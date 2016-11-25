@@ -12,25 +12,26 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/app/achievement")
-public class AchievementController {
+public class AchievementController implements AchievementApi {
+
+    private final AchievementRepository achievementRepository;
+
+    private final UserRepository userRepository;
 
     @Autowired
-    private AchievementRepository achievementRepository;
+    public AchievementController(AchievementRepository achievementRepository, UserRepository userRepository) {
+        this.achievementRepository = achievementRepository;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ResponseEntity<List<Achievement>> listAchievements(@ApiIgnore @ModelAttribute("user") User user) {
         List<Achievement> achievements = getUpdatedAchievements(user);
         return new ResponseEntity<>(achievements, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/claim/{type}", method = RequestMethod.POST)
     public ResponseEntity<AchievementsWithUserResponse> claimAchievement(@ApiIgnore @ModelAttribute("user") User user, @PathVariable AchievementType type) {
         List<Achievement> achievements = achievementRepository.findByUserId(user.getId());
-        Achievement achievement = getOrCreateAchievmentByType(achievements, type, user);
+        Achievement achievement = getOrCreateAchievementByType(achievements, type, user);
         if(achievement.getAchieved() > achievement.getClaimed()) {
             achievement.incClaimed(type.getStep());
             achievement.setLastClaimed(ZonedDateTime.now());
@@ -43,17 +44,17 @@ public class AchievementController {
 
     private List<Achievement> getUpdatedAchievements(User user) {
         List<Achievement> achievements = achievementRepository.findByUserId(user.getId());
-        checkActiveUser(getOrCreateAchievmentByType(achievements, AchievementType.ACTIVE_USER, user));
-        checkUsername(getOrCreateAchievmentByType(achievements, AchievementType.CHOOSE_USERNAME, user), user);
-        checkAtpCreator(getOrCreateAchievmentByType(achievements, AchievementType.ATP_CREATOR, user), user);
-        checkAtpCAnswerer(getOrCreateAchievmentByType(achievements, AchievementType.ATP_ANSWERER, user), user);
-        checkReliableUser(getOrCreateAchievmentByType(achievements, AchievementType.RELIABLE_USER, user), user);
+        checkActiveUser(getOrCreateAchievementByType(achievements, AchievementType.ACTIVE_USER, user));
+        checkUsername(getOrCreateAchievementByType(achievements, AchievementType.CHOOSE_USERNAME, user), user);
+        checkAtpCreator(getOrCreateAchievementByType(achievements, AchievementType.ATP_CREATOR, user), user);
+        checkAtpCAnswerer(getOrCreateAchievementByType(achievements, AchievementType.ATP_ANSWERER, user), user);
+        checkReliableUser(getOrCreateAchievementByType(achievements, AchievementType.RELIABLE_USER, user), user);
         return achievements;
     }
 
-    private Achievement getOrCreateAchievmentByType(List<Achievement> achievements, AchievementType type, User user) {
+    private Achievement getOrCreateAchievementByType(List<Achievement> achievements, AchievementType type, User user) {
         for (Achievement achievement : achievements) {
-            if(achievement.getType() == type) {
+            if (achievement.getType() == type) {
                 return achievement;
             }
         }
@@ -125,16 +126,6 @@ public class AchievementController {
                 achievement.setAchieved(1);
                 achievementRepository.save(achievement);
             }
-        }
-    }
-
-    private static class AchievementsWithUserResponse {
-        public User user;
-        public List<Achievement> achievements;
-
-        public AchievementsWithUserResponse(User user, List<Achievement> achievements) {
-            this.user = user;
-            this.achievements = achievements;
         }
     }
 }
