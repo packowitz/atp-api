@@ -94,15 +94,15 @@ public interface UserApi {
     }
 
     final class UserForHighscore {
-        String username;
-        Boolean itsme;
-        int yearOfBirth;
+        public String username;
+        public Boolean itsme;
+        public int yearOfBirth;
         public String country;
-        boolean male;
-        long surveysAnswered;
-        long surveysStarted;
-        long surveysAnsweredWeek;
-        long surveysStartedWeek;
+        public boolean male;
+        public long surveysAnswered;
+        public long surveysStarted;
+        public long surveysAnsweredWeek;
+        public long surveysStartedWeek;
 
         UserForHighscore(User me, User hs) {
             if (me.getId() == hs.getId()) {
