@@ -1,13 +1,11 @@
 package io.pacworx.atp.survey;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.ForbiddenException;
 import io.pacworx.atp.exception.NotFoundException;
 import io.pacworx.atp.user.ResponseWithUser;
-import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.User;
-import io.pacworx.atp.config.Views;
+import io.pacworx.atp.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +13,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -33,27 +26,30 @@ import java.util.List;
 import java.util.Random;
 
 @RestController
-@RequestMapping("/app/survey")
-public class SurveyController {
+public class SurveyController implements SurveyApi {
 
     private Random random = new Random();
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private SurveyRepository surveyRepository;
-    @Autowired
-    private AnswerRepository answerRepository;
+    private final UserRepository userRepository;
+    private final SurveyRepository surveyRepository;
+    private final AnswerRepository answerRepository;
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/answerable", method = RequestMethod.GET)
+    @Autowired
+    public SurveyController(UserRepository userRepository, SurveyRepository surveyRepository, AnswerRepository answerRepository) {
+        this.userRepository = userRepository;
+        this.surveyRepository = surveyRepository;
+        this.answerRepository = answerRepository;
+    }
+
     public ResponseEntity<ResponseWithUser<Survey>> getAnswerable(@ApiIgnore @ModelAttribute("user") User user) {
         Survey survey;
-        if(showSecurityAtp(user.getReliableScore())) {
+
+        if (showSecurityAtp(user.getReliableScore())) {
             survey = surveyRepository.findAnswerableSecurity(user);
         } else {
             survey = surveyRepository.findAnswerable(user);
         }
+
         user.setSurveyToAnswer(survey);
         userRepository.save(user);
 
@@ -64,16 +60,11 @@ public class SurveyController {
         }
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/private", method = RequestMethod.POST)
     public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
                                                                     @RequestBody @Valid StartSurveyRequest request,
                                                                     BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors() || request.type.getCreationCosts() > user.getCredits()) {
             throw new BadRequestException();
-        }
-        if(request.type.getCreationCosts() > user.getCredits()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         Survey survey = request.survey;
@@ -84,6 +75,7 @@ public class SurveyController {
         survey.setStatus(SurveyStatus.ACTIVE);
         user.addCredits(0 - request.type.getCreationCosts());
         user.incSurveysStarted();
+
         if(request.saveAsDefault) {
             user.setSurveyMale(survey.isMale());
             user.setSurveyFemale(survey.isFemale());
@@ -96,8 +88,6 @@ public class SurveyController {
         return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/result", method = RequestMethod.POST)
     public ResponseEntity<ResponseWithUser<Survey>> postResult(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid PostResultRequest resultRequest, BindingResult bindingResult) {
         if(bindingResult.hasErrors() || user.getSurveyIdToAnswer() != resultRequest.surveyId) {
             throw new BadRequestException();
@@ -140,18 +130,15 @@ public class SurveyController {
         return getAnswerable(user);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<Survey>>>> getSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findMySurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(surveys)), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list/byids/{ids}", method = RequestMethod.GET)
     public ResponseEntity<List<Survey>> getSurveysByIds(@ApiIgnore @ModelAttribute("user") User user, @PathVariable String ids) {
         List<Survey> surveys = new ArrayList<>();
-        for(String idString : ids.split(",")) {
+
+        for (String idString : ids.split(",")) {
             Survey survey = surveyRepository.findOne(Long.parseLong(idString));
             if(survey != null && survey.getUserId() == user.getId()) {
                 surveys.add(survey);
@@ -160,8 +147,6 @@ public class SurveyController {
         return new ResponseEntity<>(surveys, HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/updates/since/{timestamp}", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<SurveyDetailsResponse>>>> getUpdatesSince(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long timestamp) {
         ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
         List<Survey> surveys = surveyRepository.findMySurveysSince(user.getId(), since);
@@ -172,29 +157,21 @@ public class SurveyController {
         return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(details)), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list3", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<List<Survey>>> getLastThreeSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findMyLast3Surveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list/current", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<List<Survey>>> getCurrentSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findCurrentSurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/list/archived", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<List<Survey>>> getArchivedSurveys(@ApiIgnore @ModelAttribute("user") User user) {
         List<Survey> surveys = surveyRepository.findArchivedSurveys(user.getId());
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/details/{id}", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
@@ -202,7 +179,7 @@ public class SurveyController {
         }
 
         if (user.getId() != survey.getUserId()) {
-            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey user id: [" + survey.getId() + "]");
+            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
         }
 
         List<Answer> answers = answerRepository.findBySurveyIdAndAnswerGreaterThanEqual(survey.getId(), 0);
@@ -211,22 +188,20 @@ public class SurveyController {
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/update/{id}", method = RequestMethod.GET)
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
+        if (survey == null) {
             throw new NotFoundException("Survey not found");
         }
-        if(user.getId() != survey.getUserId()) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+
+        if (user.getId() != survey.getUserId()) {
+            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
         }
+
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, null);
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
@@ -259,40 +234,4 @@ public class SurveyController {
         return random.nextDouble() <= chance;
     }
 
-    private static class PostResultRequest {
-        @NotNull
-        public long surveyId;
-        @NotNull
-        @Min(-1)
-        @Max(2)
-        public int answer;
-    }
-
-    private static class StartSurveyRequest {
-        @NotNull
-        public Survey survey;
-        @NotNull
-        public SurveyType type;
-        public boolean saveAsDefault;
-    }
-
-    private static class SurveyDetailsResponse {
-        public long id;
-        public SurveyStatus status;
-        public int answered;
-        public int noOpinionCount;
-        public int pic1Count;
-        public int pic2Count;
-        public List<Answer> answers;
-
-        public SurveyDetailsResponse(Survey survey, List<Answer> answers) {
-            this.id = survey.getId();
-            this.status = survey.getStatus();
-            this.answered = survey.getAnswered();
-            this.noOpinionCount = survey.getNoOpinionCount();
-            this.pic1Count = survey.getPic1Count();
-            this.pic2Count = survey.getPic2Count();
-            this.answers = answers;
-        }
-    }
 }
