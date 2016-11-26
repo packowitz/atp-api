@@ -34,7 +34,7 @@ public interface AchievementApi {
 
     class AchievementsWithUserResponse {
         public User user;
-        List<Achievement> achievements;
+        public List<Achievement> achievements;
 
         AchievementsWithUserResponse(User user, List<Achievement> achievements) {
             this.user = user;
