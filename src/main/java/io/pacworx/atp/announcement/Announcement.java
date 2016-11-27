@@ -1,6 +1,5 @@
 package io.pacworx.atp.announcement;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.config.Views;
 
@@ -20,7 +19,6 @@ public class Announcement {
     private ZonedDateTime sendDate;
     @JsonView(Views.WebView.class)
     private String countries;
-    @JsonIgnore
     private String title;
     private String message;
 
