@@ -35,6 +35,9 @@ public class SurveyController implements SurveyApi {
     private final AnswerRepository answerRepository;
 
     @Autowired
+    private SurveyUtil surveyUtil;
+
+    @Autowired
     public SurveyController(UserRepository userRepository, SurveyRepository surveyRepository, AnswerRepository answerRepository) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
@@ -60,25 +63,38 @@ public class SurveyController implements SurveyApi {
         }
     }
 
-    public ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
+    public ResponseEntity<ResponseWithUser<List<Survey>>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
                                                                     @RequestBody @Valid StartSurveyRequest request,
                                                                     BindingResult bindingResult) {
         if (bindingResult.hasErrors() || request.type.getCreationCosts() > user.getCredits()) {
             throw new BadRequestException();
         }
 
-        Survey survey = request.survey;
-        survey.setUserId(user.getId());
-        survey.setType(request.type);
-        survey.setExpectedAnswer(null);
-        survey.setStartedDate(ZonedDateTime.now());
-        survey.setStatus(SurveyStatus.ACTIVE);
-        user.addCredits(0 - request.type.getCreationCosts());
+        request.survey.setUserId(user.getId());
+        request.survey.setType(request.type);
+        request.survey.setStartedDate(ZonedDateTime.now());
+
+        List<Survey> surveys = surveyUtil.generateMultiPictureSurveys(request.survey, request.pictures, false);
+        int costs = surveys.size() * request.type.getCreationCosts();
+
+        if(user.getCredits() < costs) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        user.addCredits(0 - costs);
         user.incSurveysStarted();
 
-        surveyRepository.save(survey);
+        Survey firstSurvey = surveys.get(0);
+        surveyRepository.save(firstSurvey);
+        if(surveys.size() > 1) {
+            long groupId = firstSurvey.getId();
+            for(Survey survey : surveys) {
+                survey.setGroupId(groupId);
+                surveyRepository.save(survey);
+            }
+        }
         userRepository.save(user);
-        return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
+        return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 
     public ResponseEntity<ResponseWithUser<Survey>> postResult(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid PostResultRequest resultRequest, BindingResult bindingResult) {

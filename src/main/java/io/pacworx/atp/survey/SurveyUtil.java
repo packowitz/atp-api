@@ -18,6 +18,7 @@ public class SurveyUtil {
     private CountryRepository countryRepository;
 
     public List<Survey> generateMultiPictureSurveys(Survey blueprint, List<String> pictures, boolean eachCountrySeparat) {
+        boolean multipicture = pictures.size() > 2;
         List<Survey> surveys = new ArrayList<>();
 
         for(int pic1_id = 0; (pic1_id + 1) < pictures.size(); pic1_id++) {
@@ -37,10 +38,10 @@ public class SurveyUtil {
                     survey.setMaxAge(blueprint.getMaxAge());
                     survey.setCountries(country);
 
-                    survey.setMultiPicture(true);
+                    survey.setMultiPicture(multipicture);
 
                     //randomize which picture is left and right
-                    if(random.nextDouble() < 0.5) {
+                    if(!multipicture || random.nextDouble() < 0.5) {
                         survey.setPic1_id(pic1_id + 1);
                         survey.setPic1(pictures.get(pic1_id));
                         survey.setPic2_id(pic2_id + 1);

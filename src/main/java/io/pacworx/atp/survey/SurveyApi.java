@@ -15,6 +15,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ public interface SurveyApi {
             response = ResponseWithUser.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/private", method = RequestMethod.POST)
-    ResponseEntity<ResponseWithUser<Survey>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
+    ResponseEntity<ResponseWithUser<List<Survey>>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
                                                              @RequestBody @Valid StartSurveyRequest request,
                                                              BindingResult bindingResult);
 
@@ -126,6 +127,9 @@ public interface SurveyApi {
         public Survey survey;
         @NotNull
         public SurveyType type;
+        @NotNull
+        @Size(min = 2)
+        public List<String> pictures;
     }
 
     class SurveyDetailsResponse {

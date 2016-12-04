@@ -19,9 +19,7 @@ public class Survey {
     @Enumerated(EnumType.STRING)
     private SurveyStatus status;
     private String title;
-    @NotNull
     private String pic1;
-    @NotNull
     private String pic2;
     @NotNull
     private int minAge;
