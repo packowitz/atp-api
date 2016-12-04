@@ -126,7 +126,6 @@ public interface SurveyApi {
         public Survey survey;
         @NotNull
         public SurveyType type;
-        public boolean saveAsDefault;
     }
 
     class SurveyDetailsResponse {

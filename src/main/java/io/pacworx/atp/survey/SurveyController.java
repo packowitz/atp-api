@@ -76,13 +76,6 @@ public class SurveyController implements SurveyApi {
         user.addCredits(0 - request.type.getCreationCosts());
         user.incSurveysStarted();
 
-        if(request.saveAsDefault) {
-            user.setSurveyMale(survey.isMale());
-            user.setSurveyFemale(survey.isFemale());
-            user.setSurveyMinAge(survey.getMinAge());
-            user.setSurveyMaxAge(survey.getMaxAge());
-            user.setSurveyCountry(survey.getCountries());
-        }
         surveyRepository.save(survey);
         userRepository.save(user);
         return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);

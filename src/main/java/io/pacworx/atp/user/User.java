@@ -54,16 +54,6 @@ public class User {
     private boolean notificationsSound = false;
     @JsonView(Views.AppView.class)
     private boolean notificationsVibration = false;
-    @JsonView(Views.AppView.class)
-    private Boolean surveyMale;
-    @JsonView(Views.AppView.class)
-    private Boolean surveyFemale;
-    @JsonView(Views.AppView.class)
-    private Integer surveyMinAge;
-    @JsonView(Views.AppView.class)
-    private Integer surveyMaxAge;
-    @JsonView(Views.AppView.class)
-    private String surveyCountry;
     private Long surveyGroupId;
     private Integer surveyPic1_id;
     private Integer surveyPic2_id;
@@ -254,46 +244,6 @@ public class User {
 
     public void setNotifications(boolean notifications) {
         this.notifications = notifications;
-    }
-
-    public Boolean getSurveyMale() {
-        return surveyMale;
-    }
-
-    public void setSurveyMale(Boolean surveyMale) {
-        this.surveyMale = surveyMale;
-    }
-
-    public Boolean getSurveyFemale() {
-        return surveyFemale;
-    }
-
-    public void setSurveyFemale(Boolean surveyFemale) {
-        this.surveyFemale = surveyFemale;
-    }
-
-    public Integer getSurveyMinAge() {
-        return surveyMinAge;
-    }
-
-    public void setSurveyMinAge(Integer surveyMinAge) {
-        this.surveyMinAge = surveyMinAge;
-    }
-
-    public Integer getSurveyMaxAge() {
-        return surveyMaxAge;
-    }
-
-    public void setSurveyMaxAge(Integer surveyMaxAge) {
-        this.surveyMaxAge = surveyMaxAge;
-    }
-
-    public String getSurveyCountry() {
-        return surveyCountry;
-    }
-
-    public void setSurveyCountry(String surveyCountry) {
-        this.surveyCountry = surveyCountry;
     }
 
     public Long getSurveyGroupId() {
