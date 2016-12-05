@@ -213,7 +213,7 @@ public class SurveyController implements SurveyApi {
 
     public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
+        if(survey == null || survey.getGroupId() != null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if(survey.getUserId() != user.getId()) {
