@@ -224,6 +224,21 @@ public class SurveyController implements SurveyApi {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    public ResponseEntity deleteSurveyGroup(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long groupId) {
+        List<Survey> surveys = surveyRepository.findByGroupId(groupId);
+        if(surveys.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        for(Survey survey : surveys) {
+            if(survey.getUserId() != user.getId()) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+        }
+        answerRepository.deleteBySurveyGroupId(groupId);
+        surveyRepository.deleteByGroupId(groupId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     private boolean showSecurityAtp(int reliableScore) {
         //150+ -> 5%    100 -> 10%     50- -> 50%
         double chance;

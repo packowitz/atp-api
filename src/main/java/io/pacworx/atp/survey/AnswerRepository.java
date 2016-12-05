@@ -13,4 +13,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     @Transactional
     void deleteBySurveyId(long surveyId);
+
+    @Transactional
+    void deleteBySurveyGroupId(long surveyGroupId);
 }

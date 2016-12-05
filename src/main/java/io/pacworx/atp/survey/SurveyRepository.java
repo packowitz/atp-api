@@ -83,4 +83,9 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
     }
 
     List<Survey> findByTypeOrderByStartedDateDesc(SurveyType type);
+
+    List<Survey> findByGroupId(long groupId);
+
+    @Transactional
+    void deleteByGroupId(long groupId);
 }

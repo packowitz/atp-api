@@ -112,6 +112,9 @@ public interface SurveyApi {
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id);
 
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/group/{groupId}", method = RequestMethod.DELETE)
+    ResponseEntity deleteSurveyGroup(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long groupId);
 
     class PostResultRequest {
         @NotNull
