@@ -72,25 +72,25 @@ public interface UserApi {
     ResponseEntity<List<UserForHighscore>> getHighscoreWeekLocal(@ApiIgnore @ModelAttribute("user") User user);
 
     final class UsernameRequest {
-        String username;
-        String password;
+        public String username;
+        public String password;
     }
 
     final class ChangePersonalDataRequest {
-        Integer yearOfBirth;
-        Boolean male;
+        public Integer yearOfBirth;
+        public Boolean male;
         public String country;
     }
 
     final class ChangeNotificationsRequest {
-        boolean enabled;
-        boolean soundEnabled;
-        boolean vibrationEnabled;
+        public boolean enabled;
+        public boolean soundEnabled;
+        public boolean vibrationEnabled;
     }
 
     final class ChangeDeviceRequest {
-        String deviceOs;
-        String notificationRegId;
+        public String deviceOs;
+        public String notificationRegId;
     }
 
     final class UserForHighscore {
