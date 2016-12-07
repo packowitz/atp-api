@@ -27,7 +27,7 @@ public class FeedbackController implements FeedbackApi {
     public ResponseEntity<Feedback> postFeedback(@ApiIgnore @ModelAttribute("user") User user,
                                                  @RequestBody Feedback feedback) {
         if(feedback.getType() == null || feedback.getTitle() == null || feedback.getMessage() == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
         feedback.setSendDate(ZonedDateTime.now());
         feedback.setStatus(FeedbackStatus.OPEN);
@@ -76,7 +76,7 @@ public class FeedbackController implements FeedbackApi {
     public ResponseEntity<Feedback> closeFeedback(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Feedback feedback = feedbackRepository.findOne(id);
         if(feedback == null || feedback.getStatus() == FeedbackStatus.CLOSED) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
         feedback.setStatus(FeedbackStatus.CLOSED);
         feedbackRepository.save(feedback);

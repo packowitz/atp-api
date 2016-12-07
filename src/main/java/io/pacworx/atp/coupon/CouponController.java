@@ -1,5 +1,8 @@
 package io.pacworx.atp.coupon;
 
+import io.pacworx.atp.exception.AtpException;
+import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.CouponAlreadyRedeemedException;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,10 +41,13 @@ public class CouponController implements CouponApi {
         LocalDate todayUTC = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate();
 
         if (coupon == null || !coupon.isActive() || todayUTC.isBefore(coupon.getStartDate()) || todayUTC.isAfter(coupon.getEndDate())) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            AtpException exception = new BadRequestException();
+            exception.setCustomTitle("Wrong code?");
+            exception.setCustomMessage("The code you entered does not exist or is not valid.");
+            throw exception;
         }
         if (couponRedeemRepository.findByCouponIdAndUserId(coupon.getId(), user.getId()) != null) {
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+            throw new CouponAlreadyRedeemedException();
         }
 
         CouponRedeem redeem = new CouponRedeem();

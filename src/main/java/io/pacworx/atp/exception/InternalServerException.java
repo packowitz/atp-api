@@ -2,24 +2,24 @@ package io.pacworx.atp.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class NotFoundException extends AtpException {
+public class InternalServerException extends AtpException {
 
-    public NotFoundException() {
+    public InternalServerException() {
         super(buildExceptionInfo());
     }
 
-    public NotFoundException(String message) {
+    public InternalServerException(String message) {
         super(message, buildExceptionInfo());
     }
 
-    public NotFoundException(String message, Throwable cause) {
+    public InternalServerException(String message, Throwable cause) {
         super(message, cause, buildExceptionInfo());
     }
 
     private static ExceptionInfo buildExceptionInfo() {
-        ExceptionInfo info = new ExceptionInfo(HttpStatus.NOT_FOUND.value());
+        ExceptionInfo info = new ExceptionInfo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        info.enableShowHomeBtn();
         info.enableShowRetryBtn();
-        info.enableShowCloseBtn();
         return info;
     }
 }

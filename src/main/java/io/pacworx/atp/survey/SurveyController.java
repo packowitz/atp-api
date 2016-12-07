@@ -3,6 +3,7 @@ package io.pacworx.atp.survey;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.ForbiddenException;
 import io.pacworx.atp.exception.NotFoundException;
+import io.pacworx.atp.exception.OutOfSurveyException;
 import io.pacworx.atp.user.ResponseWithUser;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
@@ -59,7 +60,7 @@ public class SurveyController implements SurveyApi {
         if (survey != null) {
             return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
         } else {
-            throw new NotFoundException("Requested survey couldn't be found");
+            throw new OutOfSurveyException();
         }
     }
 
@@ -78,7 +79,7 @@ public class SurveyController implements SurveyApi {
         int costs = surveys.size() * request.type.getCreationCosts();
 
         if(user.getCredits() < costs) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
 
         user.addCredits(0 - costs);
@@ -184,11 +185,11 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
-            throw new NotFoundException("Survey not found");
+            throw new NotFoundException("Survey id: [" + id + "] not found");
         }
 
         if (user.getId() != survey.getUserId()) {
-            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
+            throw new ForbiddenException("Forbidden request made from user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
         }
 
         List<Answer> answers = answerRepository.findBySurveyIdAndAnswerGreaterThanEqual(survey.getId(), 0);
@@ -200,11 +201,11 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
-            throw new NotFoundException("Survey not found");
+            throw new NotFoundException("Survey id: [" + id + "] not found");
         }
 
         if (user.getId() != survey.getUserId()) {
-            throw new ForbiddenException("Forbidden request made against user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
+            throw new ForbiddenException("Forbidden request made from user: [" + user.getId() + "] and survey id: [" + survey.getId() + "]");
         }
 
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, null);
@@ -214,10 +215,10 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null || survey.getGroupId() != null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
         if(survey.getUserId() != user.getId()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            throw new ForbiddenException();
         }
         answerRepository.deleteBySurveyId(survey.getId());
         surveyRepository.delete(survey);
@@ -227,11 +228,11 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity deleteSurveyGroup(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long groupId) {
         List<Survey> surveys = surveyRepository.findByGroupId(groupId);
         if(surveys.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            throw new BadRequestException();
         }
         for(Survey survey : surveys) {
             if(survey.getUserId() != user.getId()) {
-                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+                throw new ForbiddenException();
             }
         }
         answerRepository.deleteBySurveyGroupId(groupId);

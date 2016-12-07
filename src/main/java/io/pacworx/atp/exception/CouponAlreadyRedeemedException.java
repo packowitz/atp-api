@@ -2,23 +2,24 @@ package io.pacworx.atp.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class ForbiddenException extends AtpException {
+public class CouponAlreadyRedeemedException extends AtpException {
 
-    public ForbiddenException() {
+    public CouponAlreadyRedeemedException() {
         super(buildExceptionInfo());
     }
 
-    public ForbiddenException(String message) {
+    public CouponAlreadyRedeemedException(String message) {
         super(message, buildExceptionInfo());
     }
 
-    public ForbiddenException(String message, Throwable cause) {
+    public CouponAlreadyRedeemedException(String message, Throwable cause) {
         super(message, cause, buildExceptionInfo());
     }
 
     private static ExceptionInfo buildExceptionInfo() {
         ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
-        info.enableShowResetAccountBtn();
+        info.setCustomTitle("Already redeemed");
+        info.setCustomMessage("You can redeem each coupon only once.");
         info.enableShowCloseBtn();
         return info;
     }

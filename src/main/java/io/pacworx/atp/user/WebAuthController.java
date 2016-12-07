@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.pacworx.atp.exception.BadRequestException;
-import io.pacworx.atp.exception.NotFoundException;
+import io.pacworx.atp.exception.InternalServerException;
 import io.pacworx.atp.config.Views;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +48,7 @@ public class WebAuthController {
 
         User user = userRepository.findByUsername(request.username);
         if (user == null || !user.passwordMatches(request.password)) {
-            throw new NotFoundException("User doesn't exist or password doesn't match");
+            throw new InternalServerException("User doesn't exist or password doesn't match");
         }
 
         UserRights rights = userRightsRepository.findOne(user.getId());

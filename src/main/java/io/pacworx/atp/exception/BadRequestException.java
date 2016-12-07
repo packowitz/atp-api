@@ -1,15 +1,25 @@
 package io.pacworx.atp.exception;
 
-/**
- * Used to throw http bad request exceptions
- * Author: Max Tuzzolino
- */
+import org.springframework.http.HttpStatus;
 
-public class BadRequestException extends RuntimeException {
-    public BadRequestException() {}
+public class BadRequestException extends AtpException {
 
-    public BadRequestException(String message)
-    {
-        super(message);
+    public BadRequestException() {
+        super(buildExceptionInfo());
+    }
+
+    public BadRequestException(String message) {
+        super(message, buildExceptionInfo());
+    }
+
+    public BadRequestException(String message, Throwable cause) {
+        super(message, cause, buildExceptionInfo());
+    }
+
+    private static ExceptionInfo buildExceptionInfo() {
+        ExceptionInfo info = new ExceptionInfo(HttpStatus.BAD_REQUEST.value());
+        info.enableShowRetryBtn();
+        info.enableShowCloseBtn();
+        return info;
     }
 }

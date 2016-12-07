@@ -1,6 +1,6 @@
 package io.pacworx.atp.user;
 
-import io.pacworx.atp.exception.NotFoundException;
+import io.pacworx.atp.exception.InternalServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import springfox.documentation.annotations.ApiIgnore;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class UserController implements UserApi {
@@ -30,7 +29,7 @@ public class UserController implements UserApi {
         if (user != null) {
             return new ResponseEntity<>(user, HttpStatus.OK);
         } else {
-            throw new NotFoundException("User not found");
+            throw new InternalServerException("User not found");
         }
     }
 
