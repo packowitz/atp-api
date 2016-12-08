@@ -22,6 +22,8 @@ public class User {
     private String username;
     @JsonIgnore
     private String password;
+    private String email;
+    private boolean emailConfirmed;
     @Min(1900)
     @Max(2050)
     @Column(name = "yearofbirth")
@@ -128,6 +130,22 @@ public class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public boolean isEmailConfirmed() {
+        return emailConfirmed;
+    }
+
+    public void setEmailConfirmed(boolean emailConfirmed) {
+        this.emailConfirmed = emailConfirmed;
     }
 
     public Integer getYearOfBirth() {

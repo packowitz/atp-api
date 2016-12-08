@@ -1,15 +1,19 @@
 package io.pacworx.atp.user;
 
+import io.pacworx.atp.exception.AtpException;
+import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.InternalServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,12 +21,14 @@ import java.util.List;
 @RestController
 public class UserController implements UserApi {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private EmailConfirmationRepository emailConfirmationRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     public ResponseEntity<User> getUser(@PathVariable long id) {
         User user = userRepository.findOne(id);
@@ -40,10 +46,36 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    public ResponseEntity<User> createUsername(@ApiIgnore @ModelAttribute("user") User user, @RequestBody UsernameRequest request) throws Exception {
+    public ResponseEntity<User> createUsername(@ApiIgnore @ModelAttribute("user") User user, @RequestBody UsernameRequest request) {
+        if(user.getUsername() != null) {
+            throw new BadRequestException("User already has a username");
+        }
         user.setUsername(request.username);
+        userRepository.save(user);
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> secureAccount(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid SecureAccountRequest request, BindingResult bindingResult) throws Exception {
+        if(user.getEmail() != null || bindingResult.hasErrors()) {
+            throw new BadRequestException();
+        }
+        if(userRepository.findByEmail(request.email) != null) {
+            AtpException exception = new BadRequestException("Email address already in use");
+            exception.setCustomTitle("Failed");
+            exception.setCustomMessage("The email address " + request.email + " is already in use");
+            throw exception;
+        }
+        request.email = request.email.toLowerCase();
+        EmailConfirmation confirmation = new EmailConfirmation();
+        confirmation.setEmail(request.email);
+        confirmation.setUserId(user.getId());
+        emailConfirmationRepository.save(confirmation);
+        emailService.sendConfirmationEmail(confirmation);
+
+        user.setEmail(request.email);
         user.setPassword(request.password);
         userRepository.save(user);
+
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 

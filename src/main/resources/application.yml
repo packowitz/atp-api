@@ -13,6 +13,14 @@ spring:
 jwt.secret: ${jwt_appsecret:thisissecret}
 jwt.web.secret: ${jwt_websecret:alocaljwtsecret}
 
+email:
+  host: ${email_host}
+  user: ${email_user}
+  password: ${email_password}
+  reply-to: no-reply@askthepeople.io
+  jwt: ${email_jwt}
+  confirmation-url: ${email_confirmation_url:http://localhost:8080/confirm/email?token=}
+
 ---
 
 spring:

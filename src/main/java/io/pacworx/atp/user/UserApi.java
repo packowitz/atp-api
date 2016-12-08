@@ -5,9 +5,13 @@ import io.pacworx.atp.config.Views;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -38,7 +42,14 @@ public interface UserApi {
             response = User.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/username", method = RequestMethod.POST)
-    ResponseEntity<User> createUsername(@ApiIgnore @ModelAttribute("user") User user, @RequestBody UsernameRequest request) throws Exception;
+    ResponseEntity<User> createUsername(@ApiIgnore @ModelAttribute("user") User user, @RequestBody UsernameRequest request);
+
+    @ApiOperation(value = "Secure account",
+            notes = "Secure account with email and password",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/secure-account", method = RequestMethod.POST)
+    ResponseEntity<User> secureAccount(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid SecureAccountRequest request, BindingResult bindingResult) throws Exception;
 
     @ApiOperation(value = "Update personal data",
             notes = "Changes/creates username for logged in user",
@@ -73,6 +84,13 @@ public interface UserApi {
 
     final class UsernameRequest {
         public String username;
+    }
+
+    final class SecureAccountRequest {
+        @NotNull
+        public String email;
+        @NotNull
+        @Size(min = 8)
         public String password;
     }
 

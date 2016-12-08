@@ -12,6 +12,8 @@ import java.util.List;
 public interface UserRepository extends CrudRepository<User, Long> {
     User findByUsername(String username);
 
+    User findByEmail(String email);
+
     List<User> findFirst100BySurveysAnsweredWeekGreaterThanOrderBySurveysAnsweredWeekDesc(long surveysAnsweredWeek);
     default List<User> getHighscoreWeek() {
         return findFirst100BySurveysAnsweredWeekGreaterThanOrderBySurveysAnsweredWeekDesc(0);
