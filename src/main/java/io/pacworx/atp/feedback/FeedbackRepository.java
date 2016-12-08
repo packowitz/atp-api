@@ -1,8 +1,5 @@
 package io.pacworx.atp.feedback;
 
-import io.pacworx.atp.feedback.Feedback;
-import io.pacworx.atp.feedback.FeedbackStatus;
-import io.pacworx.atp.feedback.FeedbackType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

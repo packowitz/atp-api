@@ -1,7 +1,6 @@
 package io.pacworx.atp.country;
 
 
-import io.pacworx.atp.country.Country;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

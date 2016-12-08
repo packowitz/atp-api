@@ -1,4 +1,4 @@
-package io.pacworx.atp.achievement;
+package io.pacworx.atp.reward;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
-public class Achievement {
+public class Reward {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
@@ -14,7 +14,7 @@ public class Achievement {
     @JsonIgnore
     private long userId;
     @Enumerated(EnumType.STRING)
-    private AchievementType type;
+    private RewardType type;
     private int achieved = 0;
     private int claimed = 0;
     @JsonIgnore
@@ -36,11 +36,11 @@ public class Achievement {
         this.userId = userId;
     }
 
-    public AchievementType getType() {
+    public RewardType getType() {
         return type;
     }
 
-    public void setType(AchievementType type) {
+    public void setType(RewardType type) {
         this.type = type;
     }
 

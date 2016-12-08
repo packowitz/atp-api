@@ -1,0 +1,1 @@
+ALTER TABLE achievement RENAME TO reward;
