@@ -56,8 +56,11 @@ public class User {
     private boolean notificationsSound = false;
     @JsonView(Views.AppView.class)
     private boolean notificationsVibration = false;
+    @JsonIgnore
     private Long surveyGroupId;
+    @JsonIgnore
     private Integer surveyPic1_id;
+    @JsonIgnore
     private Integer surveyPic2_id;
 
     public void setPassword(String password) throws Exception {
