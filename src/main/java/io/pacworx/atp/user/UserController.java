@@ -30,15 +30,6 @@ public class UserController implements UserApi {
     @Autowired
     private EmailService emailService;
 
-    public ResponseEntity<User> getUser(@PathVariable long id) {
-        User user = userRepository.findOne(id);
-        if (user != null) {
-            return new ResponseEntity<>(user, HttpStatus.OK);
-        } else {
-            throw new InternalServerException("User not found");
-        }
-    }
-
     public ResponseEntity<User> getMe(@ApiIgnore @ModelAttribute("user") User user) {
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);

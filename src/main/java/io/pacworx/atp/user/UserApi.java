@@ -23,13 +23,6 @@ import java.util.List;
 @RequestMapping("/app/user")
 public interface UserApi {
 
-    @ApiOperation(value = "Get user details",
-            notes = "Simply returns a small payload of user information based on their identity number.",
-            response = User.class)
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    ResponseEntity<User> getUser(@PathVariable long id);
-
     @ApiOperation(value = "Logged in User details",
             notes = "Returns a user payload for current authenticated user.",
             response = User.class)
