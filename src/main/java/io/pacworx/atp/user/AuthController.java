@@ -33,26 +33,29 @@ public class AuthController implements AuthApi {
     }
 
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) throws Exception {
-        if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors() || (request.username == null && request.email == null)) {
             throw new BadRequestException();
         }
 
-        User user = userRepository.findByUsername(request.username);
+        User user;
+        if(request.email != null) {
+            user = userRepository.findByEmail(request.email.toLowerCase());
+            if(!user.isEmailConfirmed()) {
+                user = null;
+            }
+        } else {
+            user = userRepository.findByUsername(request.username);
+        }
 
         if (user == null || !user.passwordMatches(request.password)) {
             ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
             info.setCustomTitle("Login failed");
-            info.setCustomMessage("Either username or password is wrong");
+            info.setCustomMessage("Either email/username or password is wrong");
             info.enableShowCloseBtn();
             throw new AtpException(info);
         }
 
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user), HttpStatus.OK);
-    }
-
-    public ResponseEntity<UsernameExistsResponse> usernameCheck(@PathVariable("username") String username) {
-        User user = userRepository.findByUsername(username);
-        return new ResponseEntity<>(new UsernameExistsResponse(user != null), HttpStatus.OK);
     }
 
     private String getToken(long id) {

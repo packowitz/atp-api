@@ -36,14 +36,6 @@ public interface AuthApi {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, BindingResult bindingResult) throws Exception;
 
-    @ApiOperation(value = "Check if username exists",
-            notes = "Returns a boolean value true or false if a username exists or not. " +
-                    "Used to check if a username is taken or not during the registration process.",
-            response = UsernameExistsResponse.class)
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/username_exists/{username}", method = RequestMethod.GET)
-    ResponseEntity<UsernameExistsResponse> usernameCheck(@PathVariable("username") String username);
-
     final class TokenResponse {
         private final String token;
         private final User user;
@@ -75,8 +67,8 @@ public interface AuthApi {
     }
 
     final class LoginRequest {
-        @NotNull
         public String username;
+        public String email;
         @NotNull
         public String password;
     }
