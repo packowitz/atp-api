@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info" name="atp-api" packages="">
     <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
         <!-- Papertrail syslog config -->
         <Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"
                 protocol="TCP" appName="atp-api" mdcId="mdc" messageId="Audit" id="API"
@@ -10,6 +13,7 @@
     </Appenders>
     <Loggers>
         <Root level="info">
+            <AppenderRef ref="Console"/>
             <AppenderRef ref="SYSLOG-TCP"/>
         </Root>
     </Loggers>

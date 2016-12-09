@@ -17,7 +17,6 @@ import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.time.LocalDateTime;
 import java.util.Properties;
 
 @Component
@@ -50,7 +49,6 @@ public class EmailService {
         MimeMessage message = new MimeMessage(session);
 
         try {
-            LocalDateTime now = LocalDateTime.now();
             message.setFrom(new InternetAddress(emailReplyTo));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailConfirmation.getEmail()));
             message.setReplyTo(new InternetAddress[] {new InternetAddress(emailReplyTo)});
@@ -60,7 +58,8 @@ public class EmailService {
             ).signWith(SignatureAlgorithm.HS512, emailJwt).compact();
 
             message.setSubject("Confirm your email address for ATP");
-            message.setText("Hello,\n\n This email address was entered by someone using ATP. If you are not that person please delete this email.\n" +
+            message.setText("Hello,\n\n" +
+                    "This email address was entered by someone using ATP. If you are not that person please delete this email.\n" +
                     "To confirm your email address, please follow this link:\n\n" +
                     emailConfirmationUrl + token + "\n\n" +
                     "Thank you for using ATP\nYour ATP-Team");
@@ -70,7 +69,6 @@ public class EmailService {
             transport.sendMessage(message, message.getAllRecipients());
 
             LOGGER.info("Confirmation Email sent to " + emailConfirmation.getEmail());
-            emailConfirmation.setConfirmationSendDate(now);
         } catch (AddressException e) {
             LOGGER.warn("User was able to enter an invalid email address: " + emailConfirmation.getEmail());
             AtpException exception = new BadRequestException();

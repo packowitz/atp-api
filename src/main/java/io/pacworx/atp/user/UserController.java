@@ -2,6 +2,7 @@ package io.pacworx.atp.user;
 
 import io.pacworx.atp.exception.AtpException;
 import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.EmailAddressInUseException;
 import io.pacworx.atp.exception.InternalServerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -50,22 +51,43 @@ public class UserController implements UserApi {
         if(user.getEmail() != null || bindingResult.hasErrors()) {
             throw new BadRequestException();
         }
-        if(userRepository.findByEmail(request.email) != null) {
-            AtpException exception = new BadRequestException("Email address already in use");
-            exception.setCustomTitle("Failed");
-            exception.setCustomMessage("The email address " + request.email + " is already in use");
-            throw exception;
-        }
         request.email = request.email.toLowerCase();
+        if(userRepository.findByEmail(request.email) != null) {
+            throw new EmailAddressInUseException();
+        }
         EmailConfirmation confirmation = new EmailConfirmation();
         confirmation.setEmail(request.email);
         confirmation.setUserId(user.getId());
+        confirmation.setConfirmationSendDate(LocalDateTime.now());
         emailConfirmationRepository.save(confirmation);
         emailService.sendConfirmationEmail(confirmation);
 
         user.setEmail(request.email);
         user.setPassword(request.password);
         userRepository.save(user);
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody EmailRequest request) {
+        if(request.email == null) {
+            throw new BadRequestException();
+        }
+        request.email = request.email.toLowerCase();
+        if(!request.email.equals(user.getEmail()) && userRepository.findByEmail(request.email) != null) {
+            throw new EmailAddressInUseException();
+        }
+        if(!user.isEmailConfirmed()) {
+            user.setEmail(request.email);
+            userRepository.save(user);
+        }
+
+        EmailConfirmation confirmation = new EmailConfirmation();
+        confirmation.setEmail(request.email);
+        confirmation.setUserId(user.getId());
+        confirmation.setConfirmationSendDate(LocalDateTime.now());
+        emailConfirmationRepository.save(confirmation);
+        emailService.sendConfirmationEmail(confirmation);
 
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
