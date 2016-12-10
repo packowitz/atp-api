@@ -50,37 +50,43 @@ public class EmailService {
         sendConfirmationEmail(confirmation);
     }
 
-    private void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
-        Properties props = new Properties();
-        props.put("mail.smtp.starttls.enable", true);
-        props.put("mail.smtp.host", emailHost);
-        props.put("mail.smtp.user", emailUser);
-        props.put("mail.smtp.password", emailPassword);
-        props.put("mail.smtp.port", "587");
-        props.put("mail.smtp.auth", true);
-
-        Session session = Session.getInstance(props,null);
-        MimeMessage message = new MimeMessage(session);
-
+    public void sendNewPasswordEmail(String email, String password) {
         try {
-            message.setFrom(new InternetAddress(emailReplyTo));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailConfirmation.getEmail()));
-            message.setReplyTo(new InternetAddress[] {new InternetAddress(emailReplyTo)});
+            String subject = "Your new password for ATP";
+            String text = "Hello,\n\n" +
+                    "You requested a new password for ATP. Your new password is:\n" + password + "\n\n" +
+                    "Please change this password as soon as possible.\n\n" +
+                    "Thank you for using ATP\nYour ATP-Team";
 
+            sendMail(email, subject, text);
+
+            LOGGER.info("New password send to user: " + email);
+        } catch (AddressException e) {
+            LOGGER.info("User entered an invalid email address: " + email);
+            AtpException exception = new BadRequestException();
+            exception.setCustomTitle("Bad Email Adress");
+            exception.setCustomMessage("The email address " + email + " is not valid.");
+            throw exception;
+        } catch (MessagingException e) {
+            LOGGER.warn(e.getMessage(), e);
+            throw new InternalServerException();
+        }
+    }
+
+    private void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
+        try {
             String token = Jwts.builder().setSubject(
                     Long.toString(emailConfirmation.getId()) + " " + emailConfirmation.getUserId() + " " + emailConfirmation.getEmail()
             ).signWith(SignatureAlgorithm.HS512, emailJwt).compact();
 
-            message.setSubject("Confirm your email address for ATP");
-            message.setText("Hello,\n\n" +
+            String subject = "Confirm your email address for ATP";
+            String text = "Hello,\n\n" +
                     "This email address was entered by someone using ATP. If you are not that person please delete this email.\n" +
                     "To confirm your email address, please follow this link:\n\n" +
                     emailConfirmationUrl + token + "\n\n" +
-                    "Thank you for using ATP\nYour ATP-Team");
+                    "Thank you for using ATP\nYour ATP-Team";
 
-            Transport transport = session.getTransport("smtp");
-            transport.connect(emailHost, emailUser, emailPassword);
-            transport.sendMessage(message, message.getAllRecipients());
+            sendMail(emailConfirmation.getEmail(), subject, text);
 
             LOGGER.info("Confirmation Email sent to " + emailConfirmation.getEmail());
         } catch (AddressException e) {
@@ -93,5 +99,29 @@ public class EmailService {
             LOGGER.warn(e.getMessage(), e);
             throw new InternalServerException();
         }
+    }
+
+    private void sendMail(String email, String subject, String text) throws AddressException, MessagingException {
+        Properties props = new Properties();
+        props.put("mail.smtp.starttls.enable", true);
+        props.put("mail.smtp.host", emailHost);
+        props.put("mail.smtp.user", emailUser);
+        props.put("mail.smtp.password", emailPassword);
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", true);
+
+        Session session = Session.getInstance(props,null);
+        MimeMessage message = new MimeMessage(session);
+
+        message.setFrom(new InternetAddress(emailReplyTo));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+        message.setReplyTo(new InternetAddress[] {new InternetAddress(emailReplyTo)});
+
+        message.setSubject(subject);
+        message.setText(text);
+
+        Transport transport = session.getTransport("smtp");
+        transport.connect(emailHost, emailUser, emailPassword);
+        transport.sendMessage(message, message.getAllRecipients());
     }
 }

@@ -34,7 +34,14 @@ public interface AuthApi {
             response = TokenResponse.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, BindingResult bindingResult) throws Exception;
+    ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest req, BindingResult bindingResult) throws Exception;
+
+    @ApiOperation(value = "Password forgotten",
+            notes = "Creates a new password and sends it via email",
+            response = ForgotPasswordResponse.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/forgot-password", method = RequestMethod.POST)
+    ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req, BindingResult bindingResult) throws Exception;
 
     final class TokenResponse {
         private final String token;
@@ -71,5 +78,14 @@ public interface AuthApi {
         public String email;
         @NotNull
         public String password;
+    }
+
+    final class ForgotPasswordRequest {
+        @NotNull
+        public String email;
+    }
+
+    public class ForgotPasswordResponse {
+        public boolean success = true;
     }
 }
