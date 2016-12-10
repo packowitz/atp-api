@@ -58,6 +58,13 @@ public interface UserApi {
     @RequestMapping(value = "/email", method = RequestMethod.POST)
     ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody SecureAccountRequest request) throws Exception;
 
+    @ApiOperation(value = "Change password",
+            notes = "Change users password",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/change-password", method = RequestMethod.POST)
+    ResponseEntity<User> changePassword(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid ChangePasswordRequest request, BindingResult bindingResult) throws Exception;
+
     @ApiOperation(value = "Update personal data",
             notes = "Changes/creates username for logged in user",
             response = User.class)
@@ -99,6 +106,15 @@ public interface UserApi {
         @NotNull
         @Size(min = 8)
         public String password;
+    }
+
+    final class ChangePasswordRequest {
+        @NotNull
+        @Size(min = 8)
+        public String oldPassword;
+        @NotNull
+        @Size(min = 8)
+        public String newPassword;
     }
 
     final class ChangePersonalDataRequest {

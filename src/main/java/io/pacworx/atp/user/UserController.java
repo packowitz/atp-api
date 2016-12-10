@@ -88,6 +88,15 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    public ResponseEntity<User> changePassword(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid ChangePasswordRequest request, BindingResult bindingResult) throws Exception {
+        if(bindingResult.hasErrors() || !user.passwordMatches(request.oldPassword)) {
+            throw new BadRequestException();
+        }
+        user.setPassword(request.newPassword);
+        userRepository.save(user);
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
     public ResponseEntity<User> updatePersonalData(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request) {
         user.setYearOfBirth(request.yearOfBirth);
         user.setMale(request.male);
