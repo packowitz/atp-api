@@ -55,12 +55,7 @@ public class UserController implements UserApi {
         if(userRepository.findByEmail(request.email) != null) {
             throw new EmailAddressInUseException();
         }
-        EmailConfirmation confirmation = new EmailConfirmation();
-        confirmation.setEmail(request.email);
-        confirmation.setUserId(user.getId());
-        confirmation.setConfirmationSendDate(LocalDateTime.now());
-        emailConfirmationRepository.save(confirmation);
-        emailService.sendConfirmationEmail(confirmation);
+        emailService.sendConfirmationEmail(user, request.email);
 
         user.setEmail(request.email);
         user.setPassword(request.password);
@@ -69,8 +64,15 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    public ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody EmailRequest request) {
-        if(request.email == null) {
+    public ResponseEntity<User> resendConfirmationEmail(@ApiIgnore @ModelAttribute("user") User user) {
+        if(user.getEmail() != null && !user.isEmailConfirmed()) {
+            emailService.sendConfirmationEmail(user, user.getEmail());
+        }
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody SecureAccountRequest request) throws Exception {
+        if(request.email == null || !user.passwordMatches(request.password)) {
             throw new BadRequestException();
         }
         request.email = request.email.toLowerCase();
@@ -81,13 +83,7 @@ public class UserController implements UserApi {
             user.setEmail(request.email);
             userRepository.save(user);
         }
-
-        EmailConfirmation confirmation = new EmailConfirmation();
-        confirmation.setEmail(request.email);
-        confirmation.setUserId(user.getId());
-        confirmation.setConfirmationSendDate(LocalDateTime.now());
-        emailConfirmationRepository.save(confirmation);
-        emailService.sendConfirmationEmail(confirmation);
+        emailService.sendConfirmationEmail(user, request.email);
 
         return new ResponseEntity<>(user, HttpStatus.OK);
     }

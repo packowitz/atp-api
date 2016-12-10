@@ -44,12 +44,19 @@ public interface UserApi {
     @RequestMapping(value = "/secure-account", method = RequestMethod.POST)
     ResponseEntity<User> secureAccount(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid SecureAccountRequest request, BindingResult bindingResult) throws Exception;
 
+    @ApiOperation(value = "Resend the confirmation email",
+            notes = "Sends a new confirmation email to the current email address if it is not confirmed",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/resend-confirmation-email", method = RequestMethod.POST)
+    ResponseEntity<User> resendConfirmationEmail(@ApiIgnore @ModelAttribute("user") User user);
+
     @ApiOperation(value = "New Email address",
             notes = "Sets a new email to the user that must gets confirmed",
             response = User.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/email", method = RequestMethod.POST)
-    ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody EmailRequest request);
+    ResponseEntity<User> newEmail(@ApiIgnore @ModelAttribute("user") User user, @RequestBody SecureAccountRequest request) throws Exception;
 
     @ApiOperation(value = "Update personal data",
             notes = "Changes/creates username for logged in user",
@@ -92,10 +99,6 @@ public interface UserApi {
         @NotNull
         @Size(min = 8)
         public String password;
-    }
-
-    final class EmailRequest {
-        public String email;
     }
 
     final class ChangePersonalDataRequest {

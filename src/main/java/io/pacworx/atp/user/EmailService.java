@@ -7,6 +7,7 @@ import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.InternalServerException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,7 @@ import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.time.LocalDateTime;
 import java.util.Properties;
 
 @Component
@@ -36,7 +38,19 @@ public class EmailService {
     @Value("${email.confirmation-url}")
     private String emailConfirmationUrl;
 
-    public void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
+    @Autowired
+    EmailConfirmationRepository emailConfirmationRepository;
+
+    public void sendConfirmationEmail(User user, String email) {
+        EmailConfirmation confirmation = new EmailConfirmation();
+        confirmation.setEmail(email);
+        confirmation.setUserId(user.getId());
+        confirmation.setConfirmationSendDate(LocalDateTime.now());
+        emailConfirmationRepository.save(confirmation);
+        sendConfirmationEmail(confirmation);
+    }
+
+    private void sendConfirmationEmail(EmailConfirmation emailConfirmation) {
         Properties props = new Properties();
         props.put("mail.smtp.starttls.enable", true);
         props.put("mail.smtp.host", emailHost);
