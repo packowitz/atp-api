@@ -63,7 +63,6 @@ public class FeedbackController implements FeedbackApi {
         answer.setFeedbackId(id);
         answer.setReadAnswer(true);
         feedback.incAnswers();
-        feedback.incUnreadAnswers();
         feedback.setLastActionDate(answer.getSendDate());
         feedback.setStatus(FeedbackStatus.OPEN);
 

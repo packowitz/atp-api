@@ -112,6 +112,7 @@ public class WebCommCenterController {
         answer.setSendDate(ZonedDateTime.now());
         answer.setMessage(request.message);
         feedback.incAnswers();
+        feedback.incUnreadAnswers();
         feedback.setLastActionDate(answer.getSendDate());
         feedback.setStatus(request.close ? FeedbackStatus.CLOSED : FeedbackStatus.ANSWERED);
         feedbackAnswerRepository.save(answer);
