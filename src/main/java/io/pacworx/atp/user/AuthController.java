@@ -40,19 +40,11 @@ public class AuthController implements AuthApi {
     }
 
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) throws Exception {
-        if (bindingResult.hasErrors() || (request.username == null && request.email == null)) {
+        if (bindingResult.hasErrors()) {
             throw new BadRequestException();
         }
 
-        User user;
-        if(request.email != null) {
-            user = userRepository.findByEmail(request.email.toLowerCase());
-            if(!user.isEmailConfirmed()) {
-                user = null;
-            }
-        } else {
-            user = userRepository.findByUsername(request.username);
-        }
+        User user = userRepository.findByEmail(request.email.toLowerCase());
 
         if (user == null || !user.passwordMatches(request.password)) {
             ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());

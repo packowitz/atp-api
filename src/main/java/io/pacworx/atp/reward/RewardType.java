@@ -1,7 +1,7 @@
 package io.pacworx.atp.reward;
 
 public enum RewardType {
-    ACTIVE_USER(50), CHOOSE_USERNAME(500), ATP_CREATOR(500, 1000, 2000), ATP_ANSWERER(250, 500, 1000), RELIABLE_USER(250, 500, 1000);
+    ACTIVE_USER(50), CHOOSE_USERNAME(500), CONFIRM_EMAIL(750), ATP_CREATOR(500, 1000, 2000), ATP_ANSWERER(250, 500, 1000), RELIABLE_USER(250, 500, 1000);
 
     private int step;
     private int step1reward;

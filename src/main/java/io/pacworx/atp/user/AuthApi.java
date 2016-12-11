@@ -74,7 +74,7 @@ public interface AuthApi {
     }
 
     final class LoginRequest {
-        public String username;
+        @NotNull
         public String email;
         @NotNull
         public String password;

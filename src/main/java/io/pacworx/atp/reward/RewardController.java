@@ -46,6 +46,7 @@ public class RewardController implements RewardApi {
         List<Reward> rewards = rewardRepository.findByUserId(user.getId());
         checkActiveUser(getOrCreateAchievementByType(rewards, RewardType.ACTIVE_USER, user));
         checkUsername(getOrCreateAchievementByType(rewards, RewardType.CHOOSE_USERNAME, user), user);
+        checkEmail(getOrCreateAchievementByType(rewards, RewardType.CONFIRM_EMAIL, user), user);
         checkAtpCreator(getOrCreateAchievementByType(rewards, RewardType.ATP_CREATOR, user), user);
         checkAtpCAnswerer(getOrCreateAchievementByType(rewards, RewardType.ATP_ANSWERER, user), user);
         checkReliableUser(getOrCreateAchievementByType(rewards, RewardType.RELIABLE_USER, user), user);
@@ -84,6 +85,13 @@ public class RewardController implements RewardApi {
 
     private void checkUsername(Reward reward, User user) {
         if(reward.getAchieved() < 3 && user.getUsername() != null) {
+            reward.setAchieved(3);
+            rewardRepository.save(reward);
+        }
+    }
+
+    private void checkEmail(Reward reward, User user) {
+        if(reward.getAchieved() < 3 && user.isEmailConfirmed()) {
             reward.setAchieved(3);
             rewardRepository.save(reward);
         }
