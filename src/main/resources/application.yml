@@ -13,6 +13,8 @@ spring:
 jwt.secret: ${jwt_appsecret:thisissecret}
 jwt.web.secret: ${jwt_websecret:alocaljwtsecret}
 
+api.version: @project.version@
+
 email:
   host: ${email_host}
   user: ${email_user}
