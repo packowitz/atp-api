@@ -7,12 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +26,9 @@ public class UserController implements UserApi {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private InAppPurchaseRepository inAppPurchaseRepository;
 
     public ResponseEntity<User> getMe(@ApiIgnore @ModelAttribute("user") User user) {
         user.setLastLoginTime(LocalDateTime.now());
@@ -128,6 +133,49 @@ public class UserController implements UserApi {
 
     public ResponseEntity<List<UserForHighscore>> getHighscoreWeekLocal(@ApiIgnore @ModelAttribute("user") User user) {
         return new ResponseEntity<>(transformHighscoreList(user, userRepository.getHighscoreWeekLocal(user.getCountry())), HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> purchase(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid PurchaseRequest request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            throw new BadRequestException();
+        }
+        InAppPurchase purchase = new InAppPurchase();
+        purchase.setUserId(user.getId());
+        purchase.setOs(request.os);
+        purchase.setConsumed(false);
+        purchase.setBuyDate(ZonedDateTime.now());
+        purchase.setReceipt(request.receipt);
+
+        if(request.productId.equals("pax_tiny_bag")) {
+            purchase.setProductId(request.productId);
+            purchase.setReward(500);
+        } else if(request.productId.equals("pax_small_bag")) {
+            purchase.setProductId(request.productId);
+            purchase.setReward(1000);
+        } else if(request.productId.equals("pax_medium_bag")) {
+            purchase.setProductId(request.productId);
+            purchase.setReward(5000);
+        } else {
+            throw new BadRequestException();
+        }
+
+        inAppPurchaseRepository.save(purchase);
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> consume(@ApiIgnore @ModelAttribute("user") User user, @PathVariable String productId) {
+        List<InAppPurchase> purchases = inAppPurchaseRepository.findByUserIdAndProductIdAndConsumedFalse(user.getId(), productId);
+        if(purchases.isEmpty()) {
+            throw new BadRequestException();
+        }
+        for(InAppPurchase purchase : purchases) {
+            user.addCredits(purchase.getReward());
+            purchase.setConsumed(true);
+            purchase.setConsumeDate(ZonedDateTime.now());
+            inAppPurchaseRepository.save(purchase);
+        }
+        userRepository.save(user);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     private List<UserForHighscore> transformHighscoreList(User me, List<User> hs) {

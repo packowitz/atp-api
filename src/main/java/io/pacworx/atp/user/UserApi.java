@@ -96,6 +96,14 @@ public interface UserApi {
     @RequestMapping(value = "/highscore/week/local", method = RequestMethod.GET)
     ResponseEntity<List<UserForHighscore>> getHighscoreWeekLocal(@ApiIgnore @ModelAttribute("user") User user);
 
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/iap/purchase", method = RequestMethod.POST)
+    ResponseEntity<User> purchase(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid PurchaseRequest request, BindingResult bindingResult);
+
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/iap/consume/{productId}", method = RequestMethod.POST)
+    ResponseEntity<User> consume(@ApiIgnore @ModelAttribute("user") User user, @PathVariable String productId);
+
     final class UsernameRequest {
         public String username;
     }
@@ -158,5 +166,14 @@ public interface UserApi {
             this.surveysAnsweredWeek = hs.getSurveysAnsweredWeek();
             this.surveysStartedWeek = hs.getSurveysStartedWeek();
         }
+    }
+
+    final class PurchaseRequest {
+        @NotNull
+        public String os;
+        @NotNull
+        public String productId;
+        @NotNull
+        public String receipt;
     }
 }
