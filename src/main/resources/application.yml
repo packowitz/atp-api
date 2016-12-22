@@ -10,24 +10,24 @@ spring:
     jpa:
       show-sql: false
 
-jwt.secret: ${jwt_appsecret:thisissecret}
-jwt.web.secret: ${jwt_websecret:alocaljwtsecret}
+jwt.secret: ${ATP_JWT_APPSECRET:thisissecret}
+  jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
 
 api.version: @project.version@
 
 email:
-  host: ${email_host}
-  user: ${email_user}
-  password: ${email_password}
+  host: ${ATP_EMAIL_HOST}
+  user: ${ATP_EMAIL_USER}
+  password: ${ATP_EMAIL_PASSWORD}
   reply-to: no-reply@askthepeople.io
-  jwt: ${email_jwt}
-  confirmation-url: ${email_confirmation_url:http://localhost:8080/confirm/email?token=}
+  jwt: ${ATP_EMAIL_JWT}
+  confirmation-url: ${ATP_EMAIL_CONFIRMATION_URL:http://localhost:8080/confirm/email?token=}
 
 ---
 
 spring:
     profiles: prod
     datasource:
-        url: jdbc:postgresql://atp-db/atp
-        username: atp-user
-        password: mcks89w3jkdlwcmdsklslld
+        url: ${ATP_DB_URL}
+        username: ${ATP_DB_USER}
+        password: ${ATP_DB_PASSWORD}
