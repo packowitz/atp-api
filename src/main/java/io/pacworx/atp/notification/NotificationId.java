@@ -8,6 +8,13 @@ public class NotificationId implements Serializable {
     private long userId;
     private String deviceId;
 
+    public NotificationId() {}
+
+    public NotificationId(long userId, String deviceId) {
+        this.userId = userId;
+        this.deviceId = deviceId;
+    }
+
     public long getUserId() {
         return userId;
     }

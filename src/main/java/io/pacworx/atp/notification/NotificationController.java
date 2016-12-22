@@ -16,7 +16,7 @@ public class NotificationController implements NotificationApi {
     private NotificationRepository notificationRepository;
 
     public ResponseEntity<ChangeNotificationsResponse> updateAtpAnswerable(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
-        Notification notification = notificationRepository.findByIdUserIdAndIdDeviceId(user.getId(), request.uuid);
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
         if(notification == null) {
             notification = new Notification(user.getId(), request.uuid);
         }
@@ -26,7 +26,7 @@ public class NotificationController implements NotificationApi {
     }
 
     public ResponseEntity<ChangeNotificationsResponse> updateAtpFinished(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
-        Notification notification = notificationRepository.findByIdUserIdAndIdDeviceId(user.getId(), request.uuid);
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
         if(notification == null) {
             notification = new Notification(user.getId(), request.uuid);
         }
@@ -36,7 +36,7 @@ public class NotificationController implements NotificationApi {
     }
 
     public ResponseEntity<ChangeNotificationsResponse> updateAnnouncement(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
-        Notification notification = notificationRepository.findByIdUserIdAndIdDeviceId(user.getId(), request.uuid);
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
         if(notification == null) {
             notification = new Notification(user.getId(), request.uuid);
         }
@@ -46,7 +46,7 @@ public class NotificationController implements NotificationApi {
     }
 
     public ResponseEntity<ChangeNotificationsResponse> updateFeedback(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
-        Notification notification = notificationRepository.findByIdUserIdAndIdDeviceId(user.getId(), request.uuid);
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
         if(notification == null) {
             notification = new Notification(user.getId(), request.uuid);
         }
@@ -56,7 +56,7 @@ public class NotificationController implements NotificationApi {
     }
 
     public ResponseEntity<Notification> updateToken(@ApiIgnore @ModelAttribute("user") User user, @RequestBody NotificationTokenRequest request) {
-        Notification notification = notificationRepository.findByIdUserIdAndIdDeviceId(user.getId(), request.uuid);
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
         if(notification == null) {
             notification = new Notification(user.getId(), request.uuid);
         }

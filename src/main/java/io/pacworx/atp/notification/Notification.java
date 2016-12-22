@@ -25,9 +25,7 @@ public class Notification {
     }
 
     public Notification(long userId, String deviceId) {
-        this.id = new NotificationId();
-        this.id.setUserId(userId);
-        this.id.setDeviceId(deviceId);
+        this.id = new NotificationId(userId, deviceId);
     }
 
     public String getOs() {
