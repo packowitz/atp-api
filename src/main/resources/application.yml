@@ -11,7 +11,7 @@ spring:
       show-sql: false
 
 jwt.secret: ${ATP_JWT_APPSECRET:thisissecret}
-  jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
+jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
 
 api.version: @project.version@
 
