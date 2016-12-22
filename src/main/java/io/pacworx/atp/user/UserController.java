@@ -104,21 +104,6 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    public ResponseEntity<User> updateNotifications(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
-        user.setNotifications(request.enabled);
-        user.setNotificationsSound(request.soundEnabled);
-        user.setNotificationsVibration(request.vibrationEnabled);
-        userRepository.save(user);
-        return new ResponseEntity<>(user, HttpStatus.OK);
-    }
-
-    public ResponseEntity<User> updateDevice(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeDeviceRequest request) {
-        user.setDeviceOs(request.deviceOs);
-        user.setNotificationRegId(request.notificationRegId);
-        userRepository.save(user);
-        return new ResponseEntity<>(user, HttpStatus.OK);
-    }
-
     public ResponseEntity<List<UserForHighscore>> getHighscore(@ApiIgnore @ModelAttribute("user") User user) {
         return new ResponseEntity<>(transformHighscoreList(user, userRepository.getHighscore()), HttpStatus.OK);
     }

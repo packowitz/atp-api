@@ -48,14 +48,6 @@ public class User {
     @JsonIgnore
     @Enumerated(EnumType.STRING)
     private SurveyType surveyType;
-    private String deviceOs;
-    private String notificationRegId;
-    @JsonView(Views.AppView.class)
-    private boolean notifications = true;
-    @JsonView(Views.AppView.class)
-    private boolean notificationsSound = false;
-    @JsonView(Views.AppView.class)
-    private boolean notificationsVibration = false;
     @JsonIgnore
     private Long surveyGroupId;
     @JsonIgnore
@@ -225,46 +217,6 @@ public class User {
 
     public SurveyType getSurveyType() {
         return surveyType;
-    }
-
-    public String getDeviceOs() {
-        return deviceOs;
-    }
-
-    public void setDeviceOs(String deviceOs) {
-        this.deviceOs = deviceOs;
-    }
-
-    public String getNotificationRegId() {
-        return notificationRegId;
-    }
-
-    public void setNotificationRegId(String notificationRegId) {
-        this.notificationRegId = notificationRegId;
-    }
-
-    public boolean isNotificationsVibration() {
-        return notificationsVibration;
-    }
-
-    public void setNotificationsVibration(boolean notificationsVibration) {
-        this.notificationsVibration = notificationsVibration;
-    }
-
-    public boolean isNotificationsSound() {
-        return notificationsSound;
-    }
-
-    public void setNotificationsSound(boolean notificationsSound) {
-        this.notificationsSound = notificationsSound;
-    }
-
-    public boolean isNotifications() {
-        return notifications;
-    }
-
-    public void setNotifications(boolean notifications) {
-        this.notifications = notifications;
     }
 
     public Long getSurveyGroupId() {

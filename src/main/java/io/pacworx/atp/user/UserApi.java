@@ -73,14 +73,6 @@ public interface UserApi {
     ResponseEntity<User> updatePersonalData(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
 
     @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/notifications", method = RequestMethod.POST)
-    ResponseEntity<User> updateNotifications(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request);
-
-    @JsonView(Views.AppView.class)
-    @RequestMapping(value = "/device", method = RequestMethod.POST)
-    ResponseEntity<User> updateDevice(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeDeviceRequest request);
-
-    @JsonView(Views.AppView.class)
     @RequestMapping(value = "/highscore", method = RequestMethod.GET)
     ResponseEntity<List<UserForHighscore>> getHighscore(@ApiIgnore @ModelAttribute("user") User user);
 
@@ -129,17 +121,6 @@ public interface UserApi {
         public Integer yearOfBirth;
         public Boolean male;
         public String country;
-    }
-
-    final class ChangeNotificationsRequest {
-        public boolean enabled;
-        public boolean soundEnabled;
-        public boolean vibrationEnabled;
-    }
-
-    final class ChangeDeviceRequest {
-        public String deviceOs;
-        public String notificationRegId;
     }
 
     final class UserForHighscore {
