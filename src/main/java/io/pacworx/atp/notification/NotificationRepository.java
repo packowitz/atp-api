@@ -1,6 +1,8 @@
 package io.pacworx.atp.notification;
 
 import io.pacworx.atp.survey.Survey;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -28,6 +30,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             q += " and u.country in ('" + survey.getCountries().replaceAll(",", "','") + "')";
         }
         q += " and u.id != " + survey.getUserId() + " ORDER BY random() LIMIT " + limit;
+        Logger LOGGER = LogManager.getLogger(NotificationRepository.class);
+        LOGGER.info("query: " + q);
         return em.createNativeQuery(q).getResultList();
     }
 }
