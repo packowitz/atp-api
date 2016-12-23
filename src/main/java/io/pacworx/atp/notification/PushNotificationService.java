@@ -36,7 +36,7 @@ public class PushNotificationService {
                 FcmCommand command = new FcmCommand(this.fcmServerKey, json);
                 command.observe();
             } else {
-                LOGGER.info("Notify about new survey: found no users to fit to the survey.");
+                LOGGER.info("Notify about new survey: found no users to fit to survey #" + survey.getId());
             }
         } else {
             LOGGER.warn("Tried to send notifications put no firebase server key found.");
