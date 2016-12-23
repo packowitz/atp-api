@@ -4,6 +4,7 @@ import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.ForbiddenException;
 import io.pacworx.atp.exception.NotFoundException;
 import io.pacworx.atp.exception.OutOfSurveyException;
+import io.pacworx.atp.notification.PushNotificationService;
 import io.pacworx.atp.user.ResponseWithUser;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
@@ -37,6 +38,9 @@ public class SurveyController implements SurveyApi {
 
     @Autowired
     private SurveyUtil surveyUtil;
+
+    @Autowired
+    private PushNotificationService pushNotificationService;
 
     @Autowired
     public SurveyController(UserRepository userRepository, SurveyRepository surveyRepository, AnswerRepository answerRepository) {
@@ -95,6 +99,7 @@ public class SurveyController implements SurveyApi {
             }
         }
         userRepository.save(user);
+        pushNotificationService.notifyAnswerable(firstSurvey);
         return new ResponseEntity<>(new ResponseWithUser<>(user, surveys), HttpStatus.OK);
     }
 

@@ -15,6 +15,8 @@ jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
 
 api.version: @project.version@
 
+fcm.serverkey: ${ATP_FCM_SERVERKEY:void}
+
 email:
   host: ${ATP_EMAIL_HOST}
   user: ${ATP_EMAIL_USER}
