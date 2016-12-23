@@ -25,8 +25,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         if(!survey.isMale() || !survey.isFemale()) {
             q += " and u.male = " + Boolean.toString(survey.isMale());
         }
-        if(survey.getCountries() != "ALL") {
-
+        if(!survey.getCountries().equals("ALL")) {
             q += " and u.country in ('" + survey.getCountries().replaceAll(",", "','") + "')";
         }
         q += " and u.id != " + survey.getUserId() + " ORDER BY random() LIMIT " + limit;
