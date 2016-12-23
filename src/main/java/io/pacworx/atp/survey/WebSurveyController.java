@@ -2,6 +2,7 @@ package io.pacworx.atp.survey;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.notification.PushNotificationService;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.UserRights;
@@ -39,6 +40,9 @@ public class WebSurveyController {
     @Autowired
     private SurveyUtil surveyUtil;
 
+    @Autowired
+    private PushNotificationService pushNotificationService;
+
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)
     public ResponseEntity<Survey> createSurvey(@ModelAttribute("webuser") User webuser,
@@ -58,6 +62,7 @@ public class WebSurveyController {
 
         surveyRepository.save(survey);
         userRepository.save(webuser);
+        pushNotificationService.notifyAnswerable(survey);
 
         return new ResponseEntity<>(survey, HttpStatus.OK);
     }
@@ -93,6 +98,7 @@ public class WebSurveyController {
             surveyRepository.save(survey);
         }
         userRepository.save(webuser);
+        pushNotificationService.notifyAnswerable(firstSurvey);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
