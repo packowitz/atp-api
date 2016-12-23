@@ -27,7 +27,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
             q += " and u.country in ('" + survey.getCountries().replaceAll(",", "','") + "')";
         }
-        //q += " and u.id != " + survey.getUserId() + " ORDER BY random() LIMIT " + limit;
+        q += " and u.id != " + survey.getUserId() + " ORDER BY random() LIMIT " + limit;
         return em.createNativeQuery(q).getResultList();
     }
 }

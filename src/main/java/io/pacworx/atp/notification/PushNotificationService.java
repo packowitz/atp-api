@@ -1,6 +1,8 @@
 package io.pacworx.atp.notification;
 
 import io.pacworx.atp.survey.Survey;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @Component
 public class PushNotificationService {
+    private static final Logger LOGGER = LogManager.getLogger(PushNotificationService.class);
 
     @Value("${fcm.serverkey}")
     private String fcmServerKey;
@@ -32,7 +35,11 @@ public class PushNotificationService {
                 String json = getJson(tokens, NotificationType.ANSWERABLE);
                 FcmCommand command = new FcmCommand(this.fcmServerKey, json);
                 command.observe();
+            } else {
+                LOGGER.info("Notify about new survey: found no users to fit to the survey.");
             }
+        } else {
+            LOGGER.warn("Tried to send notifications put no firebase server key found.");
         }
 
     }
