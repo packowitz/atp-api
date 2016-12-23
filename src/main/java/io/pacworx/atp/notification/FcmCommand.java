@@ -1,7 +1,9 @@
 package io.pacworx.atp.notification;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
@@ -30,7 +32,11 @@ public class FcmCommand extends HystrixCommand<Void> {
         try {
             HttpPost post = createPost();
             CloseableHttpClient httpclient = HttpClients.createDefault();
-            httpclient.execute(post);
+            CloseableHttpResponse response = httpclient.execute(post);
+
+            ObjectMapper mapper = new ObjectMapper();
+            FcmResponse fcmResponse = mapper.readValue(response.getEntity().getContent(), FcmResponse.class);
+            LOGGER.info("Send push notification. success: " + fcmResponse.getSuccess() + ", failure: " + fcmResponse.getFailure());
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
