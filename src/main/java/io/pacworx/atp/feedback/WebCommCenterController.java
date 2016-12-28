@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.announcement.Announcement;
 import io.pacworx.atp.config.Views;
 import io.pacworx.atp.announcement.AnnouncementRepository;
+import io.pacworx.atp.notification.PushNotificationService;
 import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRights;
@@ -40,6 +41,9 @@ public class WebCommCenterController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PushNotificationService pushNotificationService;
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/open-count", method = RequestMethod.GET)
@@ -117,6 +121,7 @@ public class WebCommCenterController {
         feedback.setStatus(request.close ? FeedbackStatus.CLOSED : FeedbackStatus.ANSWERED);
         feedbackAnswerRepository.save(answer);
         feedbackRepository.save(feedback);
+        pushNotificationService.notifyFeedbackAnswered(feedback.getUserId());
         return new ResponseEntity<>(feedback, HttpStatus.OK);
     }
 
@@ -141,6 +146,7 @@ public class WebCommCenterController {
         announcement.setAdminId(webuser.getId());
         announcement.setSendDate(ZonedDateTime.now());
         announcementRepository.save(announcement);
+        pushNotificationService.notifyAnnouncement(announcement);
         return new ResponseEntity<>(announcement, HttpStatus.OK);
     }
 

@@ -1,6 +1,9 @@
 package io.pacworx.atp.notification;
 
+import com.google.common.collect.Lists;
+import io.pacworx.atp.announcement.Announcement;
 import io.pacworx.atp.survey.Survey;
+import io.pacworx.atp.user.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -32,16 +35,71 @@ public class PushNotificationService {
             EntityManager em = jpaContext.getEntityManagerByManagedType(Notification.class);
             List<String> tokens = notificationRepository.tokensForAnswerableSurvey(em, survey, 100);
             if(tokens != null && !tokens.isEmpty()) {
-                String json = getJson(tokens, NotificationType.ANSWERABLE);
-                FcmCommand command = new FcmCommand(this.fcmServerKey, json);
-                command.observe();
+                sendNotification(tokens, NotificationType.ANSWERABLE);
             } else {
                 LOGGER.info("Notify about new survey: found no users to fit to survey #" + survey.getId());
             }
         } else {
-            LOGGER.warn("Tried to send notifications put no firebase server key found.");
+            LOGGER.warn("Tried to send notifications but no FCM server key defined.");
         }
+    }
 
+    public void notifyAtpFinished(long userId) {
+        if(!fcmServerKey.equals("void")) {
+            EntityManager em = jpaContext.getEntityManagerByManagedType(Notification.class);
+            List<String> tokens = notificationRepository.tokensForFinishedSurvey(em, userId);
+            if(tokens != null && !tokens.isEmpty()) {
+                sendNotification(tokens, NotificationType.ATP_FINISHED);
+            }
+        } else {
+            LOGGER.warn("Tried to send notifications but no FCM server key defined.");
+        }
+    }
+
+    public void notifyAtpAbused(long userId) {
+        if(!fcmServerKey.equals("void")) {
+            EntityManager em = jpaContext.getEntityManagerByManagedType(Notification.class);
+            List<String> tokens = notificationRepository.tokensForFinishedSurvey(em, userId);
+            if(tokens != null && !tokens.isEmpty()) {
+                sendNotification(tokens, NotificationType.ATP_ABUSED);
+            }
+        } else {
+            LOGGER.warn("Tried to send notifications but no FCM server key defined.");
+        }
+    }
+
+    public void notifyFeedbackAnswered(long userId) {
+        if(!fcmServerKey.equals("void")) {
+            EntityManager em = jpaContext.getEntityManagerByManagedType(Notification.class);
+            List<String> tokens = notificationRepository.tokensForFeedback(em, userId);
+            if(tokens != null && !tokens.isEmpty()) {
+                sendNotification(tokens, NotificationType.FEEDBACK_ANSWER);
+            }
+        } else {
+            LOGGER.warn("Tried to send notifications but no FCM server key defined.");
+        }
+    }
+
+    public void notifyAnnouncement(Announcement announcement) {
+        if(!fcmServerKey.equals("void")) {
+            EntityManager em = jpaContext.getEntityManagerByManagedType(Notification.class);
+            List<String> tokens = notificationRepository.tokensForAnnouncement(em, announcement);
+            if(tokens != null && !tokens.isEmpty()) {
+                sendNotification(tokens, NotificationType.ANNOUNCEMENT);
+            }
+        } else {
+            LOGGER.warn("Tried to send notifications but no FCM server key defined.");
+        }
+    }
+
+    private void sendNotification(List<String> tokens, NotificationType type) {
+        // FCM can take maximal 1000 recipients with one call
+        List<List<String>> tokenLists = Lists.partition(tokens, 1000);
+        for(List<String> tokenChunk : tokenLists) {
+            String json = getJson(tokenChunk, type);
+            FcmCommand command = new FcmCommand(this.fcmServerKey, json);
+            command.observe();
+        }
     }
 
     private String getJson(List<String> recipients, NotificationType type) {

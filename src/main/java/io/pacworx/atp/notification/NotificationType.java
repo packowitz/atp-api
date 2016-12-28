@@ -1,7 +1,11 @@
 package io.pacworx.atp.notification;
 
 public enum NotificationType {
-    ANSWERABLE("1001", "answer", "ATP available", "Someone just started an ATP you could answer");
+    ANSWERABLE("1001", "answerable", "ATP available", "Someone just started an ATP you could answer"),
+    ATP_FINISHED("1010", "atp-finished", "ATP finished", "Your ATP is completely answered"),
+    ATP_ABUSED("1015", "atp-abused", "ATP canceled", "Users reported your ATP as inaceptable"),
+    FEEDBACK_ANSWER("1020", "answer", "Feedback reply", "Your feedback got answered by the ATP Team"),
+    ANNOUNCEMENT("1030", "announcement", "New Announcement", "Check out the new announcement for ATP");
 
     private String id;
     private String type;

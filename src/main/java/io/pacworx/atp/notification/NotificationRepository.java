@@ -1,5 +1,6 @@
 package io.pacworx.atp.notification;
 
+import io.pacworx.atp.announcement.Announcement;
 import io.pacworx.atp.survey.Survey;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -27,6 +28,27 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
             q += " and u.country in ('" + survey.getCountries().replaceAll(",", "','") + "')";
         }
         q += " and u.id != " + survey.getUserId() + " ORDER BY random() LIMIT " + limit;
+        return em.createNativeQuery(q).getResultList();
+    }
+
+    default List<String> tokensForFinishedSurvey(EntityManager em, long userId) {
+        String q = "select n.token from atp.public.notification n LEFT JOIN atp.public.user u on n.user_id = u.id where" +
+                " u.id = " + userId + " and n.atp_finished_enabled = TRUE";
+        return em.createNativeQuery(q).getResultList();
+    }
+
+    default List<String> tokensForFeedback(EntityManager em, long userId) {
+        String q = "select n.token from atp.public.notification n LEFT JOIN atp.public.user u on n.user_id = u.id where" +
+                " u.id = " + userId + " and n.feedback_enabled = TRUE";
+        return em.createNativeQuery(q).getResultList();
+    }
+
+    default List<String> tokensForAnnouncement(EntityManager em, Announcement announcement) {
+        String q = "select n.token from atp.public.notification n LEFT JOIN atp.public.user u on n.user_id = u.id where" +
+                " n.announcement_enabled = TRUE";
+        if(!announcement.getCountries().equals("ALL")) {
+            q += " and u.country in ('" + announcement.getCountries().replaceAll(",", "','") + "')";
+        }
         return em.createNativeQuery(q).getResultList();
     }
 }

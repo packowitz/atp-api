@@ -140,6 +140,13 @@ public class SurveyController implements SurveyApi {
 
             user.addCredits(user.getSurveyType().getAnswerReward());
             user.incSurveysAnswered();
+
+            SurveyStatus status = SurveyStatus.valueOf(surveyRepository.getStatus(resultRequest.surveyId));
+            if(status == SurveyStatus.FINISHED) {
+                pushNotificationService.notifyAtpFinished(surveyRepository.getUserId(resultRequest.surveyId));
+            } else if(status == SurveyStatus.ABUSE) {
+                pushNotificationService.notifyAtpAbused(surveyRepository.getUserId(resultRequest.surveyId));
+            }
         }
 
         return getAnswerable(user);

@@ -86,6 +86,12 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     List<Survey> findByGroupId(long groupId);
 
+    @Query(value = "SELECT status FROM survey WHERE id = :surveyId", nativeQuery = true)
+    String getStatus(long surveyId);
+
+    @Query(value = "SELECT user_id FROM survey WHERE id = :surveyId", nativeQuery = true)
+    Long getUserId(long surveyId);
+
     @Transactional
     void deleteByGroupId(long groupId);
 }
