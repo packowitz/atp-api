@@ -21,7 +21,7 @@ import javax.validation.constraints.NotNull;
  */
 
 @Api(tags = "Coupon", description = "Coupon APIs")
-@RequestMapping("/country")
+@RequestMapping("/app/coupon")
 public interface CouponApi {
     @ApiOperation(value = "Redeem coupon",
             notes = "This API can be used to ATPs ",
