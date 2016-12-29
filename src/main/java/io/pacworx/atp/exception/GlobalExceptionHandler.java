@@ -22,6 +22,14 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = AtpException.class)
+    @ResponseBody ExceptionInfo
+    handleAtpException(AtpException e) {
+        LOGGER.info(e.getMessage());
+        return e.getExceptionInfo();
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = BadRequestException.class)
     @ResponseBody ExceptionInfo
     handleBadRequestException(BadRequestException e) {

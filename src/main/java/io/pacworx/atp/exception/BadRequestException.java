@@ -9,7 +9,9 @@ public class BadRequestException extends AtpException {
     }
 
     public BadRequestException(String message, String title) {
-        super(message, buildExceptionInfo(message, title));
+        super(message, buildExceptionInfo());
+        setCustomMessage(message);
+        setCustomTitle(title);
     }
 
     public BadRequestException(String message) {
@@ -24,17 +26,6 @@ public class BadRequestException extends AtpException {
         ExceptionInfo info = new ExceptionInfo(HttpStatus.BAD_REQUEST.value());
         info.enableShowRetryBtn();
         info.enableShowCloseBtn();
-
-        return info;
-    }
-
-    private static ExceptionInfo buildExceptionInfo(String message, String title) {
-        ExceptionInfo info = new ExceptionInfo(HttpStatus.BAD_REQUEST.value());
-        info.enableShowRetryBtn();
-        info.enableShowCloseBtn();
-        info.setCustomMessage(message);
-        info.setCustomTitle(title);
-
         return info;
     }
 }

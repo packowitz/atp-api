@@ -9,7 +9,9 @@ public class ForbiddenException extends AtpException {
     }
 
     public ForbiddenException(String message, String title) {
-        super(message, buildExceptionInfo(message, title));
+        super(message, buildExceptionInfo());
+        setCustomMessage(message);
+        setCustomTitle(title);
     }
 
     public ForbiddenException(String message) {
@@ -24,17 +26,6 @@ public class ForbiddenException extends AtpException {
         ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
         info.enableShowResetAccountBtn();
         info.enableShowCloseBtn();
-
-        return info;
-    }
-
-    private static ExceptionInfo buildExceptionInfo(String message, String title) {
-        ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
-        info.enableShowRetryBtn();
-        info.enableShowCloseBtn();
-        info.setCustomMessage(message);
-        info.setCustomTitle(title);
-
         return info;
     }
 }
