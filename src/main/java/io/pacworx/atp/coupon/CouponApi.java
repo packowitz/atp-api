@@ -24,8 +24,7 @@ import javax.validation.constraints.NotNull;
 @RequestMapping("/app/coupon")
 public interface CouponApi {
     @ApiOperation(value = "Redeem coupon",
-            notes = "This API can be used to ATPs ",
-            response = CouponRedeemResponse.class)
+            notes = "This API can be used to ATPs ")
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/redeem", method = RequestMethod.POST)
     ResponseEntity<CouponRedeemResponse> redeemCoupon(@ApiIgnore @ModelAttribute("user") User user,

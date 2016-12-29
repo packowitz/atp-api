@@ -1,6 +1,5 @@
 package io.pacworx.atp.coupon;
 
-import io.pacworx.atp.exception.AtpException;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.CouponAlreadyRedeemedException;
 import io.pacworx.atp.user.User;
@@ -39,11 +38,9 @@ public class CouponController implements CouponApi {
         LocalDate todayUTC = ZonedDateTime.now(ZoneOffset.UTC).toLocalDate();
 
         if (coupon == null || !coupon.isActive() || todayUTC.isBefore(coupon.getStartDate()) || todayUTC.isAfter(coupon.getEndDate())) {
-            AtpException exception = new BadRequestException();
-            exception.setCustomTitle("Wrong code?");
-            exception.setCustomMessage("The code you entered does not exist or is not valid.");
-            throw exception;
+            throw new BadRequestException("Wrong code?", "The code you entered does not exist or is not valid.");
         }
+
         if (couponRedeemRepository.findByCouponIdAndUserId(coupon.getId(), user.getId()) != null) {
             throw new CouponAlreadyRedeemedException();
         }

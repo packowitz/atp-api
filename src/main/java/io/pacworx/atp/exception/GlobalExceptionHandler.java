@@ -22,9 +22,25 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(value = AtpException.class)
+    @ExceptionHandler(value = BadRequestException.class)
     @ResponseBody ExceptionInfo
-    handleAtpException(AtpException e) {
+    handleBadRequestException(BadRequestException e) {
+        LOGGER.info(e.getMessage());
+        return e.getExceptionInfo();
+    }
+
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = NotFoundException.class)
+    @ResponseBody ExceptionInfo
+    handleNotFoundException(NotFoundException e) {
+        LOGGER.info(e.getMessage());
+        return e.getExceptionInfo();
+    }
+
+    @ResponseStatus(value = HttpStatus.FORBIDDEN)
+    @ExceptionHandler(value = ForbiddenException.class)
+    @ResponseBody ExceptionInfo
+    handleForbiddenException(ForbiddenException e) {
         LOGGER.info(e.getMessage());
         return e.getExceptionInfo();
     }

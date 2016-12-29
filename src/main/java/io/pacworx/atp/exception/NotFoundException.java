@@ -8,6 +8,10 @@ public class NotFoundException extends AtpException {
         super(buildExceptionInfo());
     }
 
+    public NotFoundException(String message, String title) {
+        super(message, buildExceptionInfo(message, title));
+    }
+
     public NotFoundException(String message) {
         super(message, buildExceptionInfo());
     }
@@ -20,6 +24,17 @@ public class NotFoundException extends AtpException {
         ExceptionInfo info = new ExceptionInfo(HttpStatus.NOT_FOUND.value());
         info.enableShowRetryBtn();
         info.enableShowCloseBtn();
+
+        return info;
+    }
+
+    private static ExceptionInfo buildExceptionInfo(String message, String title) {
+        ExceptionInfo info = new ExceptionInfo(HttpStatus.NOT_FOUND.value());
+        info.enableShowRetryBtn();
+        info.enableShowCloseBtn();
+        info.setCustomMessage(message);
+        info.setCustomTitle(title);
+
         return info;
     }
 }

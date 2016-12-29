@@ -54,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } else {
             ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
-            info.setCustomMessage("Your authentication information are incorrect.");
+            info.setCustomMessage("Your authentication information is incorrect.");
             info.enableShowResetAccountBtn();
             info.enableShowCloseBtn();
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
