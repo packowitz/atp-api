@@ -38,8 +38,12 @@ public class EmailService {
     @Value("${email.confirmation-url}")
     private String emailConfirmationUrl;
 
+    private final EmailConfirmationRepository emailConfirmationRepository;
+
     @Autowired
-    private EmailConfirmationRepository emailConfirmationRepository;
+    public EmailService(EmailConfirmationRepository emailConfirmationRepository) {
+        this.emailConfirmationRepository = emailConfirmationRepository;
+    }
 
     public void sendConfirmationEmail(User user, String email) {
         EmailConfirmation confirmation = new EmailConfirmation();

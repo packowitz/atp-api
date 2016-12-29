@@ -14,8 +14,12 @@ public class SurveyUtil {
 
     private Random random = new Random();
 
+    private final CountryRepository countryRepository;
+
     @Autowired
-    private CountryRepository countryRepository;
+    public SurveyUtil(CountryRepository countryRepository) {
+        this.countryRepository = countryRepository;
+    }
 
     public List<Survey> generateMultiPictureSurveys(Survey blueprint, List<String> pictures, boolean eachCountrySeparat) {
         boolean multipicture = pictures.size() > 2;

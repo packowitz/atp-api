@@ -36,17 +36,16 @@ public class SurveyController implements SurveyApi {
     private final SurveyRepository surveyRepository;
     private final AnswerRepository answerRepository;
 
-    @Autowired
-    private SurveyUtil surveyUtil;
+    private final SurveyUtil surveyUtil;
+    private final PushNotificationService pushNotificationService;
 
     @Autowired
-    private PushNotificationService pushNotificationService;
-
-    @Autowired
-    public SurveyController(UserRepository userRepository, SurveyRepository surveyRepository, AnswerRepository answerRepository) {
+    public SurveyController(UserRepository userRepository, SurveyRepository surveyRepository, AnswerRepository answerRepository, SurveyUtil surveyUtil, PushNotificationService pushNotificationService) {
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
         this.answerRepository = answerRepository;
+        this.surveyUtil = surveyUtil;
+        this.pushNotificationService = pushNotificationService;
     }
 
     public ResponseEntity<ResponseWithUser<Survey>> getAnswerable(@ApiIgnore @ModelAttribute("user") User user) {

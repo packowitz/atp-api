@@ -12,8 +12,12 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 public class NotificationController implements NotificationApi {
 
+    private final NotificationRepository notificationRepository;
+
     @Autowired
-    private NotificationRepository notificationRepository;
+    public NotificationController(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
+    }
 
     public ResponseEntity<ChangeNotificationsResponse> updateAtpAnswerable(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
         Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));

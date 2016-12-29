@@ -23,11 +23,14 @@ public class JwtWebFilter extends OncePerRequestFilter {
     @Value("${jwt.web.secret}")
     private String secret;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserRightsRepository userRightsRepository;
 
     @Autowired
-    private UserRightsRepository userRightsRepository;
+    public JwtWebFilter(UserRepository userRepository, UserRightsRepository userRightsRepository) {
+        this.userRepository = userRepository;
+        this.userRightsRepository = userRightsRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {

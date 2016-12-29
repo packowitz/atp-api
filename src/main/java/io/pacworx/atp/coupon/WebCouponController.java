@@ -24,11 +24,14 @@ import java.util.List;
 @RequestMapping("/web/app/coupon")
 public class WebCouponController {
 
-    @Autowired
-    private CouponRepository couponRepository;
+    private final CouponRepository couponRepository;
+    private final CouponRedeemRepository couponRedeemRepository;
 
     @Autowired
-    private CouponRedeemRepository couponRedeemRepository;
+    public WebCouponController(CouponRepository couponRepository, CouponRedeemRepository couponRedeemRepository) {
+        this.couponRepository = couponRepository;
+        this.couponRedeemRepository = couponRedeemRepository;
+    }
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)

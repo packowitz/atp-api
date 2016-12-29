@@ -15,7 +15,6 @@ import java.util.List;
 public class FeedbackController implements FeedbackApi {
 
     private final FeedbackRepository feedbackRepository;
-
     private final FeedbackAnswerRepository feedbackAnswerRepository;
 
     @Autowired

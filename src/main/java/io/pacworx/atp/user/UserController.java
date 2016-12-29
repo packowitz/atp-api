@@ -21,14 +21,16 @@ import java.util.List;
 @RestController
 public class UserController implements UserApi {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final InAppPurchaseRepository inAppPurchaseRepository;
 
     @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private InAppPurchaseRepository inAppPurchaseRepository;
+    public UserController(UserRepository userRepository, EmailService emailService, InAppPurchaseRepository inAppPurchaseRepository) {
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+        this.inAppPurchaseRepository = inAppPurchaseRepository;
+    }
 
     public ResponseEntity<User> getMe(@ApiIgnore @ModelAttribute("user") User user) {
         user.setLastLoginTime(LocalDateTime.now());

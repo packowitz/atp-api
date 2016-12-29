@@ -23,12 +23,15 @@ public class PushNotificationService {
     @Value("${fcm.serverkey}")
     private String fcmServerKey;
 
+    private final JpaContext jpaContext;
+    private final NotificationRepository notificationRepository;
+
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
-    private JpaContext jpaContext;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
+    public PushNotificationService(NotificationRepository notificationRepository, JpaContext jpaContext) {
+        this.notificationRepository = notificationRepository;
+        this.jpaContext = jpaContext;
+    }
 
     public void notifyAnswerable(Survey survey) {
         if(!fcmServerKey.equals("void")) {

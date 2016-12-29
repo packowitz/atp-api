@@ -21,11 +21,14 @@ public class ConfirmationController {
     @Value("${email.jwt}")
     private String emailJwt;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final EmailConfirmationRepository emailConfirmationRepository;
 
     @Autowired
-    private EmailConfirmationRepository emailConfirmationRepository;
+    public ConfirmationController(UserRepository userRepository, EmailConfirmationRepository emailConfirmationRepository) {
+        this.userRepository = userRepository;
+        this.emailConfirmationRepository = emailConfirmationRepository;
+    }
 
     @RequestMapping(value = "/email", method = RequestMethod.GET)
     public void confirm(HttpServletResponse response, @RequestParam(value="token", required = true) String token) throws Exception {

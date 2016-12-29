@@ -30,20 +30,20 @@ import java.util.Map;
 @RequestMapping("/web/app/cc")
 public class WebCommCenterController {
 
-    @Autowired
-    private FeedbackRepository feedbackRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final FeedbackAnswerRepository feedbackAnswerRepository;
+    private final AnnouncementRepository announcementRepository;
+    private final UserRepository userRepository;
+    private final PushNotificationService pushNotificationService;
 
     @Autowired
-    private FeedbackAnswerRepository feedbackAnswerRepository;
-
-    @Autowired
-    private AnnouncementRepository announcementRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PushNotificationService pushNotificationService;
+    public WebCommCenterController(FeedbackRepository feedbackRepository, FeedbackAnswerRepository feedbackAnswerRepository, AnnouncementRepository announcementRepository, UserRepository userRepository, PushNotificationService pushNotificationService) {
+        this.feedbackRepository = feedbackRepository;
+        this.feedbackAnswerRepository = feedbackAnswerRepository;
+        this.announcementRepository = announcementRepository;
+        this.userRepository = userRepository;
+        this.pushNotificationService = pushNotificationService;
+    }
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/open-count", method = RequestMethod.GET)

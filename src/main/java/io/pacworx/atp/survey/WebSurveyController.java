@@ -28,20 +28,20 @@ import java.util.List;
 @RequestMapping("/web/app/survey")
 public class WebSurveyController {
 
-    @Autowired
-    private SurveyRepository surveyRepository;
+    private final SurveyRepository surveyRepository;
+    private final AnswerRepository answerRepository;
+    private final UserRepository userRepository;
+    private final SurveyUtil surveyUtil;
+    private final PushNotificationService pushNotificationService;
 
     @Autowired
-    private AnswerRepository answerRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private SurveyUtil surveyUtil;
-
-    @Autowired
-    private PushNotificationService pushNotificationService;
+    public WebSurveyController(SurveyRepository surveyRepository, AnswerRepository answerRepository, UserRepository userRepository, SurveyUtil surveyUtil, PushNotificationService pushNotificationService) {
+        this.surveyRepository = surveyRepository;
+        this.answerRepository = answerRepository;
+        this.userRepository = userRepository;
+        this.surveyUtil = surveyUtil;
+        this.pushNotificationService = pushNotificationService;
+    }
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)

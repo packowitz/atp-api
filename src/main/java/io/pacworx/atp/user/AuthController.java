@@ -2,13 +2,13 @@ package io.pacworx.atp.user;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.pacworx.atp.exception.*;
+import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.ForbiddenException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,16 +19,19 @@ import java.security.SecureRandom;
 @RestController
 public class AuthController implements AuthApi {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EmailService emailService;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Value("${jwt.secret}")
     private String secret;
 
     private SecureRandom random = new SecureRandom();
+
+    @Autowired
+    public AuthController(UserRepository userRepository, EmailService emailService) {
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+    }
 
     public ResponseEntity<TokenResponse> register() {
         User user = new User();

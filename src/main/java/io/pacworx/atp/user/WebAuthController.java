@@ -27,14 +27,17 @@ public class WebAuthController {
 
     private static final Logger LOGGER = LogManager.getLogger(WebAuthController.class);
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserRightsRepository userRightsRepository;
+    private final UserRepository userRepository;
+    private final UserRightsRepository userRightsRepository;
 
     @Value("${jwt.web.secret}")
     private String secret;
+
+    @Autowired
+    public WebAuthController(UserRepository userRepository, UserRightsRepository userRightsRepository) {
+        this.userRepository = userRepository;
+        this.userRightsRepository = userRightsRepository;
+    }
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "/login", method = RequestMethod.POST)

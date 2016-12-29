@@ -12,8 +12,12 @@ import org.springframework.stereotype.Component;
 public class ResetWeeklyStats {
     private static final Logger LOGGER = LogManager.getLogger(GlobalExceptionHandler.class);
 
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public ResetWeeklyStats(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Scheduled(cron = "0 0 0 * * MON")
     public void runJob() {
