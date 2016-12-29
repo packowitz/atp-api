@@ -3,9 +3,8 @@ package io.pacworx.atp.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.pacworx.atp.exception.ExceptionInfo;
-import io.pacworx.atp.exception.ForbiddenException;
-import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.User;
+import io.pacworx.atp.user.UserRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +27,12 @@ public class JwtFilter extends OncePerRequestFilter {
     @Value("${jwt.secret}")
     private String secret;
 
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public JwtFilter(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
@@ -39,7 +42,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 String token = authHeader.substring(BEARER.length());
                 String userId = Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
                 User user = userRepository.findOne(Long.parseLong(userId));
-                if(user != null) {
+
+                if (user != null) {
                     request.setAttribute("user", user);
                     chain.doFilter(request, response);
                     return;
@@ -57,7 +61,9 @@ public class JwtFilter extends OncePerRequestFilter {
             info.setCustomMessage("Your authentication information is incorrect.");
             info.enableShowResetAccountBtn();
             info.enableShowCloseBtn();
+
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
             ObjectMapper mapper = new ObjectMapper();
             response.getWriter().write(mapper.writeValueAsString(info));
             response.getWriter().flush();

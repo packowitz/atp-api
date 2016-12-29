@@ -39,7 +39,7 @@ public class EmailService {
     private String emailConfirmationUrl;
 
     @Autowired
-    EmailConfirmationRepository emailConfirmationRepository;
+    private EmailConfirmationRepository emailConfirmationRepository;
 
     public void sendConfirmationEmail(User user, String email) {
         EmailConfirmation confirmation = new EmailConfirmation();
@@ -63,10 +63,7 @@ public class EmailService {
             LOGGER.info("New password send to user: " + email);
         } catch (AddressException e) {
             LOGGER.info("User entered an invalid email address: " + email);
-            AtpException exception = new BadRequestException();
-            exception.setCustomTitle("Bad Email Adress");
-            exception.setCustomMessage("The email address " + email + " is not valid.");
-            throw exception;
+            throw new BadRequestException("Invalid email format", "The email address " + email + " is not valid.");
         } catch (MessagingException e) {
             LOGGER.warn(e.getMessage(), e);
             throw new InternalServerException();
@@ -91,10 +88,9 @@ public class EmailService {
             LOGGER.info("Confirmation Email sent to " + emailConfirmation.getEmail());
         } catch (AddressException e) {
             LOGGER.warn("User was able to enter an invalid email address: " + emailConfirmation.getEmail());
-            AtpException exception = new BadRequestException();
-            exception.setCustomTitle("Bad Email Adress");
-            exception.setCustomMessage("The email address " + emailConfirmation.getEmail() + " is not valid.");
-            throw exception;
+            throw new BadRequestException("Invalid email format",
+                    "The email address " + emailConfirmation.getEmail() + " is not valid."
+            );
         } catch (MessagingException e) {
             LOGGER.warn(e.getMessage(), e);
             throw new InternalServerException();

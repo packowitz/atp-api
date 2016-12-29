@@ -54,17 +54,17 @@ public class AuthController implements AuthApi {
         if (bindingResult.hasErrors()) {
             throw new BadRequestException();
         }
+
         User user = userRepository.findByEmail(request.email.toLowerCase());
         if(user == null || !user.isEmailConfirmed()) {
-            AtpException exception = new BadRequestException();
-            exception.setCustomTitle("Unknown Email address");
-            exception.setCustomMessage("There is no user with this email address in our system. Sorry.");
-            throw exception;
+            throw new BadRequestException("Unknown Email address", "There is no user with this email address in our system. Sorry.");
         }
+
         String newPassword = generatePassword();
         emailService.sendNewPasswordEmail(user.getEmail(), newPassword);
         user.setPassword(newPassword);
         userRepository.save(user);
+
         return new ResponseEntity<>(new ForgotPasswordResponse(), HttpStatus.OK);
     }
 
