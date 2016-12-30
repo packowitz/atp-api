@@ -150,6 +150,22 @@ public class WebCommCenterController {
         return new ResponseEntity<>(announcement, HttpStatus.OK);
     }
 
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/announcement/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteAnnouncement(@ModelAttribute("webuser") User webuser,
+                                             @ModelAttribute("userRights") UserRights rights,
+                                             @PathVariable long id) {
+        if(!rights.isMarketing()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        Announcement announcement = announcementRepository.findOne(id);
+        if(announcement == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        announcementRepository.delete(announcement.getId());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     private static final class FeedbackConversation {
         private final User user;
         private final Feedback feedback;
