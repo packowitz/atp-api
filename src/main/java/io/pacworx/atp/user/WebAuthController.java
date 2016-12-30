@@ -43,13 +43,13 @@ public class WebAuthController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                                BindingResult bindingResult) throws Exception {
-        LOGGER.info(request.username + " login attempt");
+        LOGGER.info(request.email + " login attempt");
 
         if (bindingResult.hasErrors()) {
             throw new BadRequestException();
         }
 
-        User user = userRepository.findByUsername(request.username);
+        User user = userRepository.findByEmail(request.email);
         if (user == null || !user.passwordMatches(request.password)) {
             throw new InternalServerException("User doesn't exist or password doesn't match");
         }
@@ -81,7 +81,7 @@ public class WebAuthController {
 
     private static final class LoginRequest {
         @NotNull
-        public String username;
+        public String email;
         @NotNull
         public String password;
     }
