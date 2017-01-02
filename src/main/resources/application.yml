@@ -30,6 +30,17 @@ email:
 ---
 
 spring:
+    profiles: test
+    application:
+          name: atp-api
+    datasource:
+        url: ${ATP_DB_URL}
+        username: ${ATP_DB_USER}
+        password: ${ATP_DB_PASSWORD}
+
+---
+
+spring:
     profiles: prod
     application:
           name: atp-api
