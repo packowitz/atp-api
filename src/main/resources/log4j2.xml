@@ -4,12 +4,12 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>
-        <!--&lt;!&ndash; Papertrail syslog config &ndash;&gt;-->
-        <!--<Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"-->
-                <!--protocol="TCP" appName="atp-api" mdcId="mdc" messageId="Audit" id="API"-->
-                <!--facility="LOCAL0" enterpriseNumber="18060" newLine="true" format="RFC5424"-->
-                <!--ignoreExceptions="false" exceptionPattern="%throwable{full}">-->
-        <!--</Syslog>-->
+        <!-- Papertrail syslog config -->
+        <Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"
+                protocol="TCP" appName="atp-api" mdcId="mdc" messageId="Audit" id="API"
+                facility="LOCAL0" enterpriseNumber="18060" newLine="true" format="RFC5424"
+                ignoreExceptions="false" exceptionPattern="%throwable{full}">
+        </Syslog>
     </Appenders>
     <Loggers>
         <Root level="info">
