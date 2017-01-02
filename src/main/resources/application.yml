@@ -1,14 +1,25 @@
 spring:
-    datasource:
-        url: jdbc:postgresql://localhost:5432/atp
-        username: atpuser
-        password: askthepeople
-        driver-class-name: org.postgresql.Driver
-    jackson:
-        serialization.write_dates_as_timestamps: false
-        mapper.default-view-inclusion: true
-    jpa:
-      show-sql: false
+  cloud:
+    consul:
+      config:
+        format: YAML
+  application:
+    name: atp-api
+  datasource:
+      url: jdbc:postgresql://localhost:5432/atp
+      username: atpuser
+      password: askthepeople
+      driver-class-name: org.postgresql.Driver
+  jackson:
+      serialization.write_dates_as_timestamps: false
+      mapper.default-view-inclusion: true
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    org.springframework.cloud.consul: DEBUG
+
 
 jwt.secret: ${ATP_JWT_APPSECRET:thisissecret}
 jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
@@ -29,6 +40,8 @@ email:
 
 spring:
     profiles: prod
+    application:
+          name: atp
     datasource:
         url: ${ATP_DB_URL}
         username: ${ATP_DB_USER}

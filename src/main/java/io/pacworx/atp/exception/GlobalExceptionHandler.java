@@ -21,6 +21,9 @@ public class GlobalExceptionHandler {
         return info;
     }
 
+    /**
+     * Generic ATP exception
+     */
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = AtpException.class)
     @ResponseBody ExceptionInfo

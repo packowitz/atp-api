@@ -1,0 +1,22 @@
+spring:
+  profiles: dev
+  application:
+    name: atp-api
+  cloud:
+    consul:
+      config:
+        format: YAML
+      host: localhost
+      port: 8500
+
+---
+
+spring:
+    profiles: prodconsul
+    application:
+      name: atp-api
+    cloud:
+      consul:
+        config:
+          format: YAML
+        host: pacworx-config
