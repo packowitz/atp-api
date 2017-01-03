@@ -1,9 +1,11 @@
 package io.pacworx.atp.config;
 
 import com.google.common.collect.Lists;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.ApiKey;
@@ -32,6 +34,13 @@ import static springfox.documentation.builders.PathSelectors.regex;
 @EnableSwagger2
 @ComponentScan("io.pacworx.atp")
 public class SwaggerConfig {
+    private final Environment env;
+
+    @Autowired
+    public SwaggerConfig(Environment env) {
+        this.env = env;
+    }
+
     @Bean
     public Docket allApis() {
         return new Docket(DocumentationType.SWAGGER_2)
@@ -81,7 +90,7 @@ public class SwaggerConfig {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Ask the People API")
+                .title("Ask the People API " + env.getProperty("spring.profiles.active", "dev"))
                 .description("Documentation for Ask the People APIs. " +
                         "Use authentication APIs to be issued a JWT token. Add that token to " +
                         "the API input in the top right to access authorized APIs.")
