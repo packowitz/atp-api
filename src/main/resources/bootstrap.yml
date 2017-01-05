@@ -25,6 +25,7 @@ spring:
       consul:
         config:
           format: YAML
+          acl-token: the_one_ring
         host: pacworx-consul
         port: 8500
 
