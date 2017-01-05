@@ -1,0 +1,43 @@
+# ------------------------------------
+# BOOTSTRAP.YML
+# Config for external config
+# ------------------------------------
+
+## Default profile
+#spring:
+#  application:
+#    name: atp-api
+#  cloud:
+#    consul:
+#      config:
+#        format: YAML
+#      host: localhost
+#      port: 8500
+
+---
+
+# Test profile
+spring:
+    profiles: test
+    application:
+      name: atp-api
+    cloud:
+      consul:
+        config:
+          format: YAML
+        host: pacworx-consul
+        port: 8500
+
+---
+
+# Prod profile
+spring:
+    profiles: prod
+    application:
+      name: atp-api
+    cloud:
+      consul:
+        config:
+          format: YAML
+        host: pacworx-consul
+        port: 8500
