@@ -28,8 +28,6 @@ spring:
           acl-token: the_one_ring
         host: pacworx-consul
         port: 8500
-        discovery:
-          health-check-url: http://api.test.askthepeople.io/health
 
 ---
 
@@ -44,5 +42,3 @@ spring:
           format: YAML
         host: pacworx-consul
         port: 8500
-        discovery:
-          health-check-url: http://api.askthepeople.io/health
