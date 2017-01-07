@@ -40,4 +40,3 @@ spring:
         config:
           format: YAML
         host: pacworx-consul
-        port: 8500
