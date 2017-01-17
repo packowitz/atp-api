@@ -62,7 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
             info.enableShowResetAccountBtn();
             info.enableShowCloseBtn();
 
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
             ObjectMapper mapper = new ObjectMapper();
             response.getWriter().write(mapper.writeValueAsString(info));
