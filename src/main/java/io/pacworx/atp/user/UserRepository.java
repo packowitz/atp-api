@@ -34,6 +34,9 @@ public interface UserRepository extends CrudRepository<User, Long> {
         return findFirst100ByCountryAndSurveysAnsweredGreaterThanOrderBySurveysAnsweredDesc(country, 0);
     }
 
+    @Query(value = "select u.* from atp.public.user_rights ur LEFT JOIN atp.public.user u on ur.user_id = u.id ORDER BY u.id;", nativeQuery = true)
+    List<User> getAllAdminUsers();
+
 
     @Modifying
     @Transactional
