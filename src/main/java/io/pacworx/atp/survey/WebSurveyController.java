@@ -45,40 +45,22 @@ public class WebSurveyController {
 
     @JsonView(Views.WebView.class)
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public ResponseEntity<Survey> createSurvey(@ModelAttribute("webuser") User webuser,
-                                               @RequestBody @Valid Survey survey,
+    public ResponseEntity<List<Survey>> createSurvey(@ModelAttribute("webuser") User webuser,
+                                               @ModelAttribute("userRights") UserRights rights,
+                                               @RequestBody @Valid StartSurveyRequest request,
                                                BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+        if(bindingResult.hasErrors() || (request.type == SurveyType.SECURITY && request.survey.getExpectedAnswer() == null)) {
             throw new BadRequestException();
         }
-
-        survey.setUserId(webuser.getId());
-        survey.setType(SurveyType.NUMBER100);
-        survey.setExpectedAnswer(null);
-        survey.setStartedDate(ZonedDateTime.now());
-        survey.setStatus(SurveyStatus.ACTIVE);
-        webuser.addCredits(0 - survey.getType().getCreationCosts());
-        webuser.incSurveysStarted();
-
-        surveyRepository.save(survey);
-        userRepository.save(webuser);
-        pushNotificationService.notifyAnswerable(survey);
-
-        return new ResponseEntity<>(survey, HttpStatus.OK);
-    }
-
-    @JsonView(Views.WebView.class)
-    @RequestMapping(value = "/multipicture", method = RequestMethod.POST)
-    public ResponseEntity<Survey> createMultiPictureSurvey(@ModelAttribute("webuser") User webuser,
-                                                           @RequestBody @Valid MultiPictureRequest request,
-                                                           BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            throw new BadRequestException();
+        if(request.type == SurveyType.SECURITY && !rights.isSecurity()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
         request.survey.setUserId(webuser.getId());
         request.survey.setType(request.type);
         request.survey.setStartedDate(ZonedDateTime.now());
+        request.survey.setStatus(SurveyStatus.ACTIVE);
+
         List<Survey> surveys = surveyUtil.generateMultiPictureSurveys(request.survey, request.pictures, request.eachCountrySeparate);
         int costs = surveys.size() * request.type.getCreationCosts();
 
@@ -87,45 +69,26 @@ public class WebSurveyController {
         }
 
         webuser.addCredits(0 - costs);
-        webuser.incSurveysStarted();
+        if(request.type != SurveyType.SECURITY) {
+            webuser.incSurveysStarted();
+        }
 
         Survey firstSurvey = surveys.get(0);
         surveyRepository.save(firstSurvey);
-        long groupId = firstSurvey.getId();
-
-        for(Survey survey : surveys) {
-            survey.setGroupId(groupId);
-            surveyRepository.save(survey);
-        }
-        userRepository.save(webuser);
-        pushNotificationService.notifyAnswerable(firstSurvey);
-
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @JsonView(Views.WebView.class)
-    @RequestMapping(value = "/security", method = RequestMethod.POST)
-    public ResponseEntity<Survey> createSecuritySurvey(@ModelAttribute("webuser") User webuser,
-                                                       @ModelAttribute("userRights") UserRights rights,
-                                                       @RequestBody @Valid Survey survey,
-                                                       BindingResult bindingResult) {
-        if(!rights.isSecurity()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        if(bindingResult.hasErrors() ||
-                survey.getExpectedAnswer() == null ||
-                survey.getExpectedAnswer() <= 0 ||
-                survey.getExpectedAnswer() > 3) {
-            throw new BadRequestException("Bad request. Survey answers aren't great.");
+        if(surveys.size() > 1) {
+            long groupId = firstSurvey.getId();
+            for(Survey survey : surveys) {
+                survey.setGroupId(groupId);
+                surveyRepository.save(survey);
+            }
         }
 
-        survey.setUserId(webuser.getId());
-        survey.setType(SurveyType.SECURITY);
-        survey.setStartedDate(ZonedDateTime.now());
-        survey.setStatus(SurveyStatus.ACTIVE);
-        surveyRepository.save(survey);
+        if(request.type != SurveyType.SECURITY) {
+            userRepository.save(webuser);
+            pushNotificationService.notifyAnswerable(firstSurvey);
+        }
 
-        return new ResponseEntity<>(survey, HttpStatus.OK);
+        return new ResponseEntity<>(surveys, HttpStatus.OK);
     }
 
     @JsonView(Views.WebView.class)
@@ -211,6 +174,17 @@ public class WebSurveyController {
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public ResponseEntity<List<Survey>> listMySurveys(@ModelAttribute("webuser") User webuser) {
         return new ResponseEntity<>(surveyRepository.findMySurveys(webuser.getId()), HttpStatus.OK);
+    }
+
+    private static class StartSurveyRequest {
+        @NotNull
+        public Survey survey;
+        @NotNull
+        public SurveyType type;
+        @NotNull
+        @Size(min = 2)
+        public List<String> pictures;
+        public boolean eachCountrySeparate;
     }
 
     private static class MultiPictureRequest {
