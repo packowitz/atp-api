@@ -1,12 +1,15 @@
 package io.pacworx.atp.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
+import io.pacworx.atp.exception.ExceptionInfo;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.UserRights;
 import io.pacworx.atp.user.UserRightsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -57,7 +60,17 @@ public class JwtWebFilter extends OncePerRequestFilter {
         if(request.getMethod().equals("OPTIONS")) {
             chain.doFilter(request, response);
         } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            ExceptionInfo info = new ExceptionInfo(HttpStatus.FORBIDDEN.value());
+            info.setCustomMessage("Your authentication information is incorrect.");
+            info.enableShowResetAccountBtn();
+            info.enableShowCloseBtn();
+
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+            ObjectMapper mapper = new ObjectMapper();
+            response.getWriter().write(mapper.writeValueAsString(info));
+            response.getWriter().flush();
+            response.getWriter().close();
         }
     }
 
