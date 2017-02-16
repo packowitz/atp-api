@@ -3,6 +3,7 @@ package io.pacworx.atp.survey;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.notification.PushNotificationService;
+import io.pacworx.atp.user.ResponseWithUser;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.UserRights;
@@ -21,7 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -136,32 +140,22 @@ public class WebSurveyController {
     }
 
     @JsonView(Views.WebView.class)
-    @RequestMapping(value = "/security/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity deleteSecuritySurvey(@ModelAttribute("webuser") User webuser,
-                                               @ModelAttribute("userRights") UserRights rights,
-                                               @PathVariable long id) {
-        if(!rights.isSecurity()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        Survey survey = surveyRepository.findOne(id);
-        if(survey == null || survey.getType() != SurveyType.SECURITY) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        answerRepository.deleteBySurveyId(survey.getId());
-        surveyRepository.delete(survey);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @JsonView(Views.WebView.class)
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity deleteSurvey(@ModelAttribute("webuser") User webuser, @PathVariable long id) {
+    public ResponseEntity deleteSurvey(@ModelAttribute("webuser") User webuser,
+                                       @ModelAttribute("userRights") UserRights rights,
+                                       @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-
-        if(survey.getUserId() != webuser.getId()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if(survey.getType() == SurveyType.SECURITY) {
+            if(!rights.isSecurity()) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+        } else {
+            if(survey.getUserId() != webuser.getId()) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
         }
 
         answerRepository.deleteBySurveyId(survey.getId());
@@ -171,9 +165,37 @@ public class WebSurveyController {
     }
 
     @JsonView(Views.WebView.class)
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public ResponseEntity<List<Survey>> listMySurveys(@ModelAttribute("webuser") User webuser) {
-        return new ResponseEntity<>(surveyRepository.findMySurveys(webuser.getId()), HttpStatus.OK);
+    @RequestMapping(value = "/own/list", method = RequestMethod.GET)
+    public ResponseEntity<ResponseWithTimestamp<List<Survey>>> getMySurveys(@ModelAttribute("webuser") User webuser) {
+        List<Survey> surveys = surveyRepository.findMySurveys(webuser.getId());
+        return new ResponseEntity<>(new ResponseWithTimestamp<>(surveys), HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/own/updates/since/{timestamp}", method = RequestMethod.GET)
+    public ResponseEntity<ResponseWithTimestamp<List<SurveyApi.SurveyDetailsResponse>>> getUpdatesForMySurveys(@ModelAttribute("webuser") User webuser,
+                                                                                                               @PathVariable long timestamp) {
+        ZonedDateTime since = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
+        List<Survey> surveys = surveyRepository.findMySurveysSince(webuser.getId(), since);
+        List<SurveyApi.SurveyDetailsResponse> details = new ArrayList<>();
+        for(Survey survey : surveys) {
+            details.add(new SurveyApi.SurveyDetailsResponse(survey, null));
+        }
+        return new ResponseEntity<>(new ResponseWithTimestamp<>(details), HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/own/list/byids/{ids}", method = RequestMethod.GET)
+    public ResponseEntity<List<Survey>> getMySurveysByIds(@ModelAttribute("webuser") User webuser, @PathVariable String ids) {
+        List<Survey> surveys = new ArrayList<>();
+
+        for (String idString : ids.split(",")) {
+            Survey survey = surveyRepository.findOne(Long.parseLong(idString));
+            if(survey != null && survey.getUserId() == webuser.getId()) {
+                surveys.add(survey);
+            }
+        }
+        return new ResponseEntity<>(surveys, HttpStatus.OK);
     }
 
     private static class StartSurveyRequest {
