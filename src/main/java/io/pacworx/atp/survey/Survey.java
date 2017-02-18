@@ -49,6 +49,8 @@ public class Survey {
     private int pic1_id = 1;
     private int pic2_id = 2;
     private boolean multiPicture = false;
+    @JsonView(Views.WebView.class)
+    private Integer daysBetween;
 
     public long getId() {
         return id;
@@ -222,5 +224,13 @@ public class Survey {
 
     public void setMultiPicture(boolean multiPicture) {
         this.multiPicture = multiPicture;
+    }
+
+    public Integer getDaysBetween() {
+        return daysBetween;
+    }
+
+    public void setDaysBetween(Integer daysBetween) {
+        this.daysBetween = daysBetween;
     }
 }

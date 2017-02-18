@@ -12,6 +12,7 @@ public class UserRights {
     private boolean userAdmin = false;
     private boolean security = false;
     private boolean coupons = false;
+    private boolean research = false;
 
     public UserRights() {
     }
@@ -62,5 +63,13 @@ public class UserRights {
 
     public void setCoupons(boolean coupons) {
         this.coupons = coupons;
+    }
+
+    public boolean isResearch() {
+        return research;
+    }
+
+    public void setResearch(boolean research) {
+        this.research = research;
     }
 }

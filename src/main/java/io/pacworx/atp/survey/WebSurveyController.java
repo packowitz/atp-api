@@ -56,7 +56,8 @@ public class WebSurveyController {
         if(bindingResult.hasErrors() || (request.type == SurveyType.SECURITY && request.survey.getExpectedAnswer() == null)) {
             throw new BadRequestException();
         }
-        if(request.type == SurveyType.SECURITY && !rights.isSecurity()) {
+        if((request.type == SurveyType.SECURITY && !rights.isSecurity())
+                || (request.type == SurveyType.PERMANENT && !rights.isResearch())) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 

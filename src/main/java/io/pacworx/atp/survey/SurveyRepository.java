@@ -31,6 +31,14 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
         return findAnswerableSecurity(age, user.getCountry(), user.isMale());
     }
 
+    @Query(value = "SELECT * FROM survey WHERE type = 'PERMANENT' and status = 'ACTIVE' and min_age <= :age and max_age >= :age and (countries like %:country% or countries = 'ALL') and ((male = true and true = :male) or (female = true and false = :male)) ORDER BY random() LIMIT 1", nativeQuery = true)
+    Survey findAnswerablePermanent(@Param("age") int age, @Param("country") String country, @Param("male") boolean male);
+
+    default Survey findAnswerablePermanent(User user) {
+        int age = LocalDate.now().getYear() - user.getYearOfBirth();
+        return findAnswerableSecurity(age, user.getCountry(), user.isMale());
+    }
+
     @Modifying
     @Transactional
     @Query(value="UPDATE survey SET answered = answered + 1, pic1count = pic1count + 1, status = CASE WHEN max_answers != -1 and answered >= max_answers THEN 'FINISHED' ELSE 'ACTIVE' END where id = :id and status = 'ACTIVE'", nativeQuery = true)

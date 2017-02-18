@@ -41,6 +41,7 @@ public class SurveyUtil {
                     survey.setMinAge(blueprint.getMinAge());
                     survey.setMaxAge(blueprint.getMaxAge());
                     survey.setCountries(country);
+                    survey.setDaysBetween(blueprint.getDaysBetween());
 
                     survey.setMultiPicture(multipicture);
 

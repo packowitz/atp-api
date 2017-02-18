@@ -49,12 +49,16 @@ public class SurveyController implements SurveyApi {
     }
 
     public ResponseEntity<ResponseWithUser<Survey>> getAnswerable(@ApiIgnore @ModelAttribute("user") User user) {
-        Survey survey;
+        Survey survey = null;
 
         if (showSecurityAtp(user.getReliableScore())) {
             survey = surveyRepository.findAnswerableSecurity(user);
-        } else {
+        }
+        if(survey == null && random.nextDouble() <= 0.75) {
             survey = surveyRepository.findAnswerable(user);
+        }
+        if(survey == null) {
+            survey = surveyRepository.findAnswerablePermanent(user);
         }
 
         user.setSurveyToAnswer(survey);
