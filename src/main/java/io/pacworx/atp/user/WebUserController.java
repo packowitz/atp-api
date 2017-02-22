@@ -31,6 +31,17 @@ public class WebUserController {
     }
 
     @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    public ResponseEntity<List<User>> listUsers(@ModelAttribute("webuser") User webuser,
+                                                @ModelAttribute("userRights") UserRights rights) {
+        if(!rights.isUserAdmin()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        List<User> users = userRepository.findByOrderById();
+        return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
     @RequestMapping(value = "/admins", method = RequestMethod.GET)
     public ResponseEntity<List<User>> getAdmins(@ModelAttribute("webuser") User webuser,
                                                 @ModelAttribute("userRights") UserRights rights) {
