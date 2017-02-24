@@ -5,10 +5,7 @@ import io.pacworx.atp.config.Views;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,10 +14,12 @@ import java.util.List;
 public class WebUserController {
 
     private final UserRepository userRepository;
+    private final UserRightsRepository userRightsRepository;
 
     @Autowired
-    public WebUserController(UserRepository userRepository) {
+    public WebUserController(UserRepository userRepository, UserRightsRepository userRightsRepository) {
         this.userRepository = userRepository;
+        this.userRightsRepository = userRightsRepository;
     }
 
     @JsonView(Views.WebView.class)
@@ -50,6 +49,41 @@ public class WebUserController {
         }
         List<User> admins = userRepository.getAllAdminUsers();
         return new ResponseEntity<>(admins, HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/rights/{userId}", method = RequestMethod.GET)
+    public ResponseEntity<UserRights> getRightsOfUser(@ModelAttribute("webuser") User webuser,
+                                                      @ModelAttribute("userRights") UserRights rights,
+                                                      @PathVariable long userId) {
+        if(!rights.isUserAdmin()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        UserRights userRights = userRightsRepository.findOne(userId);
+        if(userRights == null) {
+            userRights = new UserRights();
+        }
+        return new ResponseEntity<>(userRights, HttpStatus.OK);
+    }
+
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/rights/{userId}", method = RequestMethod.PUT)
+    public ResponseEntity<UserRights> updateRightsOfUser(@ModelAttribute("webuser") User webuser,
+                                                         @ModelAttribute("userRights") UserRights rights,
+                                                         @PathVariable long userId,
+                                                         @RequestBody UserRights userRights) {
+        if(!rights.isUserAdmin()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        UserRights existingUserRights = userRightsRepository.findOne(userId);
+        if(userRights == null) {
+            existingUserRights = userRights;
+            existingUserRights.setUserId(userId);
+        } else {
+            existingUserRights.update(userRights);
+        }
+        userRightsRepository.save(existingUserRights);
+        return new ResponseEntity<>(existingUserRights, HttpStatus.OK);
     }
 
     private static final class UserWithRightsResponse {
