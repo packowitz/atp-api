@@ -76,7 +76,7 @@ public class WebUserController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         UserRights existingUserRights = userRightsRepository.findOne(userId);
-        if(userRights == null) {
+        if(existingUserRights == null) {
             existingUserRights = userRights;
             existingUserRights.setUserId(userId);
         } else {
