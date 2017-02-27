@@ -160,6 +160,11 @@ public class SurveyController implements SurveyApi {
         return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(surveys)), HttpStatus.OK);
     }
 
+    public ResponseEntity<ResponseWithTimestamp<List<Long>>> getMySurveyIds(@ApiIgnore @ModelAttribute("user") User user) {
+        List<Long> ids = surveyRepository.findMySurveyIds(user.getId());
+        return new ResponseEntity<>(new ResponseWithTimestamp<>(ids), HttpStatus.OK);
+    }
+
     public ResponseEntity<List<Survey>> getSurveysByIds(@ApiIgnore @ModelAttribute("user") User user, @PathVariable String ids) {
         List<Survey> surveys = new ArrayList<>();
 

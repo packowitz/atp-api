@@ -58,6 +58,13 @@ public interface SurveyApi {
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     ResponseEntity<ResponseWithUser<ResponseWithTimestamp<List<Survey>>>> getSurveys(@ApiIgnore @ModelAttribute("user") User user);
 
+    @ApiOperation(value = "Get my ATP IDs",
+            notes = "This API will return a list of the users ATP IDs",
+            response = ResponseWithTimestamp.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/ids", method = RequestMethod.GET)
+    ResponseEntity<ResponseWithTimestamp<List<Long>>> getMySurveyIds(@ApiIgnore @ModelAttribute("user") User user);
+
     @ApiOperation(value = "Get ATPs by ids",
             notes = "Returns a list of ATPs when a comma separated list of their ids is present in query",
             response = Survey[].class)

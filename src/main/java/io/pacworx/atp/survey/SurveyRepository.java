@@ -85,6 +85,9 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
     @Query(value="SELECT * FROM survey WHERE user_id = :userid and type != 'SECURITY' order by started_date desc", nativeQuery = true)
     List<Survey> findMySurveys(@Param("userid") long userId);
 
+    @Query(value="SELECT id FROM survey WHERE user_id = :userid and type != 'SECURITY'", nativeQuery = true)
+    List<Long> findMySurveyIds(@Param("userid") long userId);
+
     List<Survey> findByUserIdAndTypeNotAndUpdatedDateGreaterThan(long userId, SurveyType type, ZonedDateTime updatedDate);
     default List<Survey> findMySurveysSince(long userId, ZonedDateTime since) {
         return findByUserIdAndTypeNotAndUpdatedDateGreaterThan(userId, SurveyType.SECURITY, since);
