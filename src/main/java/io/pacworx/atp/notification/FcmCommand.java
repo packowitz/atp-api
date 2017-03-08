@@ -9,6 +9,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +35,7 @@ public class FcmCommand extends HystrixCommand<Void> {
             HttpPost post = createPost();
             CloseableHttpClient httpclient = HttpClients.createDefault();
             CloseableHttpResponse response = httpclient.execute(post);
-            LOGGER.info("Notification response: " + response.getEntity().toString());
+            LOGGER.info("Notification response (" + response.getStatusLine().getStatusCode() + "): " + EntityUtils.toString(response.getEntity()));
 
             ObjectMapper mapper = new ObjectMapper();
             FcmResponse fcmResponse = mapper.readValue(response.getEntity().getContent(), FcmResponse.class);
