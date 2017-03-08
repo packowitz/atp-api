@@ -30,9 +30,11 @@ public class FcmCommand extends HystrixCommand<Void> {
     @Override
     protected Void run() throws Exception {
         try {
+            LOGGER.info("Posting notification: " + this.body);
             HttpPost post = createPost();
             CloseableHttpClient httpclient = HttpClients.createDefault();
             CloseableHttpResponse response = httpclient.execute(post);
+            LOGGER.info("Notification response: " + response.getEntity().toString());
 
             ObjectMapper mapper = new ObjectMapper();
             FcmResponse fcmResponse = mapper.readValue(response.getEntity().getContent(), FcmResponse.class);
