@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    private static final Logger LOGGER = LogManager.getLogger(GlobalExceptionHandler.class);
+    private static final Logger log = LogManager.getLogger();
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = Exception.class)
     @ResponseBody ExceptionInfo
     handleBaseException(Exception e) {
-        LOGGER.error(e.getMessage(), e);
+        log.error(e.getMessage(), e);
         ExceptionInfo info = new ExceptionInfo(HttpStatus.INTERNAL_SERVER_ERROR.value());
         info.enableShowCloseBtn();
         info.enableShowRetryBtn();
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = AtpException.class)
     @ResponseBody ExceptionInfo
     handleAtpException(AtpException e) {
-        LOGGER.info(e.getMessage());
+        log.error(e.getMessage());
         return e.getExceptionInfo();
     }
 
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = BadRequestException.class)
     @ResponseBody ExceptionInfo
     handleBadRequestException(BadRequestException e) {
-        LOGGER.info(e.getMessage());
+        log.error(e.getMessage());
         return e.getExceptionInfo();
     }
 
@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = NotFoundException.class)
     @ResponseBody ExceptionInfo
     handleNotFoundException(NotFoundException e) {
-        LOGGER.info(e.getMessage());
+        log.error(e.getMessage());
         return e.getExceptionInfo();
     }
 
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = ForbiddenException.class)
     @ResponseBody ExceptionInfo
     handleForbiddenException(ForbiddenException e) {
-        LOGGER.info(e.getMessage());
+        log.error(e.getMessage());
         return e.getExceptionInfo();
     }
 }

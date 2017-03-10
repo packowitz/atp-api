@@ -4,6 +4,8 @@ import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.CouponAlreadyRedeemedException;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +21,10 @@ import java.time.ZonedDateTime;
 
 @RestController
 public class CouponController implements CouponApi {
+    private static Logger log = LogManager.getLogger();
+
     private final CouponRepository couponRepository;
-
     private final CouponRedeemRepository couponRedeemRepository;
-
     private final UserRepository userRepository;
 
     @Autowired
@@ -56,13 +58,11 @@ public class CouponController implements CouponApi {
         if (coupon.isSingleUse()) {
             coupon.setActive(false);
         }
-
         couponRepository.save(coupon);
-
         user.addCredits(coupon.getReward());
-
         userRepository.save(user);
 
+        log.info(user + " reedemed a coupon and retrieved " + coupon.getReward());
         return new ResponseEntity<>(new CouponRedeemResponse(user, coupon.getReward()), HttpStatus.OK);
     }
 }

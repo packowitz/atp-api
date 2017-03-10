@@ -21,17 +21,16 @@ import java.io.IOException;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
-    private static final Logger LOGGER = LogManager.getLogger(JwtFilter.class);
+    private static final Logger log = LogManager.getLogger();
     private static final String BEARER = "Bearer ";
 
-    @Value("${jwt.secret}")
-    private String secret;
-
     private final UserRepository userRepository;
+    private final String secret;
 
     @Autowired
-    public JwtFilter(UserRepository userRepository) {
+    public JwtFilter(UserRepository userRepository, @Value("${jwt.secret}") String secret) {
         this.userRepository = userRepository;
+        this.secret = secret;
     }
 
     @Override
@@ -50,7 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
             catch (Exception e) {
-                LOGGER.error(e.getMessage(), e);
+                log.error(e.getMessage(), e);
             }
         }
 

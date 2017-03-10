@@ -16,8 +16,7 @@ import org.apache.logging.log4j.Logger;
 import java.net.URI;
 
 public class FcmCommand extends HystrixCommand<Void> {
-
-    private static final Logger LOGGER = LogManager.getLogger(FcmCommand.class);
+    private static final Logger log = LogManager.getLogger();
 
     private String fcmServerKey;
     private String body;
@@ -31,17 +30,20 @@ public class FcmCommand extends HystrixCommand<Void> {
     @Override
     protected Void run() throws Exception {
         try {
-            LOGGER.info("Posting notification: " + this.body);
             HttpPost post = createPost();
             CloseableHttpClient httpclient = HttpClients.createDefault();
             CloseableHttpResponse response = httpclient.execute(post);
-            LOGGER.info("Notification response (" + response.getStatusLine().getStatusCode() + "): " + EntityUtils.toString(response.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
-            FcmResponse fcmResponse = mapper.readValue(response.getEntity().getContent(), FcmResponse.class);
-            LOGGER.info("Send push notification. success: " + fcmResponse.getSuccess() + ", failure: " + fcmResponse.getFailure());
+            if (response.getStatusLine().getStatusCode() == 200) {
+                ObjectMapper mapper = new ObjectMapper();
+                FcmResponse fcmResponse = mapper.readValue(response.getEntity().getContent(), FcmResponse.class);
+                log.info("Send push notification. success: " + fcmResponse.getSuccess() + ", failure: " + fcmResponse.getFailure());
+            } else {
+                log.info("Notification body that lead to an error: " + this.body);
+                log.error("Notification response (" + response.getStatusLine().getStatusCode() + "): " + EntityUtils.toString(response.getEntity()));
+            }
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }

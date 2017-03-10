@@ -4,17 +4,16 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>
-        <!-- Papertrail syslog config -->
-        <Syslog name="SYSLOG-TCP" host="${env:ATP_PAPERTRAIL_HOST}" port="${env:ATP_PAPERTRAIL_PORT}"
-                protocol="TCP" appName="atp-api" mdcId="mdc" messageId="Audit" id="API"
-                facility="LOCAL0" enterpriseNumber="18060" newLine="true" format="RFC5424"
-                ignoreExceptions="false" exceptionPattern="%throwable{full}">
-        </Syslog>
+        <Logentries>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss ZZZ} %F.%L level:%-5p%m"/>
+            <name>logentries</name>
+            <token>${logentries.token}</token>
+        </Logentries>
     </Appenders>
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="SYSLOG-TCP"/>
+            <AppenderRef ref="logentries"/>
         </Root>
     </Loggers>
 </Configuration>

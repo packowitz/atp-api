@@ -1,6 +1,8 @@
 package io.pacworx.atp.notification;
 
 import io.pacworx.atp.user.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 public class NotificationController implements NotificationApi {
+    private static Logger log = LogManager.getLogger();
 
     private final NotificationRepository notificationRepository;
 
@@ -26,6 +29,7 @@ public class NotificationController implements NotificationApi {
         }
         notification.setAtpAnswerableEnabled(request.enabled);
         notificationRepository.save(notification);
+        log.info(user + " set notification atp-answerable to: " + Boolean.toString(request.enabled));
         return new ResponseEntity<>(new ChangeNotificationsResponse(notification.isAtpAnswerableEnabled()), HttpStatus.OK);
     }
 
@@ -36,6 +40,7 @@ public class NotificationController implements NotificationApi {
         }
         notification.setAtpFinishedEnabled(request.enabled);
         notificationRepository.save(notification);
+        log.info(user + " set notification atp-finished to: " + Boolean.toString(request.enabled));
         return new ResponseEntity<>(new ChangeNotificationsResponse(notification.isAtpFinishedEnabled()), HttpStatus.OK);
     }
 
@@ -46,6 +51,7 @@ public class NotificationController implements NotificationApi {
         }
         notification.setAnnouncementEnabled(request.enabled);
         notificationRepository.save(notification);
+        log.info(user + " set notification announcement to: " + Boolean.toString(request.enabled));
         return new ResponseEntity<>(new ChangeNotificationsResponse(notification.isAnnouncementEnabled()), HttpStatus.OK);
     }
 
@@ -56,6 +62,7 @@ public class NotificationController implements NotificationApi {
         }
         notification.setFeedbackEnabled(request.enabled);
         notificationRepository.save(notification);
+        log.info(user + " set notification feedback to: " + Boolean.toString(request.enabled));
         return new ResponseEntity<>(new ChangeNotificationsResponse(notification.isFeedbackEnabled()), HttpStatus.OK);
     }
 
@@ -68,6 +75,7 @@ public class NotificationController implements NotificationApi {
         notification.setToken(request.token);
 
         notificationRepository.save(notification);
+        log.info(user + " posted notification token for " + request.os);
         return new ResponseEntity<>(notification, HttpStatus.OK);
     }
 }

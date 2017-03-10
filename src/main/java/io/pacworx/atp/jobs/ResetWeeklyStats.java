@@ -1,7 +1,6 @@
 package io.pacworx.atp.jobs;
 
 import io.pacworx.atp.user.UserRepository;
-import io.pacworx.atp.exception.GlobalExceptionHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ResetWeeklyStats {
-    private static final Logger LOGGER = LogManager.getLogger(GlobalExceptionHandler.class);
+    private static final Logger log = LogManager.getLogger();
 
     private final UserRepository userRepository;
 
@@ -24,9 +23,9 @@ public class ResetWeeklyStats {
         try {
             int answered = userRepository.resetWeeklyAnsweredStats();
             int started = userRepository.resetWeeklyStartedStats();
-            LOGGER.info("Reset weekly Stats job successful: answered=" + answered + ", started=" + started);
+            log.info("Reset weekly Stats job successful: answered=" + answered + ", started=" + started);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 }

@@ -2,6 +2,8 @@ package io.pacworx.atp.reward;
 
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @RestController
 public class RewardController implements RewardApi {
+    private static Logger log = LogManager.getLogger();
 
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
@@ -25,6 +28,7 @@ public class RewardController implements RewardApi {
 
     public ResponseEntity<List<Reward>> listRewards(@ApiIgnore @ModelAttribute("user") User user) {
         List<Reward> rewards = getUpdatedAchievements(user);
+        log.info(user + " requested his/her list of rewards");
         return new ResponseEntity<>(rewards, HttpStatus.OK);
     }
 
@@ -34,10 +38,12 @@ public class RewardController implements RewardApi {
         if (reward.getAchieved() > reward.getClaimed()) {
             reward.incClaimed(type.getStep());
             reward.setLastClaimed(ZonedDateTime.now());
-            user.addCredits(type.getReward(reward.getClaimed()));
+            int creditReward = type.getReward(reward.getClaimed());
+            user.addCredits(creditReward);
 
             rewardRepository.save(reward);
             userRepository.save(user);
+            log.info(user + " claimed reward for " + reward.getType().name() + " step " + reward.getClaimed() + " and retrieved " + creditReward);
         }
         return new ResponseEntity<>(new RewardsWithUserResponse(user, rewards), HttpStatus.OK);
     }

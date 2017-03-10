@@ -55,6 +55,10 @@ public class User {
     @JsonIgnore
     private Integer surveyPic2_id;
 
+    public String toString() {
+        return (username != null ? username : "anonymous") + "#" + id;
+    }
+
     public void setPassword(String password) throws Exception {
         this.password = getHash(password);
     }

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/confirm")
 public class ConfirmationController {
-    private static final Logger LOGGER = LogManager.getLogger(ConfirmationController.class);
+    private static final Logger log = LogManager.getLogger();
 
     @Value("${email.jwt}")
     private String emailJwt;
@@ -54,11 +54,13 @@ public class ConfirmationController {
 
                 emailConfirmationRepository.save(confirmation);
                 userRepository.save(user);
+                log.info(user + " confirmed the email address " + email);
                 response.sendRedirect("http://www.askthepeople.io/confirm_success.html");
             }
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
+        log.warn("email confirmation failed for token: " + token);
         response.sendRedirect("http://www.askthepeople.io/confirm_error.html");
     }
 }

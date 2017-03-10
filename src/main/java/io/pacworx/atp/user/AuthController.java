@@ -4,6 +4,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.ForbiddenException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import java.security.SecureRandom;
 
 @RestController
 public class AuthController implements AuthApi {
+    private static Logger log = LogManager.getLogger();
 
     private final UserRepository userRepository;
     private final EmailService emailService;
@@ -36,12 +39,13 @@ public class AuthController implements AuthApi {
     public ResponseEntity<TokenResponse> register() {
         User user = new User();
         userRepository.save(user);
+        log.info(user + " just registered via APP");
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user), HttpStatus.OK);
     }
 
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) throws Exception {
         if (bindingResult.hasErrors()) {
-            throw new BadRequestException();
+            throw new BadRequestException("Login failed due to invalid request");
         }
 
         User user = userRepository.findByEmail(request.email.toLowerCase());
@@ -50,12 +54,13 @@ public class AuthController implements AuthApi {
             throw new ForbiddenException("Login failed", "Either email/username or password is wrong");
         }
 
+        log.info(user + " used username/password to login to APP");
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user), HttpStatus.OK);
     }
 
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request, BindingResult bindingResult) throws Exception {
         if (bindingResult.hasErrors()) {
-            throw new BadRequestException();
+            throw new BadRequestException("forgot password was called with invalid request");
         }
 
         User user = userRepository.findByEmail(request.email.toLowerCase());
@@ -68,6 +73,7 @@ public class AuthController implements AuthApi {
         user.setPassword(newPassword);
         userRepository.save(user);
 
+        log.info(user + " requested to get a new password");
         return new ResponseEntity<>(new ForgotPasswordResponse(), HttpStatus.OK);
     }
 

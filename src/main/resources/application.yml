@@ -11,21 +11,19 @@ spring:
         mapper.default-view-inclusion: true
     jpa:
       show-sql: false
-
-jwt.secret: ${ATP_JWT_APPSECRET:thisissecret}
-jwt.web.secret: ${ATP_JWT_WEBSECRET:alocaljwtsecret}
-
 api.version: @project.version@
-
-fcm.serverkey: ${ATP_FCM_SERVERKEY:void}
-
+jwt:
+    secret: thisissecret
+    web.secret: alocaljwtsecret
+fcm.serverkey: null
+logentries.token: f311bfa8-b8c2-4bf1-9c92-5b741d87e718
 email:
-  host: ${ATP_EMAIL_HOST}
-  user: ${ATP_EMAIL_USER}
-  password: ${ATP_EMAIL_PASSWORD}
-  reply-to: no-reply@askthepeople.io
-  jwt: ${ATP_EMAIL_JWT}
-  confirmation-url: ${ATP_EMAIL_CONFIRMATION_URL:http://localhost:8080/confirm/email?token=}
+    host: ${ATP_EMAIL_HOST}
+    user: ${ATP_EMAIL_USER}
+    password: ${ATP_EMAIL_PASSWORD}
+    reply-to: no-reply@askthepeople.io
+    jwt: anEmailJwt
+    confirmation-url: ${http://localhost:8080/confirm/email?token=}
 
 ---
 
@@ -48,3 +46,15 @@ spring:
         url: ${ATP_DB_URL}
         username: ${ATP_DB_USER}
         password: ${ATP_DB_PASSWORD}
+jwt:
+     secret: ${ATP_JWT_APPSECRET}
+     web.secret: ${ATP_JWT_WEBSECRET}
+fcm.serverkey: ${ATP_FCM_SERVERKEY}
+logentries.token: ${ATP_LOGENTRIES_TOKEN}
+email:
+  host: ${ATP_EMAIL_HOST}
+  user: ${ATP_EMAIL_USER}
+  password: ${ATP_EMAIL_PASSWORD}
+  reply-to: no-reply@askthepeople.io
+  jwt: ${ATP_EMAIL_JWT}
+  confirmation-url: ${ATP_EMAIL_CONFIRMATION_URL}
