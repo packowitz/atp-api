@@ -7,7 +7,7 @@
         <Logentries>
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss ZZZ} %F.%L level:%-5p%m"/>
             <name>logentries</name>
-            <token>${logentries.token}</token>
+            <token>${env:ATP_LOGENTRIES_TOKEN}</token>
         </Logentries>
     </Appenders>
     <Loggers>

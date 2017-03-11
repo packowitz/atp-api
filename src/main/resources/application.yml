@@ -16,7 +16,6 @@ jwt:
     secret: thisissecret
     web.secret: alocaljwtsecret
 fcm.serverkey: null
-logentries.token: f311bfa8-b8c2-4bf1-9c92-5b741d87e718
 email:
     host: ${ATP_EMAIL_HOST}
     user: ${ATP_EMAIL_USER}
@@ -50,7 +49,6 @@ jwt:
      secret: ${ATP_JWT_APPSECRET}
      web.secret: ${ATP_JWT_WEBSECRET}
 fcm.serverkey: ${ATP_FCM_SERVERKEY}
-logentries.token: ${ATP_LOGENTRIES_TOKEN}
 email:
   host: ${ATP_EMAIL_HOST}
   user: ${ATP_EMAIL_USER}

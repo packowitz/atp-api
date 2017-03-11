@@ -67,7 +67,7 @@ public class SurveyController implements SurveyApi {
         userRepository.save(user);
 
         if (survey != null) {
-            log.info(user + " retrieves ATP " + survey.getId() + " of type " + survey.getType().name());
+            log.info(user + " is questioned to answer ATP #" + survey.getId() + " of type " + survey.getType().name());
             return new ResponseEntity<>(new ResponseWithUser<>(user, survey), HttpStatus.OK);
         } else {
             throw new OutOfSurveyException();
@@ -116,7 +116,7 @@ public class SurveyController implements SurveyApi {
         }
 
         if(user.getSurveyType() == SurveyType.SECURITY) {
-            if(resultRequest.answer == user.getSurveyExpectedAnswer()) {
+            if(user.getSurveyExpectedAnswer() != null && resultRequest.answer == user.getSurveyExpectedAnswer()) {
                 user.incReliableScore(2);
             } else {
                 user.incReliableScore(-2);
@@ -155,8 +155,9 @@ public class SurveyController implements SurveyApi {
                 } else if (status == SurveyStatus.ABUSE) {
                     pushNotificationService.notifyAtpAbused(surveyRepository.getUserId(resultRequest.surveyId));
                 }
+                log.info(user + " answered ATP #" + resultRequest.surveyId + " with answer " + resultRequest.answer);
             } else {
-                log.info(user + " was too late to answer ATP " + resultRequest.surveyId + ". Answer doesn't count");
+                log.info(user + " was too late to answer ATP #" + resultRequest.surveyId + ". Answer doesn't count");
             }
         } else {
             log.info(user + " is not reliable. His answer doesn't count");
@@ -196,7 +197,7 @@ public class SurveyController implements SurveyApi {
         for(Survey survey : surveys) {
             details.add(new SurveyDetailsResponse(survey, null));
         }
-        log.info(user + " requested update on own surveys (" + surveys.size() + ")");
+        log.info(user + " requested update on own surveys (" + surveys.size() + " updates delivered)");
         return new ResponseEntity<>(new ResponseWithUser<>(user, new ResponseWithTimestamp<>(details)), HttpStatus.OK);
     }
 
@@ -221,65 +222,65 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getDetails(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
-            throw new NotFoundException(user + " requested details for ATP " + id + " that is not existing");
+            throw new NotFoundException(user + " requested details for ATP #" + id + " that is not existing");
         }
 
         if (user.getId() != survey.getUserId()) {
-            throw new ForbiddenException(user + " requested details for ATP " + id + " but he is not the owner");
+            throw new ForbiddenException(user + " requested details for ATP #" + id + " but he is not the owner");
         }
 
         List<Answer> answers = answerRepository.findBySurveyIdAndAnswerGreaterThanEqual(survey.getId(), 0);
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, answers);
 
-        log.info(user + " requested details for his ATP " + id);
+        log.info(user + " requested details for his ATP #" + id);
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
     public ResponseEntity<ResponseWithUser<SurveyDetailsResponse>> getSurveyUpdate(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if (survey == null) {
-            throw new NotFoundException(user + " requested to retrieve ATP " + id + " that is not existing");
+            throw new NotFoundException(user + " requested to retrieve ATP #" + id + " that is not existing");
         }
 
         if (user.getId() != survey.getUserId()) {
-            throw new ForbiddenException(user + " requested to retrieve ATP " + id + " but he is not the owner");
+            throw new ForbiddenException(user + " requested to retrieve ATP #" + id + " but he is not the owner");
         }
 
         SurveyDetailsResponse response = new SurveyDetailsResponse(survey, null);
-        log.info(user + " requested to get an update for ATP " + id);
+        log.info(user + " requested to get an update for ATP #" + id);
         return new ResponseEntity<>(new ResponseWithUser<>(user, response), HttpStatus.OK);
     }
 
     public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
         if(survey == null) {
-            throw new BadRequestException(user + " wanted to delete not existing ATP " + id);
+            throw new BadRequestException(user + " wanted to delete not existing ATP #" + id);
         }
         if(survey.getGroupId() != null) {
-            throw new BadRequestException(user + " wanted to delete single ATP " + id + " that belongs to a group");
+            throw new BadRequestException(user + " wanted to delete single ATP #" + id + " that belongs to a group");
         }
         if(survey.getUserId() != user.getId()) {
-            throw new ForbiddenException(user + " wanted to delete ATP " + id + " but he is not the owner");
+            throw new ForbiddenException(user + " wanted to delete ATP #" + id + " but he is not the owner");
         }
         answerRepository.deleteBySurveyId(survey.getId());
         surveyRepository.delete(survey);
-        log.info(user + " deleted ATP " + id);
+        log.info(user + " deleted ATP #" + id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     public ResponseEntity deleteSurveyGroup(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long groupId) {
         List<Survey> surveys = surveyRepository.findByGroupId(groupId);
         if(surveys.isEmpty()) {
-            throw new BadRequestException(user + " wanted to delete not existing ATP group " + groupId);
+            throw new BadRequestException(user + " wanted to delete not existing ATP group #" + groupId);
         }
         for(Survey survey : surveys) {
             if(survey.getUserId() != user.getId()) {
-                throw new ForbiddenException(user + " wanted to delete ATP group " + groupId + " but he is not the owner");
+                throw new ForbiddenException(user + " wanted to delete ATP group #" + groupId + " but he is not the owner");
             }
         }
         answerRepository.deleteBySurveyGroupId(groupId);
         surveyRepository.deleteByGroupId(groupId);
-        log.info(user + " deleted ATP group " + groupId);
+        log.info(user + " deleted ATP group #" + groupId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

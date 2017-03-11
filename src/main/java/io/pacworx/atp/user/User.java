@@ -56,7 +56,7 @@ public class User {
     private Integer surveyPic2_id;
 
     public String toString() {
-        return (username != null ? username : "anonymous") + "#" + id;
+        return (username != null ? username : "anonymous") + " #" + id;
     }
 
     public void setPassword(String password) throws Exception {
