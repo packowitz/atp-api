@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/web/auth")
@@ -29,14 +30,16 @@ public class WebAuthController {
 
     private final UserRepository userRepository;
     private final UserRightsRepository userRightsRepository;
+    private final ClosedBetaRepository closedBetaRepository;
 
     @Value("${jwt.web.secret}")
     private String secret;
 
     @Autowired
-    public WebAuthController(UserRepository userRepository, UserRightsRepository userRightsRepository) {
+    public WebAuthController(UserRepository userRepository, UserRightsRepository userRightsRepository, ClosedBetaRepository closedBetaRepository) {
         this.userRepository = userRepository;
         this.userRightsRepository = userRightsRepository;
+        this.closedBetaRepository = closedBetaRepository;
     }
 
     @JsonView(Views.WebView.class)
@@ -63,6 +66,18 @@ public class WebAuthController {
         return new ResponseEntity<>(new TokenResponse(getToken(user.getId()), user, rights), HttpStatus.OK);
     }
 
+    @JsonView(Views.WebView.class)
+    @RequestMapping(value = "/register-closed-beta", method = RequestMethod.POST)
+    public ResponseEntity<BooleanResponse> registerForBeta(@RequestBody ClosedBeta closedBeta) {
+        if(closedBeta.getGmail() != null || closedBeta.getAppleId() != null) {
+            closedBeta.setRegisterDate(LocalDateTime.now());
+            closedBeta.setGmailSendDate(null);
+            closedBeta.setAppleSendDate(null);
+            this.closedBetaRepository.save(closedBeta);
+        }
+        return new ResponseEntity<>(new BooleanResponse(true), HttpStatus.OK);
+    }
+
     private String getToken(long id) {
         return Jwts.builder().setSubject(Long.toString(id)).signWith(SignatureAlgorithm.HS512, secret).compact();
     }
@@ -84,6 +99,14 @@ public class WebAuthController {
         public String email;
         @NotNull
         public String password;
+    }
+
+    private static final class BooleanResponse {
+        public boolean success;
+
+        public BooleanResponse(boolean success) {
+            this.success = success;
+        }
     }
 
 }
