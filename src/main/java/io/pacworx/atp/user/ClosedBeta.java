@@ -1,25 +1,22 @@
 package io.pacworx.atp.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 public class ClosedBeta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     private long id;
     private String gmail;
     private String appleId;
     private String finding;
-    private LocalDateTime registerDate;
-    private LocalDateTime gmailSendDate;
-    private LocalDateTime appleSendDate;
+    private ZonedDateTime registerDate;
+    private ZonedDateTime gmailSendDate;
+    private ZonedDateTime appleSendDate;
 
     public long getId() {
         return id;
@@ -49,27 +46,27 @@ public class ClosedBeta {
         this.finding = finding;
     }
 
-    public LocalDateTime getRegisterDate() {
+    public ZonedDateTime getRegisterDate() {
         return registerDate;
     }
 
-    public void setRegisterDate(LocalDateTime registerDate) {
+    public void setRegisterDate(ZonedDateTime registerDate) {
         this.registerDate = registerDate;
     }
 
-    public LocalDateTime getGmailSendDate() {
+    public ZonedDateTime getGmailSendDate() {
         return gmailSendDate;
     }
 
-    public void setGmailSendDate(LocalDateTime gmailSendDate) {
+    public void setGmailSendDate(ZonedDateTime gmailSendDate) {
         this.gmailSendDate = gmailSendDate;
     }
 
-    public LocalDateTime getAppleSendDate() {
+    public ZonedDateTime getAppleSendDate() {
         return appleSendDate;
     }
 
-    public void setAppleSendDate(LocalDateTime appleSendDate) {
+    public void setAppleSendDate(ZonedDateTime appleSendDate) {
         this.appleSendDate = appleSendDate;
     }
 }

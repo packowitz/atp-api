@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @RestController
 @RequestMapping("/web/auth")
@@ -70,7 +70,7 @@ public class WebAuthController {
     @RequestMapping(value = "/register-closed-beta", method = RequestMethod.POST)
     public ResponseEntity<BooleanResponse> registerForBeta(@RequestBody ClosedBeta closedBeta) {
         if(closedBeta.getGmail() != null || closedBeta.getAppleId() != null) {
-            closedBeta.setRegisterDate(LocalDateTime.now());
+            closedBeta.setRegisterDate(ZonedDateTime.now());
             closedBeta.setGmailSendDate(null);
             closedBeta.setAppleSendDate(null);
             this.closedBetaRepository.save(closedBeta);

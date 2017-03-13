@@ -2,7 +2,6 @@ package io.pacworx.atp.user;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.pacworx.atp.exception.AtpException;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.InternalServerException;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +22,7 @@ import java.util.Properties;
 
 @Component
 public class EmailService {
-    private static final Logger LOGGER = LogManager.getLogger(EmailService.class);
+    private static final Logger log = LogManager.getLogger();
 
     @Value("${email.host}")
     private String emailHost;
@@ -64,12 +63,35 @@ public class EmailService {
 
             sendMail(email, subject, text);
 
-            LOGGER.info("New password send to user: " + email);
+            log.info("New password send to user: " + email);
         } catch (AddressException e) {
-            LOGGER.info("User entered an invalid email address: " + email);
+            log.info("User entered an invalid email address: " + email);
             throw new BadRequestException("Invalid email format", "The email address " + email + " is not valid.");
         } catch (MessagingException e) {
-            LOGGER.warn(e.getMessage(), e);
+            log.warn(e.getMessage(), e);
+            throw new InternalServerException();
+        }
+    }
+
+    public void sendAndroidInvitationEmail(String email) {
+        try {
+            String subject = "You are invited to ATP closed beta";
+            String text = "Hello,\n\n" +
+                    "You receive this email because your email address was entered on http://www.askthepeople.io to participate in the closed beta of Ask The People (ATP).\n" +
+                    "If it wasn't you that entered the email please ignore this email.\n\n" +
+                    "Your email address " + email + " is now activated to participate in closed beta.\n" +
+                    "Please visit this Google Play URL to install ATP on your Android device:\n" +
+                    "https://play.google.com/apps/testing/io.pacworx.atp\n\n" +
+                    "Thank you for your interest in ATP\nYour ATP-Team";
+
+            sendMail(email, subject, text);
+
+            log.info("New password send to user: " + email);
+        } catch (AddressException e) {
+            log.info("User entered an invalid email address: " + email);
+            throw new BadRequestException("Invalid email format", "The email address " + email + " is not valid.");
+        } catch (MessagingException e) {
+            log.warn(e.getMessage(), e);
             throw new InternalServerException();
         }
     }
@@ -89,14 +111,14 @@ public class EmailService {
 
             sendMail(emailConfirmation.getEmail(), subject, text);
 
-            LOGGER.info("Confirmation Email sent to " + emailConfirmation.getEmail());
+            log.info("Confirmation Email sent to " + emailConfirmation.getEmail());
         } catch (AddressException e) {
-            LOGGER.warn("User was able to enter an invalid email address: " + emailConfirmation.getEmail());
+            log.warn("User was able to enter an invalid email address: " + emailConfirmation.getEmail());
             throw new BadRequestException("Invalid email format",
                     "The email address " + emailConfirmation.getEmail() + " is not valid."
             );
         } catch (MessagingException e) {
-            LOGGER.warn(e.getMessage(), e);
+            log.warn(e.getMessage(), e);
             throw new InternalServerException();
         }
     }
