@@ -55,12 +55,12 @@ public class ConfirmationController {
                 emailConfirmationRepository.save(confirmation);
                 userRepository.save(user);
                 log.info(user + " confirmed the email address " + email);
-                response.sendRedirect("http://www.askthepeople.io/confirm_success.html");
+                response.sendRedirect("http://www.askthepeople.io/assets/static/confirm_success.html");
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
         log.warn("email confirmation failed for token: " + token);
-        response.sendRedirect("http://www.askthepeople.io/confirm_error.html");
+        response.sendRedirect("http://www.askthepeople.io/assets/static/confirm_error.html");
     }
 }
