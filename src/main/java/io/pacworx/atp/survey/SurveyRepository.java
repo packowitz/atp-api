@@ -36,7 +36,7 @@ public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     default Survey findAnswerablePermanent(User user) {
         int age = LocalDate.now().getYear() - user.getYearOfBirth();
-        return findAnswerableSecurity(age, user.getCountry(), user.isMale());
+        return findAnswerablePermanent(age, user.getCountry(), user.isMale());
     }
 
     @Modifying
