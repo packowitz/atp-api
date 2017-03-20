@@ -16,11 +16,16 @@ import java.util.List;
 public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     @Query(value = "SELECT * FROM survey WHERE type != 'SECURITY' and type != 'PERMANENT' and status = 'ACTIVE' and user_id != :userId and min_age <= :age and max_age >= :age and (countries like %:country% or countries = 'ALL') and ((male = true and true = :male) or (female = true and false = :male)) ORDER BY random() LIMIT 1", nativeQuery = true)
+    Survey findNonUniqueAnswerable(@Param("userId") long userId, @Param("age") int age, @Param("country") String country, @Param("male") boolean male);
+
+    @Query(value = "SELECT s.* FROM survey s LEFT JOIN answer a ON s.id = a.survey_id AND a.user_id = :userId WHERE a.id IS NULL and s.type != 'SECURITY' and s.type != 'PERMANENT' and s.status = 'ACTIVE' and s.user_id != :userId and s.min_age <= :age and s.max_age >= :age and (s.countries like %:country% or s.countries = 'ALL') and ((s.male = true and true = :male) or (s.female = true and false = :male)) ORDER BY random() LIMIT 1", nativeQuery = true)
     Survey findAnswerable(@Param("userId") long userId, @Param("age") int age, @Param("country") String country, @Param("male") boolean male);
+
 
     default Survey findAnswerable(User user) {
         int age = LocalDate.now().getYear() - user.getYearOfBirth();
-        return findAnswerable(user.getId(), age, user.getCountry(), user.isMale());
+        Survey survey = findAnswerable(user.getId(), age, user.getCountry(), user.isMale());
+        return survey != null ? survey : findNonUniqueAnswerable(user.getId(), age, user.getCountry(), user.isMale());
     }
 
     @Query(value = "SELECT * FROM survey WHERE type = 'SECURITY' and status = 'ACTIVE' and min_age <= :age and max_age >= :age and (countries like %:country% or countries = 'ALL') and ((male = true and true = :male) or (female = true and false = :male)) ORDER BY random() LIMIT 1", nativeQuery = true)
