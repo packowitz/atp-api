@@ -30,7 +30,7 @@ public class ClosedBetaController {
         if(!rights.isUserAdmin()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        List<ClosedBeta> betaUsers = this.closedBetaRepository.findAll();
+        List<ClosedBeta> betaUsers = this.closedBetaRepository.findByOrderByRegisterDateDesc();
         return new ResponseEntity<>(betaUsers, HttpStatus.OK);
     }
 
