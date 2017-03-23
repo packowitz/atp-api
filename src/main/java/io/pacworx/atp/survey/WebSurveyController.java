@@ -146,22 +146,20 @@ public class WebSurveyController {
                                        @ModelAttribute("userRights") UserRights rights,
                                        @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        if(survey.getType() == SurveyType.SECURITY) {
-            if(!rights.isSecurity()) {
-                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        if(survey != null) {
+            if(survey.getType() == SurveyType.SECURITY) {
+                if(!rights.isSecurity()) {
+                    return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+                }
+            } else {
+                if(survey.getUserId() != webuser.getId()) {
+                    return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+                }
             }
-        } else {
-            if(survey.getUserId() != webuser.getId()) {
-                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-            }
+
+            answerRepository.deleteBySurveyId(survey.getId());
+            surveyRepository.delete(survey);
         }
-
-        answerRepository.deleteBySurveyId(survey.getId());
-        surveyRepository.delete(survey);
-
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

@@ -253,18 +253,19 @@ public class SurveyController implements SurveyApi {
 
     public ResponseEntity deleteSurvey(@ApiIgnore @ModelAttribute("user") User user, @PathVariable long id) {
         Survey survey = surveyRepository.findOne(id);
-        if(survey == null) {
-            throw new BadRequestException(user + " wanted to delete not existing ATP #" + id);
+        if(survey != null) {
+            if(survey.getGroupId() != null) {
+                throw new BadRequestException(user + " wanted to delete single ATP #" + id + " that belongs to a group");
+            }
+            if(survey.getUserId() != user.getId()) {
+                throw new ForbiddenException(user + " wanted to delete ATP #" + id + " but he is not the owner");
+            }
+            answerRepository.deleteBySurveyId(survey.getId());
+            surveyRepository.delete(survey);
+            log.info(user + " deleted ATP #" + id);
+        } else {
+            log.warn(user + " wanted to delete non-existing ATP #" + id);
         }
-        if(survey.getGroupId() != null) {
-            throw new BadRequestException(user + " wanted to delete single ATP #" + id + " that belongs to a group");
-        }
-        if(survey.getUserId() != user.getId()) {
-            throw new ForbiddenException(user + " wanted to delete ATP #" + id + " but he is not the owner");
-        }
-        answerRepository.deleteBySurveyId(survey.getId());
-        surveyRepository.delete(survey);
-        log.info(user + " deleted ATP #" + id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
