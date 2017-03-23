@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.ForbiddenException;
+import io.pacworx.atp.exception.LoginFailedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,7 @@ public class AuthController implements AuthApi {
         User user = userRepository.findByEmail(request.email.toLowerCase());
 
         if (user == null || !user.passwordMatches(request.password)) {
-            throw new ForbiddenException("Login failed", "Either email/username or password is wrong");
+            throw new LoginFailedException();
         }
 
         log.info(user + " used username/password to login to APP");

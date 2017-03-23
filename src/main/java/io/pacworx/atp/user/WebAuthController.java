@@ -6,6 +6,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.InternalServerException;
 import io.pacworx.atp.config.Views;
+import io.pacworx.atp.exception.LoginFailedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +55,7 @@ public class WebAuthController {
 
         User user = userRepository.findByEmail(request.email);
         if (user == null || !user.passwordMatches(request.password)) {
-            throw new InternalServerException("User doesn't exist or password doesn't match");
+            throw new LoginFailedException();
         }
 
         UserRights rights = userRightsRepository.findOne(user.getId());

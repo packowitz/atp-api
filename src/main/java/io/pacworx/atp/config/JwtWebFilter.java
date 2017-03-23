@@ -7,6 +7,8 @@ import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRepository;
 import io.pacworx.atp.user.UserRights;
 import io.pacworx.atp.user.UserRightsRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import java.io.IOException;
 
 @Component
 public class JwtWebFilter extends OncePerRequestFilter {
+    private static final Logger log = LogManager.getLogger();
     private static final String BEARER = "Bearer ";
 
     @Value("${jwt.web.secret}")
@@ -43,19 +46,20 @@ public class JwtWebFilter extends OncePerRequestFilter {
                 String token = authHeader.substring(BEARER.length());
                 String userId = Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
                 User user = userRepository.findOne(Long.parseLong(userId));
-                if(user == null) {
-                    throw new IllegalArgumentException();
+                if(user != null) {
+                    UserRights rights = userRightsRepository.findOne(user.getId());
+                    if(rights == null) {
+                        rights = new UserRights(user.getId());
+                    }
+                    request.setAttribute("webuser", user);
+                    request.setAttribute("userRights", rights);
+                    chain.doFilter(request, response);
+                    return;
                 }
-                request.setAttribute("webuser", user);
-                UserRights rights = userRightsRepository.findOne(user.getId());
-                if(rights == null) {
-                    rights = new UserRights(user.getId());
-                }
-                request.setAttribute("userRights", rights);
-                chain.doFilter(request, response);
-                return;
             }
-            catch (Exception e) {}
+            catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
         }
         if(request.getMethod().equals("OPTIONS")) {
             chain.doFilter(request, response);
