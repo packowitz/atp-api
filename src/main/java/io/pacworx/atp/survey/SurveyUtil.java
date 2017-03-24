@@ -32,6 +32,9 @@ public class SurveyUtil {
                     Survey survey = new Survey();
                     survey.setUserId(blueprint.getUserId());
                     survey.setType(blueprint.getType());
+                    if(survey.getType() == SurveyType.SECURITY) {
+                        survey.setExpectedAnswer(blueprint.getExpectedAnswer());
+                    }
                     survey.setStatus(SurveyStatus.ACTIVE);
                     survey.setStartedDate(blueprint.getStartedDate());
 
