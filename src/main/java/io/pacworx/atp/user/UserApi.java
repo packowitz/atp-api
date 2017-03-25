@@ -66,11 +66,32 @@ public interface UserApi {
     ResponseEntity<User> changePassword(@ApiIgnore @ModelAttribute("user") User user, @RequestBody @Valid ChangePasswordRequest request, BindingResult bindingResult) throws Exception;
 
     @ApiOperation(value = "Update personal data",
-            notes = "Changes/creates username for logged in user",
+            notes = "Changes personal data for logged in user. deprecated in version 0.2.0",
             response = User.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/personal-data", method = RequestMethod.POST)
     ResponseEntity<User> updatePersonalData(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
+
+    @ApiOperation(value = "Update personal data",
+            notes = "Changes year of birth for logged in user",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/personal-data/year-of-birth", method = RequestMethod.POST)
+    ResponseEntity<User> updateYearOfBirth(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
+
+    @ApiOperation(value = "Update personal data",
+            notes = "Changes gender for logged in user",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/personal-data/gender", method = RequestMethod.POST)
+    ResponseEntity<User> updateGender(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
+
+    @ApiOperation(value = "Update personal data",
+            notes = "Changes country for logged in user",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/personal-data/country", method = RequestMethod.POST)
+    ResponseEntity<User> updateCountry(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
 
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/highscore", method = RequestMethod.GET)

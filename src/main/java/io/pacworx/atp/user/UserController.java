@@ -116,6 +116,27 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
+    public ResponseEntity<User> updateYearOfBirth(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request) {
+        user.setYearOfBirth(request.yearOfBirth);
+        userRepository.save(user);
+        log.info(user + " changed year of birth to : " + user.getYearOfBirth());
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> updateGender(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request) {
+        user.setMale(request.male);
+        userRepository.save(user);
+        log.info(user + " changed gender to : " + (user.isMale() ? " male" : " female"));
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> updateCountry(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request) {
+        user.setCountry(request.country);
+        userRepository.save(user);
+        log.info(user + " changed country to : " + user.getCountry());
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
     public ResponseEntity<List<UserForHighscore>> getHighscore(@ApiIgnore @ModelAttribute("user") User user) {
         log.info(user + " requested highscore");
         return new ResponseEntity<>(transformHighscoreList(user, userRepository.getHighscore()), HttpStatus.OK);
