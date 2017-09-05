@@ -21,10 +21,17 @@ public class Survey {
     private String title;
     private String pic1;
     private String pic2;
-    @NotNull
-    private int minAge;
-    @NotNull
-    private int maxAge;
+    private Integer minAge;
+    private Integer maxAge;
+    private boolean age_1;
+    private boolean age_2;
+    private boolean age_3;
+    private boolean age_4;
+    private boolean age_5;
+    private boolean age_6;
+    private boolean age_7;
+    private boolean age_8;
+    private boolean age_9;
     @NotNull
     private String countries;
     @NotNull
@@ -106,20 +113,92 @@ public class Survey {
         this.pic2 = pic2;
     }
 
-    public int getMinAge() {
+    public Integer getMinAge() {
         return minAge;
     }
 
-    public void setMinAge(int minAge) {
+    public void setMinAge(Integer minAge) {
         this.minAge = minAge;
     }
 
-    public int getMaxAge() {
+    public Integer getMaxAge() {
         return maxAge;
     }
 
-    public void setMaxAge(int maxAge) {
+    public void setMaxAge(Integer maxAge) {
         this.maxAge = maxAge;
+    }
+
+    public boolean isAge_1() {
+        return age_1;
+    }
+
+    public void setAge_1(boolean age_1) {
+        this.age_1 = age_1;
+    }
+
+    public boolean isAge_2() {
+        return age_2;
+    }
+
+    public void setAge_2(boolean age_2) {
+        this.age_2 = age_2;
+    }
+
+    public boolean isAge_3() {
+        return age_3;
+    }
+
+    public void setAge_3(boolean age_3) {
+        this.age_3 = age_3;
+    }
+
+    public boolean isAge_4() {
+        return age_4;
+    }
+
+    public void setAge_4(boolean age_4) {
+        this.age_4 = age_4;
+    }
+
+    public boolean isAge_5() {
+        return age_5;
+    }
+
+    public void setAge_5(boolean age_5) {
+        this.age_5 = age_5;
+    }
+
+    public boolean isAge_6() {
+        return age_6;
+    }
+
+    public void setAge_6(boolean age_6) {
+        this.age_6 = age_6;
+    }
+
+    public boolean isAge_7() {
+        return age_7;
+    }
+
+    public void setAge_7(boolean age_7) {
+        this.age_7 = age_7;
+    }
+
+    public boolean isAge_8() {
+        return age_8;
+    }
+
+    public void setAge_8(boolean age_8) {
+        this.age_8 = age_8;
+    }
+
+    public boolean isAge_9() {
+        return age_9;
+    }
+
+    public void setAge_9(boolean age_9) {
+        this.age_9 = age_9;
     }
 
     public String getCountries() {

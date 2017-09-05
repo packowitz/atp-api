@@ -41,8 +41,31 @@ public class SurveyUtil {
                     survey.setTitle(blueprint.getTitle());
                     survey.setMale(blueprint.isMale());
                     survey.setFemale(blueprint.isFemale());
-                    survey.setMinAge(blueprint.getMinAge());
-                    survey.setMaxAge(blueprint.getMaxAge());
+                    if(blueprint.getMinAge() != null && blueprint.getMaxAge() != null) {
+                        survey.setMinAge(blueprint.getMinAge());
+                        survey.setMaxAge(blueprint.getMaxAge());
+                        survey.setAge_1(blueprint.getMinAge() <= 9);
+                        survey.setAge_2(blueprint.getMaxAge() >= 10 && blueprint.getMinAge() <= 12);
+                        survey.setAge_3(blueprint.getMaxAge() >= 13 && blueprint.getMinAge() <= 15);
+                        survey.setAge_4(blueprint.getMaxAge() >= 16 && blueprint.getMinAge() <= 17);
+                        survey.setAge_5(blueprint.getMaxAge() >= 18 && blueprint.getMinAge() <= 21);
+                        survey.setAge_6(blueprint.getMaxAge() >= 22 && blueprint.getMinAge() <= 29);
+                        survey.setAge_7(blueprint.getMaxAge() >= 30 && blueprint.getMinAge() <= 39);
+                        survey.setAge_8(blueprint.getMaxAge() >= 40 && blueprint.getMinAge() <= 55);
+                        survey.setAge_9(blueprint.getMaxAge() >= 56);
+                    } else {
+                        survey.setAge_1(blueprint.isAge_1());
+                        survey.setAge_2(blueprint.isAge_2());
+                        survey.setAge_3(blueprint.isAge_3());
+                        survey.setAge_4(blueprint.isAge_4());
+                        survey.setAge_5(blueprint.isAge_5());
+                        survey.setAge_6(blueprint.isAge_6());
+                        survey.setAge_7(blueprint.isAge_7());
+                        survey.setAge_8(blueprint.isAge_8());
+                        survey.setAge_9(blueprint.isAge_9());
+                        survey.setMinAge(5);
+                        survey.setMaxAge(99);
+                    }
                     survey.setCountries(country);
                     survey.setDaysBetween(blueprint.getDaysBetween());
 

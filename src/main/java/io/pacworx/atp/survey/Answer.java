@@ -21,6 +21,7 @@ public class Answer {
     private int answer;
     private int answerId;
     private int age;
+    private int ageRange;
     private String country;
     private boolean male;
     private Long surveyGroupId;
@@ -77,6 +78,14 @@ public class Answer {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public int getAgeRange() {
+        return ageRange;
+    }
+
+    public void setAgeRange(int ageRange) {
+        this.ageRange = ageRange;
     }
 
     public String getCountry() {

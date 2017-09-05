@@ -118,8 +118,19 @@ public class UserController implements UserApi {
 
     public ResponseEntity<User> updateYearOfBirth(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request) {
         user.setYearOfBirth(request.yearOfBirth);
+        user.setAgeRange(AgeRange.byYearOfBirth(request.yearOfBirth).getId());
         userRepository.save(user);
         log.info(user + " changed year of birth to : " + user.getYearOfBirth());
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    public ResponseEntity<User> updateAgeRange(User user, int ageRange) {
+        if(AgeRange.byId(ageRange) == null) {
+            throw new BadRequestException(user + " tried to set non existing ageRange of " + ageRange);
+        }
+        user.setAgeRange(ageRange);
+        userRepository.save(user);
+        log.info(user + "changed his ageRange to " + ageRange);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 

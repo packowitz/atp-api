@@ -142,6 +142,7 @@ public class SurveyController implements SurveyApi {
                 answer.setAnswer(resultRequest.answer);
 
                 answer.setAge(LocalDate.now().getYear() - user.getYearOfBirth());
+                answer.setAgeRange(user.getAgeRange());
                 answer.setCountry(user.getCountry());
                 answer.setMale(user.isMale());
                 answerRepository.save(answer);

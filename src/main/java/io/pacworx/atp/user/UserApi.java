@@ -80,6 +80,13 @@ public interface UserApi {
     ResponseEntity<User> updateYearOfBirth(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangePersonalDataRequest request);
 
     @ApiOperation(value = "Update personal data",
+            notes = "Changes age range for logged in user",
+            response = User.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/personal-data/age-range/{ageRange}", method = RequestMethod.POST)
+    ResponseEntity<User> updateAgeRange(@ApiIgnore @ModelAttribute("user") User user, @PathVariable("ageRange") int ageRange);
+
+    @ApiOperation(value = "Update personal data",
             notes = "Changes gender for logged in user",
             response = User.class)
     @JsonView(Views.AppView.class)

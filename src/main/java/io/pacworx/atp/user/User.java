@@ -28,6 +28,7 @@ public class User {
     @Max(2050)
     @Column(name = "yearofbirth")
     private Integer yearOfBirth;
+    private Integer ageRange;
     private String country;
     private Boolean male;
     private int credits = 2000;
@@ -153,6 +154,14 @@ public class User {
 
     public void setYearOfBirth(Integer yearOfBirth) {
         this.yearOfBirth = yearOfBirth;
+    }
+
+    public Integer getAgeRange() {
+        return ageRange;
+    }
+
+    public void setAgeRange(Integer ageRange) {
+        this.ageRange = ageRange;
     }
 
     public String getCountry() {
