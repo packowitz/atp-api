@@ -84,7 +84,7 @@ public interface UserApi {
             response = User.class)
     @JsonView(Views.AppView.class)
     @RequestMapping(value = "/personal-data/age-range/{ageRange}", method = RequestMethod.POST)
-    ResponseEntity<User> updateAgeRange(@ApiIgnore @ModelAttribute("user") User user, @PathVariable("ageRange") int ageRange);
+    ResponseEntity<User> updateAgeRange(@ApiIgnore @ModelAttribute("user") User user, @PathVariable int ageRange);
 
     @ApiOperation(value = "Update personal data",
             notes = "Changes gender for logged in user",

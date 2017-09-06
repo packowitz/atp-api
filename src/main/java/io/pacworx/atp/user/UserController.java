@@ -124,7 +124,7 @@ public class UserController implements UserApi {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    public ResponseEntity<User> updateAgeRange(User user, int ageRange) {
+    public ResponseEntity<User> updateAgeRange(@ApiIgnore @ModelAttribute("user") User user, @PathVariable int ageRange) {
         if(AgeRange.byId(ageRange) == null) {
             throw new BadRequestException(user + " tried to set non existing ageRange of " + ageRange);
         }
