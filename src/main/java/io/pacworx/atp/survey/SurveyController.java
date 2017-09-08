@@ -77,7 +77,7 @@ public class SurveyController implements SurveyApi {
     public ResponseEntity<ResponseWithUser<List<Survey>>> createNewSurvey(@ApiIgnore @ModelAttribute("user") User user,
                                                                     @RequestBody @Valid StartSurveyRequest request,
                                                                     BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors() || !request.survey.hasAgeRange()) {
             throw new BadRequestException(user + " failed to create new ATP");
         }
 
