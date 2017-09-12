@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -129,6 +130,18 @@ public class UserController implements UserApi {
             throw new BadRequestException(user + " tried to set non existing ageRange of " + ageRange);
         }
         user.setAgeRange(ageRange);
+        //during migration we have to make sure that year of birth is not NULL
+        switch(ageRange) {
+            case 1: user.setYearOfBirth(LocalDate.now().getYear() - 7); break;
+            case 2: user.setYearOfBirth(LocalDate.now().getYear() - 11); break;
+            case 3: user.setYearOfBirth(LocalDate.now().getYear() - 14); break;
+            case 4: user.setYearOfBirth(LocalDate.now().getYear() - 16); break;
+            case 5: user.setYearOfBirth(LocalDate.now().getYear() - 19); break;
+            case 6: user.setYearOfBirth(LocalDate.now().getYear() - 26); break;
+            case 7: user.setYearOfBirth(LocalDate.now().getYear() - 35); break;
+            case 8: user.setYearOfBirth(LocalDate.now().getYear() - 47); break;
+            case 9: user.setYearOfBirth(LocalDate.now().getYear() - 65); break;
+        }
         userRepository.save(user);
         log.info(user + "changed his ageRange to " + ageRange);
         return new ResponseEntity<>(user, HttpStatus.OK);
