@@ -6,6 +6,8 @@ import io.pacworx.atp.config.Views;
 
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import java.sql.Date;
+import java.time.ZonedDateTime;
 
 @Entity
 public class Notification {
@@ -17,6 +19,8 @@ public class Notification {
     @JsonView(Views.WebView.class)
     private String token;
     private boolean atpAnswerableEnabled = true;
+    private ZonedDateTime atpAnswerableSendDate;
+    private Date atpAnswerableBetweenTime;
     private boolean atpFinishedEnabled = true;
     private boolean announcementEnabled = true;
     private boolean feedbackEnabled = true;
@@ -50,6 +54,22 @@ public class Notification {
 
     public void setAtpAnswerableEnabled(boolean atpAnswerableEnabled) {
         this.atpAnswerableEnabled = atpAnswerableEnabled;
+    }
+
+    public ZonedDateTime getAtpAnswerableSendDate() {
+        return atpAnswerableSendDate;
+    }
+
+    public void setAtpAnswerableSendDate(ZonedDateTime atpAnswerableSendDate) {
+        this.atpAnswerableSendDate = atpAnswerableSendDate;
+    }
+
+    public Date getAtpAnswerableBetweenTime() {
+        return atpAnswerableBetweenTime;
+    }
+
+    public void setAtpAnswerableBetweenTime(Date atpAnswerableBetweenTime) {
+        this.atpAnswerableBetweenTime = atpAnswerableBetweenTime;
     }
 
     public boolean isAtpFinishedEnabled() {

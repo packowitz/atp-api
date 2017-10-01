@@ -39,6 +39,7 @@ public class PushNotificationService {
             List<String> tokens = notificationRepository.tokensForAnswerableSurvey(em, survey, 100);
             if(tokens != null && !tokens.isEmpty()) {
                 sendNotification(tokens, NotificationType.ANSWERABLE);
+                notificationRepository.updateAnswerableSendDate(tokens);
             } else {
                 LOGGER.info("Notify about new survey: found no users to fit to survey #" + survey.getId());
             }
