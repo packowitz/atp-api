@@ -28,9 +28,11 @@ public class Notification {
     private boolean feedbackEnabled = true;
 
     public Notification() {
+        this.atpAnswerableBetweenTime = Time.valueOf("23:59:59");
     }
 
     public Notification(long userId, String deviceId) {
+        this();
         this.id = new NotificationId(userId, deviceId);
     }
 
