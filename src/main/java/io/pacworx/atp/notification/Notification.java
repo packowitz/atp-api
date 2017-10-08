@@ -6,8 +6,9 @@ import io.pacworx.atp.config.Views;
 
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import java.sql.Date;
+import java.sql.Time;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 
 @Entity
 public class Notification {
@@ -20,7 +21,8 @@ public class Notification {
     private String token;
     private boolean atpAnswerableEnabled = true;
     private ZonedDateTime atpAnswerableSendDate;
-    private Date atpAnswerableBetweenTime;
+    @JsonIgnore
+    private Time atpAnswerableBetweenTime;
     private boolean atpFinishedEnabled = true;
     private boolean announcementEnabled = true;
     private boolean feedbackEnabled = true;
@@ -64,11 +66,21 @@ public class Notification {
         this.atpAnswerableSendDate = atpAnswerableSendDate;
     }
 
-    public Date getAtpAnswerableBetweenTime() {
+    public int getHoursBetweenAnswerable() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(this.atpAnswerableBetweenTime);
+        int hours = cal.get(Calendar.HOUR_OF_DAY);
+        if(hours == 23 && cal.get(Calendar.MINUTE) > 0) {
+            return 24;
+        }
+        return hours;
+    }
+
+    public Time getAtpAnswerableBetweenTime() {
         return atpAnswerableBetweenTime;
     }
 
-    public void setAtpAnswerableBetweenTime(Date atpAnswerableBetweenTime) {
+    public void setAtpAnswerableBetweenTime(Time atpAnswerableBetweenTime) {
         this.atpAnswerableBetweenTime = atpAnswerableBetweenTime;
     }
 

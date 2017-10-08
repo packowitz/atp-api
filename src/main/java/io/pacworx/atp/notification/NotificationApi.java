@@ -19,6 +19,12 @@ public interface NotificationApi {
     @RequestMapping(value = "/settings/atp-answerable", method = RequestMethod.POST)
     ResponseEntity<ChangeNotificationsResponse> updateAtpAnswerable(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request);
 
+    @ApiOperation(value = "Post the time in hours between notifications for ATPs that the user could answer",
+            response = ChangeNotificationsResponse.class)
+    @JsonView(Views.AppView.class)
+    @RequestMapping(value = "/settings/atp-answerable/time-between", method = RequestMethod.POST)
+    ResponseEntity<ChangeTimeBetweenResponse> updateAtpAnswerableBetweenTime(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeTimeBetweenRequest request);
+
     @ApiOperation(value = "Post if user has notification enabled for when one of his ATPs finished",
             response = ChangeNotificationsResponse.class)
     @JsonView(Views.AppView.class)
@@ -62,6 +68,19 @@ public interface NotificationApi {
         public String uuid;
         public String os;
         public String token;
+    }
+
+    final class ChangeTimeBetweenRequest {
+        public String uuid;
+        public int hours;
+    }
+
+    final class ChangeTimeBetweenResponse {
+        public int hours;
+
+        public ChangeTimeBetweenResponse(int hours) {
+            this.hours = hours;
+        }
     }
 
 }

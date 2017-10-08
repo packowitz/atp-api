@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.sql.Date;
+import java.sql.Time;
+
 @RestController
 public class NotificationController implements NotificationApi {
     private static Logger log = LogManager.getLogger();
@@ -31,6 +34,25 @@ public class NotificationController implements NotificationApi {
         notificationRepository.save(notification);
         log.info(user + " set notification atp-answerable to: " + Boolean.toString(request.enabled));
         return new ResponseEntity<>(new ChangeNotificationsResponse(notification.isAtpAnswerableEnabled()), HttpStatus.OK);
+    }
+
+    public ResponseEntity<ChangeTimeBetweenResponse> updateAtpAnswerableBetweenTime(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeTimeBetweenRequest request) {
+        Notification notification = notificationRepository.findById(new NotificationId(user.getId(), request.uuid));
+        if(notification == null) {
+            notification = new Notification(user.getId(), request.uuid);
+        }
+        Time time;
+        if(request.hours <= 0) {
+            time = Time.valueOf("0:00:00");
+        } else if(request.hours >= 24) {
+            time = Time.valueOf("23:59:59");
+        } else {
+            time = Time.valueOf(request.hours + ":00:00");
+        }
+        notification.setAtpAnswerableBetweenTime(time);
+        notificationRepository.save(notification);
+        log.info(user + " set notification time between atp-answerable to: " + time.toString());
+        return new ResponseEntity<>(new ChangeTimeBetweenResponse(notification.getHoursBetweenAnswerable()), HttpStatus.OK);
     }
 
     public ResponseEntity<ChangeNotificationsResponse> updateAtpFinished(@ApiIgnore @ModelAttribute("user") User user, @RequestBody ChangeNotificationsRequest request) {
