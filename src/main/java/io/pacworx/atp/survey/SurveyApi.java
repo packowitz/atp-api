@@ -130,6 +130,9 @@ public interface SurveyApi {
         @Min(-1)
         @Max(2)
         public int answer;
+        @Min(0)
+        @Max(2)
+        public Integer rating;
     }
 
     class StartSurveyRequest {

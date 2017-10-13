@@ -1,0 +1,1 @@
+ALTER TABLE answer ADD rating INT DEFAULT 0;

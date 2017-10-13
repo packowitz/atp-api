@@ -27,6 +27,7 @@ public class Answer {
     private Long surveyGroupId;
     private int pic1_id;
     private int pic2_id;
+    private int rating;
 
     public long getId() {
         return id;
@@ -126,5 +127,13 @@ public class Answer {
 
     public void setPic2_id(int pic2_id) {
         this.pic2_id = pic2_id;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
     }
 }
