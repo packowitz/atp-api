@@ -49,6 +49,7 @@ spring:
 jwt:
      secret: ${ATP_JWT_APPSECRET}
      web.secret: ${ATP_JWT_WEBSECRET}
+     trade.secret: ${ATP_JWT_TRADESECRET}
 fcm.serverkey: ${ATP_FCM_SERVERKEY}
 email:
   host: ${ATP_EMAIL_HOST}
