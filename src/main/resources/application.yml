@@ -15,6 +15,7 @@ api.version: @project.version@
 jwt:
     secret: thisissecret
     web.secret: alocaljwtsecret
+    trade.secret: cnsjdkncvjknvk
 fcm.serverkey: null
 email:
     host: ${ATP_EMAIL_HOST}
