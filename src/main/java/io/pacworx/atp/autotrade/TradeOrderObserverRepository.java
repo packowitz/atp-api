@@ -1,0 +1,12 @@
+package io.pacworx.atp.autotrade;
+
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface TradeOrderObserverRepository extends CrudRepository<TradeOrderObserver, Long> {
+
+    List<TradeOrderObserver> getAllByPlanType(TradePlanType planType);
+}

@@ -2,94 +2,139 @@ package io.pacworx.atp.autotrade;
 
 import io.pacworx.atp.exception.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @RestController
 @RequestMapping("/trade/app/binance")
 public class BinanceController {
 
-    private static final String SERVER = "https://api.binance.com/api";
-
+    private final BinanceService binanceService;
+    private final BinanceCircleService circleService;
     private final TradeAccountRepository tradeAccountRepository;
+    private final TradePlanRepository tradePlanRepository;
+    private final TradeCircleRepository tradeCircleRepository;
 
     @Autowired
-    public BinanceController(TradeAccountRepository tradeAccountRepository) {
+    public BinanceController(BinanceService binanceService,
+                             BinanceCircleService circleService,
+                             TradeAccountRepository tradeAccountRepository,
+                             TradePlanRepository tradePlanRepository,
+                             TradeCircleRepository tradeCircleRepository) {
+        this.binanceService = binanceService;
+        this.circleService = circleService;
         this.tradeAccountRepository = tradeAccountRepository;
+        this.tradePlanRepository = tradePlanRepository;
+        this.tradeCircleRepository = tradeCircleRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
     public ResponseEntity<Ticker[]> getTicker() throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
-        Ticker[] tickers = restTemplate.getForObject(SERVER + "/v1/ticker/allBookTickers", Ticker[].class);
-
-        for(Ticker ticker : tickers) {
-            double ask = Double.parseDouble(ticker.getAskPrice());
-            double bid = Double.parseDouble(ticker.getBidPrice());
-            double perc = (ask / bid) - 1;
-            ticker.setPerc(perc);
-        }
-
-        return new ResponseEntity<>(tickers, HttpStatus.OK);
+        return new ResponseEntity<>(binanceService.getAllTicker(), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/depth/{symbol}", method = RequestMethod.GET)
     public ResponseEntity<Depth> getDepth(@PathVariable String symbol) throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
-        Depth depth = restTemplate.getForObject(SERVER + "/v1/depth?symbol=" + symbol, Depth.class);
-        return new ResponseEntity<>(depth, HttpStatus.OK);
+        return new ResponseEntity<>(binanceService.getDepth(symbol), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)
     public ResponseEntity<BinanceAccount> getAccount(@ModelAttribute("tradeuser") TradeUser user) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
-            throw new BadRequestException("User already has a binance account");
+            throw new BadRequestException("User doesn't have a binance account");
         }
-        BinanceAccount binanceAccount = doSignedGet("/v3/account", null, binance, BinanceAccount.class);
-        return new ResponseEntity<>(binanceAccount, HttpStatus.OK);
+        return new ResponseEntity<>(binanceService.getBinanceAccount(binance), HttpStatus.OK);
     }
 
-    private <T>T doSignedGet(String path, String params, TradeAccount account, Class<T> returnClass) {
-        RestTemplate restTemplate = new RestTemplate();
-        String url = SERVER + path;
-        if(params == null || params.length() == 0) {
-            params = "";
-        } else {
-            params += "&";
+    @RequestMapping(value = "/plan/circle", method = RequestMethod.POST)
+    public ResponseEntity<TradePlan> createCirclePlan(@ModelAttribute("tradeuser") TradeUser user,
+                                                      @Valid @RequestBody CreateCircleRequest request) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
         }
-        params += "recvWindow=5000&timestamp=" + System.currentTimeMillis();
-        url += "?" + params + "&signature=" + getSignature(params, account.getPrivateKeyUnencrypted());
+        TradePlan plan = new TradePlan();
+        plan.setUserId(user.getId());
+        plan.setAccountId(binance.getId());
+        plan.setPlanType(TradePlanType.CIRCLE);
+        plan.setStatus(TradePlanStatus.ACTIVE);
+        this.tradePlanRepository.save(plan);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-MBX-APIKEY", account.getApiKeyUnencrypted());
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET,  entity, returnClass);
-        return response.getBody();
+        TradeCircle circle = new TradeCircle();
+        circle.setPlanId(plan.getId());
+        circle.setStatus(TradePlanStatus.ACTIVE);
+        circle.setStartCurrency(request.startCurrency);
+        circle.setStartAmount(request.startAmount);
+        circle.setRisk(request.risk);
+        circle.setTreshold(request.treshold);
+        circle.setCancelOnTreshold(request.cancelOnTreshold);
+        int stepCount = 0;
+        for(CreateCircleStep createStep: request.steps) {
+            TradeCircleStep step = new TradeCircleStep();
+            step.setStep(++stepCount);
+            step.setStatus(TradeStatus.IDLE);
+            step.setSymbol(createStep.symbol);
+            step.setSide(createStep.side);
+            step.setPrice(createStep.price);
+            circle.addStep(step);
+        }
+        this.tradeCircleRepository.save(circle);
+        this.circleService.startCircle(binance, circle);
+        return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
-    private String getSignature(String message, String secret) {
-        try {
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
-            sha256_HMAC.init(secret_key);
+    @RequestMapping(value = "/plans", method = RequestMethod.GET)
+    public ResponseEntity<List<TradePlan>> getPlans(@ModelAttribute("tradeuser") TradeUser user) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        List<TradePlan> plans = this.tradePlanRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
+        return new ResponseEntity<>(plans, HttpStatus.OK);
+    }
 
-            final byte[] mac_data = sha256_HMAC.doFinal(message.getBytes());
-            String result = "";
-            for (final byte element : mac_data)
-            {
-                result += Integer.toString((element & 0xff) + 0x100, 16).substring(1);
-            }
-            return result;
+    @RequestMapping(value = "/plan/{planId}/circles", method = RequestMethod.GET)
+    public ResponseEntity<List<TradeCircle>> getCircle(@ModelAttribute("tradeuser") TradeUser user,
+                                                 @PathVariable long planId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
         }
-        catch (Exception e){
-            e.printStackTrace();
-            return null;
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
         }
+        List<TradeCircle> circles = this.tradeCircleRepository.findAllByPlanId(planId);
+        return new ResponseEntity<>(circles, HttpStatus.OK);
+    }
+
+    private static final class CreateCircleRequest {
+        @NotNull
+        public String startCurrency;
+        @NotNull
+        public double startAmount;
+        @NotNull
+        public TradeCircleRisk risk;
+        @NotNull
+        public Integer treshold;
+        @NotNull
+        public Boolean cancelOnTreshold;
+        @NotNull
+        public List<CreateCircleStep> steps;
+    }
+
+    private static final class CreateCircleStep {
+        @NotNull
+        public String symbol;
+        @NotNull
+        public String side;
+        @NotNull
+        public double price;
     }
 }
