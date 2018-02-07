@@ -1,6 +1,6 @@
 package io.pacworx.atp.config;
 
-import io.pacworx.atp.autotrade.TradeUser;
+import io.pacworx.atp.autotrade.domain.TradeUser;
 import io.pacworx.atp.user.User;
 import io.pacworx.atp.user.UserRights;
 import org.springframework.web.bind.annotation.ControllerAdvice;
