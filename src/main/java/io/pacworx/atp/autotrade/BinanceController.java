@@ -101,7 +101,7 @@ public class BinanceController {
 
     @RequestMapping(value = "/plan/{planId}/circles", method = RequestMethod.GET)
     public ResponseEntity<List<TradeCircle>> getCircle(@ModelAttribute("tradeuser") TradeUser user,
-                                                 @PathVariable long planId) {
+                                                       @PathVariable long planId) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
@@ -112,6 +112,23 @@ public class BinanceController {
         }
         List<TradeCircle> circles = this.tradeCircleRepository.findAllByPlanId(planId);
         return new ResponseEntity<>(circles, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/plan/{planId}/cancel", method = RequestMethod.GET)
+    public ResponseEntity<PlanWithCirclesResponse> cancelPlan(@ModelAttribute("tradeuser") TradeUser user,
+                                                              @PathVariable long planId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
+        }
+        List<TradeCircle> circles = this.circleService.cancelCircles(binance, plan);
+        plan.setStatus(TradePlanStatus.CANCELLED);
+        this.tradePlanRepository.save(plan);
+        return new ResponseEntity<>(new PlanWithCirclesResponse(plan, circles), HttpStatus.OK);
     }
 
     private static final class CreateCircleRequest {
@@ -136,5 +153,15 @@ public class BinanceController {
         public String side;
         @NotNull
         public double price;
+    }
+
+    private static final class PlanWithCirclesResponse {
+        public TradePlan plan;
+        public List<TradeCircle> circles;
+
+        public PlanWithCirclesResponse(TradePlan plan, List<TradeCircle> circles) {
+            this.plan = plan;
+            this.circles = circles;
+        }
     }
 }

@@ -57,6 +57,25 @@ public class BinanceCircleService {
         tradeOrderObserverRepository.save(observer);
     }
 
+    public List<TradeCircle> cancelCircles(TradeAccount account, TradePlan plan) {
+        List<TradeOrderObserver> orders = this.tradeOrderObserverRepository.getAllByPlanId(plan.getId());
+        for(TradeOrderObserver order: orders) {
+            this.binanceService.cancelOrder(account, order.getSymbol(), order.getOrderId());
+            this.tradeOrderObserverRepository.delete(order.getId());
+        }
+        List<TradeCircle> circles = this.tradeCircleRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
+        for(TradeCircle circle: circles) {
+            circle.setStatus(TradePlanStatus.CANCELLED);
+            for(TradeCircleStep step: circle.getSteps()) {
+                if(step.getStatus() == TradeStatus.ACTIVE) {
+                    step.setStatus(TradeStatus.CANCELLED);
+                }
+            }
+            this.tradeCircleRepository.save(circle);
+        }
+        return circles;
+    }
+
     @Scheduled(fixedDelay = 20000)
     public void checkCircles() {
         List<TradeOrderObserver> ordersToCheck = this.tradeOrderObserverRepository.getAllByPlanType(TradePlanType.CIRCLE);
@@ -97,12 +116,15 @@ public class BinanceCircleService {
         currentStep.setStatus(TradeStatus.DONE);
         currentStep.setFinishDate(ZonedDateTime.now());
         currentStep.setOutCurrency(orderResult.getSymbol().replaceFirst(currentStep.getInCurrency(), ""));
-        double outAmount;
+        double inAmount, outAmount;
         if(orderResult.getSide().equalsIgnoreCase("BUY")) {
+            inAmount = Double.parseDouble(orderResult.getExecutedQty()) * Double.parseDouble(orderResult.getPrice());
             outAmount = Double.parseDouble(orderResult.getExecutedQty());
         } else {
+            inAmount = Double.parseDouble(orderResult.getExecutedQty());
             outAmount = Double.parseDouble(orderResult.getExecutedQty()) * Double.parseDouble(orderResult.getPrice());
         }
+        currentStep.setInAmount(inAmount);
         currentStep.setOutAmount(outAmount);
 
         TradeCircleStep nextStep = circle.getNextStep();
@@ -117,6 +139,7 @@ public class BinanceCircleService {
             this.tradeOrderObserverRepository.save(orderToCheck);
         } else {
             //Circle Finished
+            this.tradeOrderObserverRepository.delete(orderToCheck.getId());
             circle.setStatus(TradePlanStatus.FINISHED);
             circle.setActiveStep(null);
             circle.setActiveOrderId(null);
@@ -147,7 +170,7 @@ public class BinanceCircleService {
         if(result.getSide().equalsIgnoreCase("BUY")) {
             inAmount = Double.parseDouble(result.getOrigQty()) * Double.parseDouble(result.getPrice());
         } else {
-            inAmount = Double.parseDouble(result.getExecutedQty());
+            inAmount = Double.parseDouble(result.getOrigQty());
         }
         step.setInAmount(inAmount);
 

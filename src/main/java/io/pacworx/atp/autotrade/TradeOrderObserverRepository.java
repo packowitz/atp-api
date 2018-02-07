@@ -9,4 +9,6 @@ import java.util.List;
 public interface TradeOrderObserverRepository extends CrudRepository<TradeOrderObserver, Long> {
 
     List<TradeOrderObserver> getAllByPlanType(TradePlanType planType);
+
+    List<TradeOrderObserver> getAllByPlanId(long planId);
 }

@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface TradeCircleRepository extends CrudRepository<TradeCircle, Long> {
     List<TradeCircle> findAllByPlanId(long planId);
+
+    List<TradeCircle> findAllByPlanIdAndStatus(long planId, TradePlanStatus status);
 }

@@ -1,5 +1,5 @@
 package io.pacworx.atp.autotrade;
 
 public enum TradeStatus {
-    IDLE, ACTIVE, DONE;
+    IDLE, ACTIVE, DONE, CANCELLED;
 }
