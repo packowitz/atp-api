@@ -35,7 +35,7 @@ public class BinanceCircleService {
     }
 
     public void startCircle(TradeAccount account, TradeCircle circle) {
-        TradeCircleStep firstStep = circle.getSteps().get(0);
+        TradeStep firstStep = circle.getSteps().get(0);
         firstStep.setInCurrency(circle.getStartCurrency());
         firstStep.setInAmount(circle.getStartAmount());
 
@@ -68,7 +68,7 @@ public class BinanceCircleService {
         List<TradeCircle> circles = this.tradeCircleRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
         for(TradeCircle circle: circles) {
             circle.setStatus(TradePlanStatus.CANCELLED);
-            for(TradeCircleStep step: circle.getSteps()) {
+            for(TradeStep step: circle.getSteps()) {
                 if(step.getStatus() == TradeStatus.ACTIVE) {
                     step.setStatus(TradeStatus.CANCELLED);
                 }
@@ -114,7 +114,7 @@ public class BinanceCircleService {
 
     private void startNextStep(TradeAccount account, TradeOrderObserver orderToCheck, BinanceOrderResult orderResult) {
         TradeCircle circle = this.tradeCircleRepository.findOne(orderToCheck.getSubplanId());
-        TradeCircleStep currentStep = circle.getCurrentStep();
+        TradeStep currentStep = circle.getCurrentStep();
         currentStep.setStatus(TradeStatus.DONE);
         currentStep.setFinishDate(ZonedDateTime.now());
         currentStep.setOutCurrency(orderResult.getSymbol().replaceFirst(currentStep.getInCurrency(), ""));
@@ -129,7 +129,7 @@ public class BinanceCircleService {
         currentStep.setInAmount(inAmount);
         currentStep.setOutAmount(outAmount);
 
-        TradeCircleStep nextStep = circle.getNextStep();
+        TradeStep nextStep = circle.getNextStep();
         if(nextStep != null) {
             nextStep.setInCurrency(currentStep.getOutCurrency());
             nextStep.setInAmount(currentStep.getOutAmount());
@@ -152,7 +152,7 @@ public class BinanceCircleService {
         this.tradeCircleRepository.save(circle);
     }
 
-    private BinanceOrderResult openStepOrder(TradeAccount account, TradeCircle circle, TradeCircleStep step) {
+    private BinanceOrderResult openStepOrder(TradeAccount account, TradeCircle circle, TradeStep step) {
         double amount;
         if(step.getSide().equalsIgnoreCase("BUY")) {
             amount = step.getInAmount() / step.getPrice();

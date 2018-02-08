@@ -1,14 +1,18 @@
 package io.pacworx.atp.autotrade.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.pacworx.atp.autotrade.controller.BinanceController;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static io.pacworx.atp.autotrade.domain.TradeStatus.DONE;
 
 @Entity
-public class TradeCircle {
+public class TradePath {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
@@ -17,21 +21,42 @@ public class TradeCircle {
     private long planId;
     @Enumerated(EnumType.STRING)
     private TradePlanStatus status;
-    private Integer activeStep;
-    private Long activeOrderId;
+    private int maxSteps;
     private String startCurrency;
     private double startAmount;
-    private Double finishAmount;
-    @Enumerated(EnumType.STRING)
-    private TradeCircleRisk risk;
-    private int treshold;
-    private boolean cancelOnTreshold;
+    private String destCurrency;
+    private Double destAmount;
+    private boolean autoRestart;
     private ZonedDateTime startDate;
     private ZonedDateTime finishDate;
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "subplan_id")
     @OrderBy("step asc")
     private List<TradeStep> steps;
+
+    public TradePath() {}
+
+    public TradePath(TradePlan plan, BinanceController.CreatePathRequest request) {
+        this.planId = plan.getId();
+        this.status = TradePlanStatus.ACTIVE;
+        this.maxSteps = request.maxSteps;
+        this.startCurrency = request.startCurrency;
+        this.startAmount = request.startAmount;
+        this.destCurrency = request.destCurrency;
+        this.autoRestart = request.autoRestart;
+        this.startDate = ZonedDateTime.now();
+    }
+
+    public TradePath(TradePath origPath) {
+        this.planId = origPath.planId;
+        this.status = TradePlanStatus.ACTIVE;
+        this.maxSteps = origPath.maxSteps;
+        this.startCurrency = origPath.startCurrency;
+        this.startAmount = origPath.startAmount;
+        this.destCurrency = origPath.destCurrency;
+        this.autoRestart = origPath.autoRestart;
+        this.setStartDate(ZonedDateTime.now());
+    }
 
     public long getId() {
         return id;
@@ -53,20 +78,19 @@ public class TradeCircle {
         this.status = status;
     }
 
-    public Integer getActiveStep() {
-        return activeStep;
+    public int getMaxSteps() {
+        return maxSteps;
     }
 
-    public void setActiveStep(Integer activeStep) {
-        this.activeStep = activeStep;
+    public void setMaxSteps(int maxSteps) {
+        this.maxSteps = maxSteps;
     }
 
-    public Long getActiveOrderId() {
-        return activeOrderId;
-    }
-
-    public void setActiveOrderId(Long activeOrderId) {
-        this.activeOrderId = activeOrderId;
+    public int getStepsCompleted() {
+        if(steps != null) {
+            return (int)steps.stream().filter(t -> t.getStatus() == DONE).count();
+        }
+        return 0;
     }
 
     public String getStartCurrency() {
@@ -85,36 +109,28 @@ public class TradeCircle {
         this.startAmount = startAmount;
     }
 
-    public Double getFinishAmount() {
-        return finishAmount;
+    public String getDestCurrency() {
+        return destCurrency;
     }
 
-    public void setFinishAmount(Double finishAmount) {
-        this.finishAmount = finishAmount;
+    public void setDestCurrency(String destCurrency) {
+        this.destCurrency = destCurrency;
     }
 
-    public TradeCircleRisk getRisk() {
-        return risk;
+    public Double getDestAmount() {
+        return destAmount;
     }
 
-    public void setRisk(TradeCircleRisk risk) {
-        this.risk = risk;
+    public void setDestAmount(Double destAmount) {
+        this.destAmount = destAmount;
     }
 
-    public int getTreshold() {
-        return treshold;
+    public boolean isAutoRestart() {
+        return autoRestart;
     }
 
-    public void setTreshold(int treshold) {
-        this.treshold = treshold;
-    }
-
-    public boolean isCancelOnTreshold() {
-        return cancelOnTreshold;
-    }
-
-    public void setCancelOnTreshold(boolean cancelOnTreshold) {
-        this.cancelOnTreshold = cancelOnTreshold;
+    public void setAutoRestart(boolean autoRestart) {
+        this.autoRestart = autoRestart;
     }
 
     public ZonedDateTime getStartDate() {
@@ -134,16 +150,12 @@ public class TradeCircle {
     }
 
     @JsonIgnore
-    public TradeStep getCurrentStep() {
-        return this.steps.get(activeStep - 1);
-    }
-
-    @JsonIgnore
-    public TradeStep getNextStep() {
-        if(this.steps.size() > activeStep) {
-            return this.steps.get(activeStep);
+    public TradeStep getLatestStep() {
+        if(this.steps == null || this.steps.isEmpty()) {
+            return null;
+        } else {
+            return this.steps.get(this.steps.size() - 1);
         }
-        return null;
     }
 
     public List<TradeStep> getSteps() {

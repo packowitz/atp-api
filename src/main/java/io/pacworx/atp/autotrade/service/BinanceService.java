@@ -1,5 +1,6 @@
 package io.pacworx.atp.autotrade.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.pacworx.atp.autotrade.domain.TradeAccount;
 import io.pacworx.atp.autotrade.domain.TradeOffer;
 import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
@@ -30,6 +31,9 @@ public class BinanceService {
     private final BinanceExchangeInfoService exchangeInfoService;
     private long serverTimeDifference = 0;
 
+    private BinanceTicker[] tickerCache;
+    private long tickerLoadTimestamp;
+
     @Autowired
     public BinanceService(BinanceExchangeInfoService exchangeInfoService) {
         this.exchangeInfoService = exchangeInfoService;
@@ -47,6 +51,9 @@ public class BinanceService {
     }
 
     public BinanceTicker[] getAllTicker() {
+        if(System.currentTimeMillis() - tickerLoadTimestamp < 10000) {
+            return tickerCache;
+        }
         RestTemplate restTemplate = new RestTemplate();
         BinanceTicker[] tickers = restTemplate.getForObject(SERVER + "/v1/ticker/allBookTickers", BinanceTicker[].class);
         for(BinanceTicker ticker : tickers) {
@@ -55,7 +62,9 @@ public class BinanceService {
             double perc = (ask / bid) - 1;
             ticker.setPerc(perc);
         }
-        return tickers;
+        this.tickerCache = tickers;
+        this.tickerLoadTimestamp = System.currentTimeMillis();
+        return tickerCache;
     }
 
     public BinanceDepth getDepth(String symbol) {
@@ -99,12 +108,11 @@ public class BinanceService {
 
         HttpEntity<String> entity = new HttpEntity<>(body, getHeaders(account));
 
-        ResponseEntity<T> response;
+        ResponseEntity<T> response = null;
         try {
             response = restTemplate.exchange(url, HttpMethod.POST,  entity, returnClass);
         } catch (HttpClientErrorException e) {
-            log.error("Post to binance ended with " + e.getStatusCode() + " and body: " + e.getResponseBodyAsString());
-            throw new BadRequestException();
+            handleBinanceError(e);
         }
         return response.getBody();
     }
@@ -115,12 +123,11 @@ public class BinanceService {
 
         HttpEntity<String> entity = new HttpEntity<>(getHeaders(account));
 
-        ResponseEntity<T> response;
+        ResponseEntity<T> response = null;
         try {
             response = restTemplate.exchange(url, HttpMethod.DELETE,  entity, returnClass);
         } catch (HttpClientErrorException e) {
-            log.error("Delete to binance ended with " + e.getStatusCode() + " and body: " + e.getResponseBodyAsString());
-            throw new BadRequestException();
+            handleBinanceError(e);
         }
         return response.getBody();
     }
@@ -131,14 +138,26 @@ public class BinanceService {
 
         HttpEntity<String> entity = new HttpEntity<>(getHeaders(account));
 
-        ResponseEntity<T> response;
+        ResponseEntity<T> response = null;
         try {
             response = restTemplate.exchange(url, HttpMethod.GET,  entity, returnClass);
         } catch (HttpClientErrorException e) {
-            log.error("Get to binance ended with " + e.getStatusCode() + " and body: " + e.getResponseBodyAsString());
-            throw new BadRequestException();
+            handleBinanceError(e);
         }
         return response.getBody();
+    }
+
+    private void handleBinanceError(HttpClientErrorException e) {
+        try {
+            BinanceErrorResponse errorResponse = new ObjectMapper().readValue(e.getResponseBodyAsString(), BinanceErrorResponse.class);
+            log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.code + " and msg " + errorResponse.msg);
+            if(errorResponse.code == -1021) {
+                calcServerTimeDifference();
+            }
+        } catch (Exception ex) {
+            log.error("Not able to parse binance error: " + e.getResponseBodyAsString());
+        }
+        throw new BadRequestException();
     }
 
     private String signParams(TradeAccount account, String params) {
@@ -180,5 +199,10 @@ public class BinanceService {
 
     private static final class ServerTimeResponse {
         public long serverTime;
+    }
+
+    private static final class BinanceErrorResponse {
+        public int code;
+        public String msg;
     }
 }

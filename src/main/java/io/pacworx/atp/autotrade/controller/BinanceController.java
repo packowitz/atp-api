@@ -1,6 +1,7 @@
 package io.pacworx.atp.autotrade.controller;
 
 import io.pacworx.atp.autotrade.service.BinanceCircleService;
+import io.pacworx.atp.autotrade.service.BinancePathService;
 import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.autotrade.domain.*;
 import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -22,6 +25,7 @@ public class BinanceController {
 
     private final BinanceService binanceService;
     private final BinanceCircleService circleService;
+    private final BinancePathService pathService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
     private final TradeCircleRepository tradeCircleRepository;
@@ -29,11 +33,13 @@ public class BinanceController {
     @Autowired
     public BinanceController(BinanceService binanceService,
                              BinanceCircleService circleService,
+                             BinancePathService pathService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
                              TradeCircleRepository tradeCircleRepository) {
         this.binanceService = binanceService;
         this.circleService = circleService;
+        this.pathService = pathService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
         this.tradeCircleRepository = tradeCircleRepository;
@@ -58,6 +64,23 @@ public class BinanceController {
         return new ResponseEntity<>(binanceService.getBinanceAccount(binance), HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/plan/path", method = RequestMethod.POST)
+    public ResponseEntity<TradePlan> createPathPlan(@ModelAttribute("tradeuser") TradeUser user,
+                                                    @Valid @RequestBody CreatePathRequest request) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if (binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = new TradePlan(binance, TradePlanType.PATH);
+        plan.setDescription(request.createDescription());
+
+        TradePath path = new TradePath(plan, request);
+        this.pathService.startPath(binance, path);
+
+        this.tradePlanRepository.save(plan);
+        return new ResponseEntity<>(plan, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/plan/circle", method = RequestMethod.POST)
     public ResponseEntity<TradePlan> createCirclePlan(@ModelAttribute("tradeuser") TradeUser user,
                                                       @Valid @RequestBody CreateCircleRequest request) {
@@ -65,11 +88,8 @@ public class BinanceController {
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = new TradePlan();
-        plan.setUserId(user.getId());
-        plan.setAccountId(binance.getId());
-        plan.setPlanType(TradePlanType.CIRCLE);
-        plan.setStatus(TradePlanStatus.ACTIVE);
+        TradePlan plan = new TradePlan(binance, TradePlanType.CIRCLE);
+        plan.setDescription(request.createDescription());
         this.tradePlanRepository.save(plan);
 
         TradeCircle circle = new TradeCircle();
@@ -82,7 +102,7 @@ public class BinanceController {
         circle.setCancelOnTreshold(request.cancelOnTreshold);
         int stepCount = 0;
         for(CreateCircleStep createStep: request.steps) {
-            TradeCircleStep step = new TradeCircleStep();
+            TradeStep step = new TradeStep();
             step.setStep(++stepCount);
             step.setStatus(TradeStatus.IDLE);
             step.setSymbol(createStep.symbol);
@@ -121,7 +141,7 @@ public class BinanceController {
     }
 
     @RequestMapping(value = "/plan/{planId}/cancel", method = RequestMethod.GET)
-    public ResponseEntity<PlanWithCirclesResponse> cancelPlan(@ModelAttribute("tradeuser") TradeUser user,
+    public ResponseEntity<TradePlan> cancelPlan(@ModelAttribute("tradeuser") TradeUser user,
                                                               @PathVariable long planId) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
@@ -131,10 +151,30 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        List<TradeCircle> circles = this.circleService.cancelCircles(binance, plan);
+        if(plan.getType() == TradePlanType.CIRCLE) {
+            List<TradeCircle> circles = this.circleService.cancelCircles(binance, plan);
+        }
         plan.setStatus(TradePlanStatus.CANCELLED);
         this.tradePlanRepository.save(plan);
-        return new ResponseEntity<>(new PlanWithCirclesResponse(plan, circles), HttpStatus.OK);
+        return new ResponseEntity<>(plan, HttpStatus.OK);
+    }
+
+    public static final class CreatePathRequest {
+        @NotNull
+        public String startCurrency;
+        @NotNull
+        public double startAmount;
+        @NotNull
+        public String destCurrency;
+        @NotNull
+        @Min(2)
+        @Max(6)
+        public int maxSteps;
+        public boolean autoRestart;
+
+        public String createDescription() {
+            return startAmount + " " + startCurrency + " in " + maxSteps + " steps to " + destCurrency;
+        }
     }
 
     private static final class CreateCircleRequest {
@@ -150,6 +190,16 @@ public class BinanceController {
         public Boolean cancelOnTreshold;
         @NotNull
         public List<CreateCircleStep> steps;
+
+        public String createDescription() {
+            String desc = "" + startAmount + " " + startCurrency;
+            String prevCur = startCurrency;
+            for(CreateCircleStep step: steps) {
+                prevCur = step.symbol.replaceFirst(prevCur, "");
+                desc += "->" + prevCur;
+            }
+            return desc;
+        }
     }
 
     private static final class CreateCircleStep {
@@ -159,15 +209,5 @@ public class BinanceController {
         public String side;
         @NotNull
         public double price;
-    }
-
-    private static final class PlanWithCirclesResponse {
-        public TradePlan plan;
-        public List<TradeCircle> circles;
-
-        public PlanWithCirclesResponse(TradePlan plan, List<TradeCircle> circles) {
-            this.plan = plan;
-            this.circles = circles;
-        }
     }
 }

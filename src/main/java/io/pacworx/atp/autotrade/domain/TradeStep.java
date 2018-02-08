@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
-public class TradeCircleStep {
+public class TradeStep {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore

@@ -2,8 +2,24 @@ CREATE TABLE trade_plan (
   id SERIAL,
   user_id BIGINT NOT NULL,
   account_id BIGINT NOT NULL,
-  plan_type VARCHAR(50) NOT NULL,
+  type VARCHAR(50) NOT NULL,
   status VARCHAR(50) NOT NULL,
+  description VARCHAR(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE trade_path (
+  id SERIAL,
+  plan_id BIGINT NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  max_steps INT NOT NULL,
+  start_currency VARCHAR(10) NOT NULL,
+  start_amount DOUBLE PRECISION NOT NULL,
+  dest_currency VARCHAR(10) NOT NULL,
+  dest_amount DOUBLE PRECISION,
+  auto_restart BOOLEAN NOT NULL,
+  start_date TIMESTAMPTZ,
+  finish_date TIMESTAMPTZ,
   PRIMARY KEY (id)
 );
 
@@ -24,9 +40,9 @@ CREATE TABLE trade_circle (
   PRIMARY KEY (id)
 );
 
-CREATE TABLE trade_circle_step (
+CREATE TABLE trade_step (
   id SERIAL,
-  circle_id BIGINT,
+  subplan_id BIGINT,
   step INT NOT NULL,
   order_id BIGINT,
   status VARCHAR(10) NOT NULL ,
