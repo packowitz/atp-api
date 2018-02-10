@@ -75,8 +75,15 @@ public class BinancePathService {
                     startNextStep(account, orderToCheck, orderResult);
                 } if("CANCELED".equals(orderResult.getStatus())) {
                     log.info("Order " + orderResult.getOrderId() + " was cancelled. Deleting observer.");
-                    planRepository.updateStatus(orderToCheck.getPlanId(), TradePlanStatus.CANCELLED.name());
                     orderObserverRepository.delete(orderToCheck.getId());
+                    planRepository.updateStatus(orderToCheck.getPlanId(), TradePlanStatus.CANCELLED.name());
+                    TradePath path = pathRepository.findOne(orderToCheck.getSubplanId());
+                    path.setStatus(TradePlanStatus.CANCELLED);
+                    TradeStep step = path.getLatestStep();
+                    if(step != null) {
+                        step.setStatus(TradeStatus.CANCELLED);
+                    }
+                    pathRepository.save(path);
                 } if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
                     double percExecuted = 100d * Double.parseDouble(orderResult.getExecutedQty()) / Double.parseDouble(orderResult.getOrigQty());
                     if(percExecuted >= orderToCheck.getTreshold()) {
@@ -91,6 +98,7 @@ public class BinancePathService {
                 } if("NEW".equals(orderResult.getStatus())) {
                     long duration = Duration.between(orderToCheck.getCheckDate(), ZonedDateTime.now()).getSeconds();
                     log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is since " + duration + "s in status NEW");
+
                 } else {
                     log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is in status: " + orderResult.getStatus());
                 }

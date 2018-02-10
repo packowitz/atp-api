@@ -29,6 +29,7 @@ public class BinanceController {
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
     private final TradeCircleRepository tradeCircleRepository;
+    private final TradePathRepository tradePathRepository;
 
     @Autowired
     public BinanceController(BinanceService binanceService,
@@ -36,13 +37,15 @@ public class BinanceController {
                              BinancePathService pathService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
-                             TradeCircleRepository tradeCircleRepository) {
+                             TradeCircleRepository tradeCircleRepository,
+                             TradePathRepository tradePathRepository) {
         this.binanceService = binanceService;
         this.circleService = circleService;
         this.pathService = pathService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
         this.tradeCircleRepository = tradeCircleRepository;
+        this.tradePathRepository = tradePathRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
@@ -74,10 +77,10 @@ public class BinanceController {
         TradePlan plan = new TradePlan(binance, TradePlanType.PATH);
         plan.setDescription(request.createDescription());
 
+        this.tradePlanRepository.save(plan);
         TradePath path = new TradePath(plan, request);
         this.pathService.startPath(binance, path);
 
-        this.tradePlanRepository.save(plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
@@ -123,6 +126,21 @@ public class BinanceController {
         }
         List<TradePlan> plans = this.tradePlanRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
         return new ResponseEntity<>(plans, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/plan/{planId}/paths", method = RequestMethod.GET)
+    public ResponseEntity<List<TradePath>> getPaths(@ModelAttribute("tradeuser") TradeUser user,
+                                                    @PathVariable long planId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
+        }
+        List<TradePath> paths = this.tradePathRepository.findAllByPlanId(planId);
+        return new ResponseEntity<>(paths, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan/{planId}/circles", method = RequestMethod.GET)
