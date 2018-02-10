@@ -169,8 +169,10 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        if(plan.getType() == TradePlanType.CIRCLE) {
-            List<TradeCircle> circles = this.circleService.cancelCircles(binance, plan);
+        if(plan.getType() == TradePlanType.PATH) {
+            this.pathService.cancelPaths(binance, plan);
+        } else if(plan.getType() == TradePlanType.CIRCLE) {
+            this.circleService.cancelCircles(binance, plan);
         }
         plan.setStatus(TradePlanStatus.CANCELLED);
         this.tradePlanRepository.save(plan);

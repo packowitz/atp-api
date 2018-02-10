@@ -63,6 +63,23 @@ public class BinancePathService {
         orderObserverRepository.save(observer);
     }
 
+    public void cancelPaths(TradeAccount account, TradePlan plan) {
+        List<TradeOrderObserver> orders = orderObserverRepository.getAllByPlanId(plan.getId());
+        for(TradeOrderObserver order: orders) {
+            binanceService.cancelOrder(account, order.getSymbol(), order.getOrderId());
+            orderObserverRepository.delete(order.getId());
+        }
+        List<TradePath> paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
+        for(TradePath path: paths) {
+            path.setStatus(TradePlanStatus.CANCELLED);
+            TradeStep latestStep = path.getLatestStep();
+            if(latestStep != null) {
+                latestStep.setStatus(TradeStatus.CANCELLED);
+            }
+            pathRepository.save(path);
+        }
+    }
+
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
         List<TradeOrderObserver> ordersToCheck = orderObserverRepository.getAllByPlanType(TradePlanType.PATH);
@@ -211,35 +228,8 @@ public class BinancePathService {
         step.setStartDate(ZonedDateTime.now());
         step.setOrderId(result.getOrderId());
         step.setStatus(TradeStatus.ACTIVE);
-        double inAmount;
-        if(TradeUtil.isBuy(result.getSide())) {
-            inAmount = Double.parseDouble(result.getOrigQty()) * Double.parseDouble(result.getPrice());
-        } else {
-            inAmount = Double.parseDouble(result.getOrigQty());
-        }
-        step.setInAmount(inAmount);
 
         return result;
     }
 
-
-//    public static void main(String args[]) {
-//        BinancePathService service = new BinancePathService(new BinanceService(null), null, null, accountRepository);
-//        TradePath path = new TradePath();
-//        path.setMaxSteps(4);
-//        path.setStartCurrency("BNB");
-//        path.setDestCurrency("BNB");
-//
-//        long start = System.currentTimeMillis();
-//        RouteCalculator.Route route = service.findBestRoute(path);
-//        long end = System.currentTimeMillis();
-//        System.out.println((end - start) + "ms took the route calculation.");
-//
-//        String desc = "Best route: 1 " + route.startCur;
-//        for(RouteCalculator.RouteStep step: route.steps) {
-//            desc += "->" + step.cur;
-//        }
-//        desc += ": " + route.finalAmount;
-//        System.out.println(desc);
-//    }
 }
