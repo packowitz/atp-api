@@ -89,7 +89,7 @@ public class BinancePathService {
                     if(percExecuted >= orderToCheck.getTreshold()) {
                         log.info("Order " + orderResult.getOrderId() + " is filled over " + orderToCheck.getTreshold() + "%. Setting up next path step.");
                         if(orderToCheck.isCancelOnTreshold()) {
-                            this.binanceService.cancelOrder(account, orderToCheck.getSymbol(), orderToCheck.getOrderId());
+                            binanceService.cancelOrder(account, orderToCheck.getSymbol(), orderToCheck.getOrderId());
                         }
                         startNextStep(account, orderToCheck, orderResult);
                     } else {
@@ -97,8 +97,13 @@ public class BinancePathService {
                     }
                 } if("NEW".equals(orderResult.getStatus())) {
                     long duration = Duration.between(orderToCheck.getCheckDate(), ZonedDateTime.now()).getSeconds();
-                    log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is since " + duration + "s in status NEW");
-
+                    if(duration >= 300) {
+                        log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is since " + duration + "s in status NEW. Will cancel step and search for better one.");
+                        binanceService.cancelOrder(account, orderToCheck.getSymbol(), orderToCheck.getOrderId());
+                        restartLatestStep(account, orderToCheck);
+                    } else {
+                        log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is since " + duration + "s in status NEW");
+                    }
                 } else {
                     log.info("Order " + orderResult.getOrderId() + " from path " + orderToCheck.getSubplanId() + " is in status: " + orderResult.getStatus());
                 }
@@ -106,6 +111,26 @@ public class BinancePathService {
                 log.info("Order " + orderToCheck.getOrderId() + " from path " + orderToCheck.getSubplanId() + " failed to check status");
             }
         }
+    }
+
+    private void restartLatestStep(TradeAccount account, TradeOrderObserver orderToCheck) {
+        TradePath path = pathRepository.findOne(orderToCheck.getSubplanId());
+        TradeStep currentStep = path.getLatestStep();
+        currentStep.setStatus(TradeStatus.CANCELLED);
+
+        RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getInCurrency(), path.getDestCurrency());
+        RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
+
+        TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getInCurrency(), currentStep.getInAmount());
+        path.addStep(step);
+
+        BinanceOrderResult result = openStepOrder(account, step);
+
+        orderToCheck.setOrderId(result.getOrderId());
+        orderToCheck.setSymbol(step.getSymbol());
+        orderToCheck.setCheckDate(ZonedDateTime.now());
+        orderObserverRepository.save(orderToCheck);
+        pathRepository.save(path);
     }
 
     private void startNextStep(TradeAccount account, TradeOrderObserver orderToCheck, BinanceOrderResult orderResult) {

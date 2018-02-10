@@ -7,7 +7,6 @@ import javax.persistence.*;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.pacworx.atp.autotrade.domain.TradeStatus.DONE;
 
@@ -31,7 +30,7 @@ public class TradePath {
     private ZonedDateTime finishDate;
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "subplan_id")
-    @OrderBy("step asc")
+    @OrderBy("startDate asc")
     private List<TradeStep> steps;
 
     public TradePath() {}
