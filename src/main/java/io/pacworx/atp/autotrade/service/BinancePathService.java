@@ -72,6 +72,7 @@ public class BinancePathService {
         List<TradePath> paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
         for(TradePath path: paths) {
             path.setStatus(TradePlanStatus.CANCELLED);
+            path.setFinishDate(ZonedDateTime.now());
             TradeStep latestStep = path.getLatestStep();
             if(latestStep != null) {
                 latestStep.setStatus(TradeStatus.CANCELLED);
@@ -96,6 +97,7 @@ public class BinancePathService {
                     planRepository.updateStatus(orderToCheck.getPlanId(), TradePlanStatus.CANCELLED.name());
                     TradePath path = pathRepository.findOne(orderToCheck.getSubplanId());
                     path.setStatus(TradePlanStatus.CANCELLED);
+                    path.setFinishDate(ZonedDateTime.now());
                     TradeStep step = path.getLatestStep();
                     if(step != null) {
                         step.setStatus(TradeStatus.CANCELLED);
