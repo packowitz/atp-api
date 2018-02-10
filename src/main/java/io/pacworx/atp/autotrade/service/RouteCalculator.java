@@ -106,7 +106,11 @@ public class RouteCalculator {
         }
 
         boolean isRouteFinished() {
-            return destCur.equals(lastCur) && steps.size() > 1;
+            if(startCur.equals(destCur)) {
+                return destCur.equals(lastCur) && steps.size() > 1;
+            } else {
+                return destCur.equals(lastCur);
+            }
         }
 
         void calc() {
