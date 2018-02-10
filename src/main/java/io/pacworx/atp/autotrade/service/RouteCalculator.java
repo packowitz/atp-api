@@ -1,7 +1,8 @@
 package io.pacworx.atp.autotrade.service;
 
-import io.pacworx.atp.autotrade.domain.TradePath;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RouteCalculator {
+    private static final Logger log = LogManager.getLogger();
+
     int maxSteps;
     String startCur;
     String destCur;
@@ -23,6 +26,7 @@ public class RouteCalculator {
     }
 
     public Route searchBestRoute() {
+        log.info("Searching best route from " + startCur + " to " + destCur + " in " + maxSteps + " steps");
         Route route = new Route(startCur, destCur);
         nextSteps(route);
         return bestRoute;
