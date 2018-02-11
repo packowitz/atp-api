@@ -8,7 +8,7 @@ import java.util.List;
 @Repository
 public interface TradePathRepository extends CrudRepository<TradePath, Long> {
 
-    List<TradePath> findAllByPlanId(long planId);
+    List<TradePath> findAllByPlanIdOrderByStartDateDesc(long planId);
 
     List<TradePath> findAllByPlanIdAndStatus(long planId, TradePlanStatus status);
 }

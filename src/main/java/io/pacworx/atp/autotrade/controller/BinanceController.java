@@ -139,7 +139,7 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        List<TradePath> paths = this.tradePathRepository.findAllByPlanId(planId);
+        List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
         return new ResponseEntity<>(paths, HttpStatus.OK);
     }
 
