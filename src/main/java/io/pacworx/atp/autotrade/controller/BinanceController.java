@@ -9,6 +9,8 @@ import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
 import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.exception.BadRequestException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/trade/app/binance")
 public class BinanceController {
+    private static final Logger log = LogManager.getLogger();
 
     private final BinanceService binanceService;
     private final BinanceCircleService circleService;
@@ -173,6 +176,7 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
+        log.info("User " + user.getId() + " manually cancelled plan " + planId);
         if(plan.getType() == TradePlanType.PATH) {
             this.pathService.cancelPaths(binance, plan);
         } else if(plan.getType() == TradePlanType.CIRCLE) {

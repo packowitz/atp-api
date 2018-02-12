@@ -44,7 +44,8 @@ public class BinanceDepthService {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
         double treshold = 100d / depth.getAsks().size();
         for(TradeOffer ask: depth.getAsks()) {
-            if(treshold < 100d * ask.getQuantity() / depth.getBidVolume()) {
+            double perc = 100d * ask.getQuantity() / depth.getAskVolume();
+            if(perc > treshold) {
                 return ask.getPrice() - exchangeInfoService.getInfo(symbol).getPriceStepSize();
             }
         }

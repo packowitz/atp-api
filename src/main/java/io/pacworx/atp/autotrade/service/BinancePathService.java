@@ -210,6 +210,7 @@ public class BinancePathService {
             path.setStatus(TradePlanStatus.FINISHED);
             path.setFinishDate(ZonedDateTime.now());
             path.setDestAmount(currentStep.getOutAmount());
+            pathRepository.save(path);
 
             if(path.isAutoRestart()) {
                 startPath(account, new TradePath(path));
@@ -217,6 +218,7 @@ public class BinancePathService {
                 planRepository.updateStatus(path.getPlanId(), TradePlanStatus.FINISHED.name());
             }
         } else {
+            pathRepository.save(path);
             RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getOutCurrency(), path.getDestCurrency());
             RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
@@ -230,7 +232,6 @@ public class BinancePathService {
             orderToCheck.setCheckDate(ZonedDateTime.now());
             orderObserverRepository.save(orderToCheck);
         }
-        pathRepository.save(path);
     }
 
     private TradeStep createTradeStep(RouteCalculator.RouteStep routeStep, int stepNumber, String inCurrency, double inAmount) {
