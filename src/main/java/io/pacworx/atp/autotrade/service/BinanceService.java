@@ -67,11 +67,6 @@ public class BinanceService {
         return tickerCache;
     }
 
-    public BinanceDepth getDepth(String symbol) {
-        RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.getForObject(SERVER + "/v1/depth?symbol=" + symbol, BinanceDepth.class);
-    }
-
     public BinanceAccount getBinanceAccount(TradeAccount account) {
         return doSignedGet("/v3/account", null, account, BinanceAccount.class);
     }

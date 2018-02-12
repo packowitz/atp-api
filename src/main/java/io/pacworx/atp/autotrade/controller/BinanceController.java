@@ -1,6 +1,7 @@
 package io.pacworx.atp.autotrade.controller;
 
 import io.pacworx.atp.autotrade.service.BinanceCircleService;
+import io.pacworx.atp.autotrade.service.BinanceDepthService;
 import io.pacworx.atp.autotrade.service.BinancePathService;
 import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.autotrade.domain.*;
@@ -26,6 +27,7 @@ public class BinanceController {
     private final BinanceService binanceService;
     private final BinanceCircleService circleService;
     private final BinancePathService pathService;
+    private final BinanceDepthService depthService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
     private final TradeCircleRepository tradeCircleRepository;
@@ -35,6 +37,7 @@ public class BinanceController {
     public BinanceController(BinanceService binanceService,
                              BinanceCircleService circleService,
                              BinancePathService pathService,
+                             BinanceDepthService depthService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
                              TradeCircleRepository tradeCircleRepository,
@@ -42,6 +45,7 @@ public class BinanceController {
         this.binanceService = binanceService;
         this.circleService = circleService;
         this.pathService = pathService;
+        this.depthService = depthService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
         this.tradeCircleRepository = tradeCircleRepository;
@@ -55,7 +59,7 @@ public class BinanceController {
 
     @RequestMapping(value = "/depth/{symbol}", method = RequestMethod.GET)
     public ResponseEntity<BinanceDepth> getDepth(@PathVariable String symbol) throws Exception {
-        return new ResponseEntity<>(binanceService.getDepth(symbol), HttpStatus.OK);
+        return new ResponseEntity<>(depthService.getDepth(symbol), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)

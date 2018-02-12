@@ -1,17 +1,12 @@
 package io.pacworx.atp.autotrade.service;
 
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class RouteCalculator {
-    private static final Logger log = LogManager.getLogger();
-
     int maxSteps;
     String startCur;
     String destCur;
@@ -26,7 +21,6 @@ public class RouteCalculator {
     }
 
     public Route searchBestRoute() {
-        log.info("Searching best route from " + startCur + " to " + destCur + " in " + maxSteps + " steps");
         Route route = new Route(startCur, destCur);
         nextSteps(route);
         return bestRoute;
@@ -128,7 +122,7 @@ public class RouteCalculator {
     public static final class RouteStep {
         boolean isBuy;
         BinanceTicker ticker;
-        double tradePerc = 50;
+        double tradePerc = 0.5;
         double tradePoint;
         String cur;
         double amount;
@@ -136,18 +130,18 @@ public class RouteCalculator {
         public RouteStep(boolean isBuy, BinanceTicker ticker) {
             this.isBuy = isBuy;
             this.ticker = ticker;
-            this.optimizeTradePerc();
+            //this.optimizeTradePerc();
         }
 
-        private void optimizeTradePerc() {
-            if(ticker.getPerc() < 0.002) {
-                tradePerc = 0;
-            } else if(ticker.getPerc() < 0.005) {
-                tradePerc = 0.5;
-            } else {
-                tradePerc = 0.9;
-            }
-        }
+//        private void optimizeTradePerc() {
+//            if(ticker.getPerc() < 0.002) {
+//                tradePerc = 0;
+//            } else if(ticker.getPerc() < 0.005) {
+//                tradePerc = 0.5;
+//            } else {
+//                tradePerc = 0.9;
+//            }
+//        }
 
         void calc(String inCur, double inAmount) {
             cur = TradeUtil.otherCur(ticker.getSymbol(), inCur);

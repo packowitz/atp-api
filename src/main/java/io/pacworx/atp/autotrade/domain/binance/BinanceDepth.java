@@ -10,7 +10,9 @@ import java.util.List;
 public class BinanceDepth {
     private long lastUpdateId;
     private List<TradeOffer> bids;
+    private double bidVolume = 0;
     private List<TradeOffer> asks;
+    private double askVolume = 0;
 
     public long getLastUpdateId() {
         return lastUpdateId;
@@ -33,6 +35,11 @@ public class BinanceDepth {
             bids = new ArrayList<>();
         }
         bids.add(bid);
+        bidVolume += bid.getQuantity();
+    }
+
+    public double getBidVolume() {
+        return bidVolume;
     }
 
     public List<TradeOffer> getAsks() {
@@ -48,5 +55,10 @@ public class BinanceDepth {
             asks = new ArrayList<>();
         }
         asks.add(ask);
+        askVolume += ask.getQuantity();
+    }
+
+    public double getAskVolume() {
+        return askVolume;
     }
 }
