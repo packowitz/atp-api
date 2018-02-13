@@ -232,6 +232,7 @@ public class BinancePathService {
             orderToCheck.setCheckDate(ZonedDateTime.now());
             orderObserverRepository.save(orderToCheck);
         }
+        pathRepository.save(path);
     }
 
     private TradeStep createTradeStep(RouteCalculator.RouteStep routeStep, int stepNumber, String inCurrency, double inAmount) {
