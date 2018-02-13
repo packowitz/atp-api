@@ -85,6 +85,11 @@ public class BinancePathService {
         }
     }
 
+    public void deletePaths(TradePlan plan) {
+        orderObserverRepository.deleteAllByPlanId(plan.getId());
+        pathRepository.deleteAllByPlanId(plan.getId());
+    }
+
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
         List<TradeOrderObserver> ordersToCheck = orderObserverRepository.getAllByPlanType(TradePlanType.PATH);

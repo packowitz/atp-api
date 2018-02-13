@@ -150,6 +150,27 @@ public class BinanceController {
         return new ResponseEntity<>(paths, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/plan/{planId}/autorepeat/{autorepeat}", method = RequestMethod.PUT)
+    public ResponseEntity<List<TradePath>> changePathAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
+                                                                @PathVariable long planId,
+                                                                @PathVariable boolean autorepeat) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
+        }
+        List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
+        if(!paths.isEmpty()) {
+            TradePath latestPath = paths.get(0);
+            latestPath.setAutoRestart(autorepeat);
+            this.tradePathRepository.save(latestPath);
+        }
+        return new ResponseEntity<>(paths, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/plan/{planId}/circles", method = RequestMethod.GET)
     public ResponseEntity<List<TradeCircle>> getCircle(@ModelAttribute("tradeuser") TradeUser user,
                                                        @PathVariable long planId) {
@@ -184,6 +205,30 @@ public class BinanceController {
         }
         plan.setStatus(TradePlanStatus.CANCELLED);
         this.tradePlanRepository.save(plan);
+        return new ResponseEntity<>(plan, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/plan/{planId}", method = RequestMethod.DELETE)
+    public ResponseEntity<TradePlan> deletePlan(@ModelAttribute("tradeuser") TradeUser user,
+                                                @PathVariable long planId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan " + planId);
+        }
+        if(plan.getStatus() == TradePlanStatus.ACTIVE) {
+            throw new BadRequestException("Cannot delete plan " + planId + " because it is active.");
+        }
+        log.info("User " + user.getId() + " manually deleted plan " + planId);
+        if(plan.getType() == TradePlanType.PATH) {
+            this.pathService.deletePaths(plan);
+        } else if(plan.getType() == TradePlanType.CIRCLE) {
+            this.circleService.deleteCircles(plan);
+        }
+        tradePlanRepository.delete(plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 

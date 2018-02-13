@@ -78,6 +78,11 @@ public class BinanceCircleService {
         return circles;
     }
 
+    public void deleteCircles(TradePlan plan) {
+        tradeOrderObserverRepository.deleteAllByPlanId(plan.getId());
+        tradeCircleRepository.deleteAllByPlanId(plan.getId());
+    }
+
     @Scheduled(fixedDelay = 20000)
     public void checkCircles() {
         List<TradeOrderObserver> ordersToCheck = this.tradeOrderObserverRepository.getAllByPlanType(TradePlanType.CIRCLE);
