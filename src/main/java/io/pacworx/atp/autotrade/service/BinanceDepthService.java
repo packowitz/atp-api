@@ -7,11 +7,16 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Component
 public class BinanceDepthService {
 
     private static final Logger log = LogManager.getLogger();
     private static final String SERVER = "https://api.binance.com/api";
+
+    private static final double thresholdPerc = 0.75;
 
     private final BinanceExchangeInfoService exchangeInfoService;
 
@@ -31,25 +36,44 @@ public class BinanceDepthService {
 
     public double getGoodBuyPoint(String symbol) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
-        double treshold = 100d / depth.getBids().size();
-        for(TradeOffer bid: depth.getBids()) {
-            if(treshold < 100d * bid.getQuantity() / depth.getBidVolume()) {
-                return bid.getPrice() + exchangeInfoService.getInfo(symbol).getPriceStepSize();
+        double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
+        double threshold = thresholdPerc / depth.getBids().size();
+        List<TradeOffer> overTreshold = depth.getBids().stream().filter(
+                t -> (t.getQuantity() / depth.getBidVolume()) > threshold).collect(Collectors.toList());
+        double priceDiffToHighest = depth.getBids().get(0).getPrice() / overTreshold.get(0).getPrice();
+        // if first offer over threshhold is 0.3% away from highest bid use the first offer over threshold
+        if(priceDiffToHighest > 1.003) {
+            return overTreshold.get(0).getPrice() + priceStep;
+        }
+        if(overTreshold.size() > 1) {
+            //check if 2nd offer is worth to go for
+            double priceDiff = overTreshold.get(0).getPrice() / overTreshold.get(1).getPrice();
+            if (priceDiff > 1.01) {
+                return overTreshold.get(1).getPrice() + priceStep;
             }
         }
-        throw new RuntimeException("Found no good buy point for " + symbol);
+        return overTreshold.get(0).getPrice() + priceStep;
     }
 
     public double getGoodSellPoint(String symbol) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
-        double treshold = 100d / depth.getAsks().size();
-        for(TradeOffer ask: depth.getAsks()) {
-            double perc = 100d * ask.getQuantity() / depth.getAskVolume();
-            if(perc > treshold) {
-                return ask.getPrice() - exchangeInfoService.getInfo(symbol).getPriceStepSize();
+        double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
+        double threshold = thresholdPerc / depth.getAsks().size();
+        List<TradeOffer> overTreshold = depth.getAsks().stream().filter(
+                t -> (t.getQuantity() / depth.getAskVolume()) > threshold).collect(Collectors.toList());
+        double priceDiffToLowest = overTreshold.get(0).getPrice() / depth.getAsks().get(0).getPrice();
+        // if first offer over threshhold is 0.3% away from lowest ask use the first offer over threshold
+        if(priceDiffToLowest > 1.003) {
+            return overTreshold.get(0).getPrice() - priceStep;
+        }
+        if(overTreshold.size() > 1) {
+            //check if 2nd offer is worth to go for
+            double priceDiff = overTreshold.get(1).getPrice() / overTreshold.get(0).getPrice();
+            if (priceDiff > 1.01) {
+                return overTreshold.get(1).getPrice() - priceStep;
             }
         }
-        throw new RuntimeException("Found no good sell point for " + symbol);
+        return overTreshold.get(0).getPrice() - priceStep;
     }
 
     public enum DepthLimit {
@@ -64,5 +88,15 @@ public class BinanceDepthService {
         public int getLimit() {
             return limit;
         }
+    }
+
+    public static void main(String[] args) {
+        BinanceExchangeInfoService exchange = new BinanceExchangeInfoService();
+        exchange.loadInfos();
+        BinanceDepthService service = new BinanceDepthService(exchange);
+
+        String symbol = "BLZBNB";
+        System.out.printf("Good buy: %.8f\n", service.getGoodBuyPoint(symbol));
+        System.out.printf("Good sell: %.8f\n", service.getGoodSellPoint(symbol));
     }
 }
