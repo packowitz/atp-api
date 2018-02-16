@@ -90,13 +90,13 @@ public class BinanceDepthService {
         }
     }
 
-    public static void main(String[] args) {
-        BinanceExchangeInfoService exchange = new BinanceExchangeInfoService();
-        exchange.loadInfos();
-        BinanceDepthService service = new BinanceDepthService(exchange);
-
-        String symbol = "BLZBNB";
-        System.out.printf("Good buy: %.8f\n", service.getGoodBuyPoint(symbol));
-        System.out.printf("Good sell: %.8f\n", service.getGoodSellPoint(symbol));
-    }
+//    public static void main(String[] args) {
+//        BinanceExchangeInfoService exchange = new BinanceExchangeInfoService();
+//        exchange.loadInfos();
+//        BinanceDepthService service = new BinanceDepthService(exchange);
+//
+//        String symbol = "BLZBNB";
+//        System.out.printf("Good buy: %.8f\n", service.getGoodBuyPoint(symbol));
+//        System.out.printf("Good sell: %.8f\n", service.getGoodSellPoint(symbol));
+//    }
 }
