@@ -3,10 +3,7 @@ package io.pacworx.atp.autotrade.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.pacworx.atp.autotrade.domain.TradeAccount;
 import io.pacworx.atp.autotrade.domain.TradeOffer;
-import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
-import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
-import io.pacworx.atp.autotrade.domain.binance.BinanceOrderResult;
-import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
+import io.pacworx.atp.autotrade.domain.binance.*;
 import io.pacworx.atp.exception.BadRequestException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,6 +62,11 @@ public class BinanceService {
         this.tickerCache = tickers;
         this.tickerLoadTimestamp = System.currentTimeMillis();
         return tickerCache;
+    }
+
+    public BinanceTrade[] getLastTrades(String symbol) {
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForObject(SERVER + "/v1/trades?symbol=" + symbol, BinanceTrade[].class);
     }
 
     public BinanceAccount getBinanceAccount(TradeAccount account) {

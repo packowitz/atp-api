@@ -1,5 +1,6 @@
 package io.pacworx.atp.autotrade.controller;
 
+import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
 import io.pacworx.atp.autotrade.service.BinanceCircleService;
 import io.pacworx.atp.autotrade.service.BinanceDepthService;
 import io.pacworx.atp.autotrade.service.BinancePathService;
@@ -63,6 +64,11 @@ public class BinanceController {
     @RequestMapping(value = "/depth/{symbol}", method = RequestMethod.GET)
     public ResponseEntity<BinanceDepth> getDepth(@PathVariable String symbol) throws Exception {
         return new ResponseEntity<>(depthService.getDepth(symbol), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/trades/{symbol}", method = RequestMethod.GET)
+    public ResponseEntity<BinanceTrade[]> getTrades(@PathVariable String symbol) throws Exception {
+        return new ResponseEntity<>(binanceService.getLastTrades(symbol), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)
