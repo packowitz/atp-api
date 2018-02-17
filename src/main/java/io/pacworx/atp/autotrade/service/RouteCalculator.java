@@ -122,7 +122,7 @@ public class RouteCalculator {
     public static final class RouteStep {
         boolean isBuy;
         BinanceTicker ticker;
-        double tradePerc = 0.5;
+        double tradePerc = 1;
         double tradePoint;
         String cur;
         double amount;
