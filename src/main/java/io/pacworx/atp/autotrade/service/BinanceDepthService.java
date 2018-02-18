@@ -34,12 +34,12 @@ public class BinanceDepthService {
         return restTemplate.getForObject(SERVER + "/v1/depth?symbol=" + symbol + "&limit=" + limit.getLimit(), BinanceDepth.class);
     }
 
-    public double getGoodBuyPoint(String symbol) {
+    public double getGoodBuyPoint(String symbol, double ignoreBid) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
         double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
         double threshold = thresholdPerc / depth.getBids().size();
         List<TradeOffer> overTreshold = depth.getBids().stream().filter(
-                t -> (t.getQuantity() / depth.getBidVolume()) > threshold).collect(Collectors.toList());
+                t -> t.getPrice() != ignoreBid && (t.getQuantity() / depth.getBidVolume()) > threshold).collect(Collectors.toList());
         double priceDiffToHighest = depth.getBids().get(0).getPrice() / overTreshold.get(0).getPrice();
         // if first offer over threshhold is 0.3% away from highest bid use the first offer over threshold
         if(priceDiffToHighest > 1.003) {
@@ -55,12 +55,12 @@ public class BinanceDepthService {
         return overTreshold.get(0).getPrice() + priceStep;
     }
 
-    public double getGoodSellPoint(String symbol) {
+    public double getGoodSellPoint(String symbol, double ignoreAsk) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
         double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
         double threshold = thresholdPerc / depth.getAsks().size();
         List<TradeOffer> overTreshold = depth.getAsks().stream().filter(
-                t -> (t.getQuantity() / depth.getAskVolume()) > threshold).collect(Collectors.toList());
+                t -> t.getPrice() != ignoreAsk && (t.getQuantity() / depth.getAskVolume()) > threshold).collect(Collectors.toList());
         double priceDiffToLowest = overTreshold.get(0).getPrice() / depth.getAsks().get(0).getPrice();
         // if first offer over threshhold is 0.3% away from lowest ask use the first offer over threshold
         if(priceDiffToLowest > 1.003) {

@@ -171,9 +171,9 @@ public class BinancePathService {
     private void checkPrice(TradeAccount account, TradeOrderObserver orderToCheck, BinanceOrderResult orderResult) {
         double price;
         if(TradeUtil.isBuy(orderResult.getSide())) {
-            price = depthService.getGoodBuyPoint(orderToCheck.getSymbol());
+            price = depthService.getGoodBuyPoint(orderToCheck.getSymbol(), Double.parseDouble(orderResult.getPrice()));
         } else {
-            price = depthService.getGoodSellPoint(orderToCheck.getSymbol());
+            price = depthService.getGoodSellPoint(orderToCheck.getSymbol(), Double.parseDouble(orderResult.getPrice()));
         }
         if(price != Double.parseDouble(orderResult.getPrice())) {
             log.info("Order " + orderToCheck.getOrderId() + " best trade price has changed from " + orderResult.getPrice() + " to " + String.format("%.8f", price) + ". Will adjust it.");
@@ -247,10 +247,10 @@ public class BinancePathService {
         step.setSymbol(routeStep.ticker.getSymbol());
         if(routeStep.isBuy) {
             step.setSide("BUY");
-            step.setPrice(depthService.getGoodBuyPoint(step.getSymbol()));
+            step.setPrice(depthService.getGoodBuyPoint(step.getSymbol(), 0d));
         } else {
             step.setSide("SELL");
-            step.setPrice(depthService.getGoodSellPoint(step.getSymbol()));
+            step.setPrice(depthService.getGoodSellPoint(step.getSymbol(), 0d));
         }
         step.setPrice(routeStep.tradePoint);
         step.setInCurrency(inCurrency);
