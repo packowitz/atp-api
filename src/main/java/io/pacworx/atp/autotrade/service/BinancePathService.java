@@ -48,7 +48,7 @@ public class BinancePathService {
         TradeStep firstStep = createTradeStep(routeFirstStep, 1, path.getStartCurrency(), path.getStartAmount());
         path.addStep(firstStep);
 
-        BinanceOrderResult result = openStepOrder(account, firstStep);
+        BinanceOrderResult result = binanceService.openStepOrder(account, firstStep);
 
         pathRepository.save(path);
 
@@ -156,7 +156,7 @@ public class BinancePathService {
             TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getInCurrency(), currentStep.getInAmount());
             path.addStep(step);
 
-            BinanceOrderResult result = openStepOrder(account, step);
+            BinanceOrderResult result = binanceService.openStepOrder(account, step);
 
             orderToCheck.setOrderId(result.getOrderId());
             orderToCheck.setSymbol(step.getSymbol());
@@ -183,7 +183,7 @@ public class BinancePathService {
             TradeStep currentStep = path.getLatestStep();
             currentStep.setPrice(price);
 
-            BinanceOrderResult result = openStepOrder(account, currentStep);
+            BinanceOrderResult result = binanceService.openStepOrder(account, currentStep);
 
             orderToCheck.setOrderId(result.getOrderId());
 
@@ -230,7 +230,7 @@ public class BinancePathService {
             TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getOutCurrency(), currentStep.getOutAmount());
             path.addStep(step);
 
-            BinanceOrderResult result = openStepOrder(account, step);
+            BinanceOrderResult result = binanceService.openStepOrder(account, step);
 
             orderToCheck.setOrderId(result.getOrderId());
             orderToCheck.setSymbol(step.getSymbol());
@@ -252,7 +252,6 @@ public class BinancePathService {
             step.setSide("SELL");
             step.setPrice(depthService.getGoodSellPoint(step.getSymbol(), 0d));
         }
-        step.setPrice(routeStep.tradePoint);
         step.setInCurrency(inCurrency);
         step.setInAmount(inAmount);
         return step;
@@ -262,26 +261,6 @@ public class BinancePathService {
         List<BinanceTicker> tickers = Arrays.asList(binanceService.getAllTicker());
         RouteCalculator calculator = new RouteCalculator(maxSteps, startCur, destCur, tickers);
         return calculator.searchBestRoute();
-    }
-
-    private BinanceOrderResult openStepOrder(TradeAccount account, TradeStep step) {
-        double amount;
-        if(TradeUtil.isBuy(step.getSide())) {
-            amount = step.getInAmount() / step.getPrice();
-        } else {
-            amount = step.getInAmount();
-        }
-
-        TradeOffer offer = new TradeOffer(step.getSymbol(), step.getSide().toUpperCase(), step.getPrice(), amount);
-        BinanceOrderResult result = binanceService.openLimitOrder(account, offer);
-
-        if(step.getStartDate() == null) {
-            step.setStartDate(ZonedDateTime.now());
-        }
-        step.setOrderId(result.getOrderId());
-        step.setStatus(TradeStatus.ACTIVE);
-
-        return result;
     }
 
 }

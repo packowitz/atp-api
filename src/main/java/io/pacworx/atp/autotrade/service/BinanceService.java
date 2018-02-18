@@ -3,6 +3,8 @@ package io.pacworx.atp.autotrade.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.pacworx.atp.autotrade.domain.TradeAccount;
 import io.pacworx.atp.autotrade.domain.TradeOffer;
+import io.pacworx.atp.autotrade.domain.TradeStatus;
+import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.*;
 import io.pacworx.atp.exception.BadRequestException;
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.time.ZonedDateTime;
 
 @Component
 public class BinanceService {
@@ -71,6 +74,26 @@ public class BinanceService {
 
     public BinanceAccount getBinanceAccount(TradeAccount account) {
         return doSignedGet("/v3/account", null, account, BinanceAccount.class);
+    }
+
+    public BinanceOrderResult openStepOrder(TradeAccount account, TradeStep step) {
+        double amount;
+        if(TradeUtil.isBuy(step.getSide())) {
+            amount = step.getInAmount() / step.getPrice();
+        } else {
+            amount = step.getInAmount();
+        }
+
+        TradeOffer offer = new TradeOffer(step.getSymbol(), step.getSide().toUpperCase(), step.getPrice(), amount);
+        BinanceOrderResult result = openLimitOrder(account, offer);
+
+        if(step.getStartDate() == null) {
+            step.setStartDate(ZonedDateTime.now());
+        }
+        step.setOrderId(result.getOrderId());
+        step.setStatus(TradeStatus.ACTIVE);
+
+        return result;
     }
 
     public BinanceOrderResult openLimitOrder(TradeAccount account, TradeOffer offer) {
