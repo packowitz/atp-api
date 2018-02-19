@@ -2,9 +2,6 @@ package io.pacworx.atp.autotrade.domain.binance;
 
 import java.math.BigDecimal;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -245,29 +242,6 @@ public class BinanceTickerStatistics implements Comparable<BinanceTickerStatisti
 
 	public void setSymbol(String symbol) {
 		this.symbol = symbol;
-	}
-
-	@Override
-	public String toString() {
-		return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-				.append("symbol", symbol)
-				.append("priceChange", priceChange)
-				.append("priceChangePercent", priceChangePercent)
-				.append("weightedAvgPrice", weightedAvgPrice)
-				.append("prevClosePrice", prevClosePrice)
-				.append("lastPrice", lastPrice)
-				.append("bidPrice", bidPrice)
-				.append("askPrice", askPrice)
-				.append("openPrice", openPrice)
-				.append("highPrice", highPrice)
-				.append("lowPrice", lowPrice)
-				.append("volume", volume)
-				.append("quoteVolume", quoteVolume)
-				.append("openTime", openTime)
-				.append("closeTime", closeTime)
-				.append("firstId", firstId)
-				.append("lastId", lastId)
-				.append("count", count).toString();
 	}
 
 	@Override
