@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 
 @Component
 public class BinanceService {
@@ -33,6 +34,9 @@ public class BinanceService {
 
     private BinanceTicker[] tickerCache;
     private long tickerLoadTimestamp;
+    
+    private BinanceTickerStatistics[] statsCache;
+    private long statsLoadTimestamp;
 
     @Autowired
     public BinanceService(BinanceExchangeInfoService exchangeInfoService) {
@@ -62,9 +66,31 @@ public class BinanceService {
             double perc = (ask / bid) - 1;
             ticker.setPerc(perc);
         }
+        
+        Arrays.sort(tickers);
+		BinanceTickerStatistics[] stats = get24HrPriceStatistics();
+		if (stats.length == tickers.length) {
+			for (int i = 0; i < tickers.length; i++) {
+				if (tickers[i].getSymbol().equals(stats[i].getSymbol())) {
+					tickers[i].setStats24h(stats[i]);
+				}
+			}
+		}        
         this.tickerCache = tickers;
         this.tickerLoadTimestamp = System.currentTimeMillis();
         return tickerCache;
+    }
+    
+    public BinanceTickerStatistics[] get24HrPriceStatistics(){
+    	if(System.currentTimeMillis() - statsLoadTimestamp < 900000) { // every 15 minutes
+            return statsCache;
+        }
+    	RestTemplate restTemplate = new RestTemplate();
+    	BinanceTickerStatistics[] stats  = restTemplate.getForObject(SERVER + "/v1/ticker/24hr", BinanceTickerStatistics[].class);
+    	Arrays.sort(stats);
+    	this.statsCache = stats;
+    	this.statsLoadTimestamp = System.currentTimeMillis();    	
+    	return statsCache;
     }
 
     public BinanceTrade[] getLastTrades(String symbol) {

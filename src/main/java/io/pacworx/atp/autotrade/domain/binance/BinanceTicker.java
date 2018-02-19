@@ -1,14 +1,15 @@
 package io.pacworx.atp.autotrade.domain.binance;
 
-public class BinanceTicker {
+public class BinanceTicker implements Comparable<BinanceTicker> {
     private String symbol;
     private String bidPrice;
     private String bidQty;
     private String askPrice;
     private String askQty;
     private Double perc;
+    private BinanceTickerStatistics stats24h;
 
-    public String getSymbol() {
+ 	public String getSymbol() {
         return symbol;
     }
 
@@ -55,4 +56,17 @@ public class BinanceTicker {
     public void setPerc(Double perc) {
         this.perc = perc;
     }
+    
+    public BinanceTickerStatistics getStats24h() {
+ 		return stats24h;
+ 	}
+
+ 	public void setStats24h(BinanceTickerStatistics stats24h) {
+ 		this.stats24h = stats24h;
+ 	}
+
+	@Override
+	public int compareTo(BinanceTicker o) {
+		return this.getSymbol().compareTo(o.getSymbol());
+	}
 }
