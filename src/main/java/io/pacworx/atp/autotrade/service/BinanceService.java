@@ -103,11 +103,9 @@ public class BinanceService {
     }
 
     public BinanceOrderResult openStepOrder(TradeAccount account, TradeStep step) {
-        double amount;
+        double amount = step.getInAmount() - step.getInFilled();
         if(TradeUtil.isBuy(step.getSide())) {
-            amount = step.getInAmount() / step.getPrice();
-        } else {
-            amount = step.getInAmount();
+            amount /= step.getPrice();
         }
 
         TradeOffer offer = new TradeOffer(step.getSymbol(), step.getSide().toUpperCase(), step.getPrice(), amount);
@@ -117,8 +115,21 @@ public class BinanceService {
             step.setStartDate(ZonedDateTime.now());
         }
         step.setOrderId(result.getOrderId());
+        step.setOrderFilled(0d);
+        step.setOrderAltcoinQty(Double.parseDouble(result.getOrigQty()));
+        step.setOrderBasecoinQty(step.getOrderAltcoinQty() * Double.parseDouble(result.getPrice()));
         step.setStatus(TradeStatus.ACTIVE);
 
+        String logMsg = "Opened order " + result.getOrderId() + " for plan #" + step.getPlanId() + "-" + step.getStep() + ": ";
+        if(TradeUtil.isBuy(result.getSide())) {
+            logMsg += "BUY " + step.getOrderAltcoinQty() + " " + step.getOutCurrency() + " for ";
+            logMsg += step.getOrderBasecoinQty() + " " + step.getInCurrency();
+        } else {
+            logMsg += "SELL " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getInCurrency() + " to ";
+            logMsg += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getOutCurrency();
+        }
+        logMsg += " at " + String.format("%.8f", step.getPrice());
+        log.info(logMsg);
         return result;
     }
 
@@ -145,6 +156,12 @@ public class BinanceService {
         params += "&orderId=" + orderId;
         log.info("Cancel order " + orderId + " (" + symbol + ")");
         return doSignedDelete("/v3/order", params, account, BinanceOrderResult.class);
+    }
+
+    public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
+        cancelOrder(account, step.getSymbol(), step.getOrderId());
+        step.setStatus(TradeStatus.CANCELLED);
+        return getOrderStatus(account, step.getSymbol(), step.getOrderId());
     }
 
     private <T>T doSignedPost(String path, String params, TradeAccount account, Class<T> returnClass) {

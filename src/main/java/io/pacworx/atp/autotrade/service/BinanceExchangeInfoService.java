@@ -34,12 +34,34 @@ public class BinanceExchangeInfoService {
         return this.infos.get(symbol);
     }
 
+    public boolean isTradeBigEnough(String symbol, String currency, double amount, double price) {
+        BinanceExchangeInfo info = getInfo(symbol);
+        double altCoinAmount;
+        double baseCoinAmount;
+        // price may vary. include some buffer of 10%
+        double calcPrice = price * 0.9;
+        if(TradeUtil.isBaseCurrency(currency)) {
+            altCoinAmount = amount / calcPrice;
+            baseCoinAmount = amount;
+        } else {
+            altCoinAmount = amount;
+            baseCoinAmount = amount * calcPrice;
+        }
+        return baseCoinAmount > info.getMinBaseAssetQty() && altCoinAmount > info.getQtyStepSize();
+    }
+
     public void polishTradeOffer(TradeOffer offer) {
         BinanceExchangeInfo info = getInfo(offer.getSymbol());
         double polishedAmount = info.getQtyStepSize() * Math.floor(offer.getQuantity() / info.getQtyStepSize());
         offer.setQuantity(polishedAmount);
         double polishedPrice = info.getPriceStepSize() * Math.round(offer.getPrice() / info.getPriceStepSize());
         offer.setPrice(polishedPrice);
+    }
+
+    public double polishPrice(String symbol, double price) {
+        BinanceExchangeInfo info = getInfo(symbol);
+        double polishedPrice = info.getPriceStepSize() * Math.round(price / info.getPriceStepSize());
+        return polishedPrice;
     }
 
     private static final class ExchangeInfoResponse {

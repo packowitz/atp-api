@@ -7,11 +7,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-public interface TradeOrderObserverRepository extends CrudRepository<TradeOrderObserver, Long> {
+public interface TradeOneMarketRepository extends CrudRepository<TradeOneMarket, Long> {
 
-    List<TradeOrderObserver> getAllByPlanType(TradePlanType planType);
+    List<TradeOneMarket> findAllByStatus(TradePlanStatus status);
 
-    List<TradeOrderObserver> getAllByPlanId(long planId);
+    TradeOneMarket findByPlanId(long planId);
+
+    TradeOneMarket findByPlanIdAndStatus(long planId, TradePlanStatus status);
 
     @Transactional
     int deleteAllByPlanId(long planId);

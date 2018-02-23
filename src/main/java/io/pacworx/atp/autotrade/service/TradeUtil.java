@@ -20,6 +20,15 @@ public class TradeUtil {
         return null;
     }
 
+    public static String getAltCoin(String symbol) {
+        for(String baseCur: baseCurrencies) {
+            if(symbol.endsWith(baseCur)) {
+                return symbol.substring(0, symbol.length() - baseCur.length());
+            }
+        }
+        return null;
+    }
+
     public static boolean isBuy(String side) {
         return "BUY".equalsIgnoreCase(side);
     }

@@ -1,6 +1,7 @@
 package io.pacworx.atp.autotrade.service;
 
 import io.pacworx.atp.autotrade.domain.TradeOffer;
+import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,23 @@ public class BinanceDepthService {
     public BinanceDepth getDepth(String symbol, DepthLimit limit) {
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.getForObject(SERVER + "/v1/depth?symbol=" + symbol + "&limit=" + limit.getLimit(), BinanceDepth.class);
+    }
+
+    public double getGoodTradePrice(TradeStep step) {
+        double ignoreBid = step.getPrice();
+        double price;
+        if(TradeUtil.isBuy(step.getSide())) {
+            price = getGoodBuyPoint(step.getSymbol(), ignoreBid);
+            if(step.getPriceThreshold() != null && price > step.getPriceThreshold()) {
+                price = step.getPriceThreshold();
+            }
+        } else {
+            price = getGoodSellPoint(step.getSymbol(), ignoreBid);
+            if(step.getPriceThreshold() != null && price < step.getPriceThreshold()) {
+                price = step.getPriceThreshold();
+            }
+        }
+        return price;
     }
 
     public double getGoodBuyPoint(String symbol, double ignoreBid) {

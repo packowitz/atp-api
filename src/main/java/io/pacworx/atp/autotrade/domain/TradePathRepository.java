@@ -13,6 +13,8 @@ public interface TradePathRepository extends CrudRepository<TradePath, Long> {
 
     List<TradePath> findAllByPlanIdAndStatus(long planId, TradePlanStatus status);
 
+    List<TradePath> findAllByStatus(TradePlanStatus status);
+
     @Transactional
     int deleteAllByPlanId(long planId);
 }

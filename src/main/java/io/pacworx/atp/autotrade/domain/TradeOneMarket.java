@@ -9,10 +9,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.pacworx.atp.autotrade.domain.TradeStatus.DONE;
-
-@Entity(name = "trade_path")
-public class TradePath implements Serializable {
+@Entity(name = "trade_one_market")
+public class TradeOneMarket implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
@@ -24,11 +22,11 @@ public class TradePath implements Serializable {
     private long accountId;
     @Enumerated(EnumType.STRING)
     private TradePlanStatus status;
-    private int maxSteps;
+    private String symbol;
+    private double minProfit;
     private String startCurrency;
     private double startAmount;
-    private String destCurrency;
-    private Double destAmount;
+    private double balance = 0d;
     private boolean autoRestart;
     private ZonedDateTime startDate;
     private ZonedDateTime finishDate;
@@ -37,37 +35,29 @@ public class TradePath implements Serializable {
             @JoinColumn(name = "subplan_id", referencedColumnName = "id"),
             @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
     })
-    @OrderBy("startDate asc")
+    @OrderBy("startDate desc")
     private List<TradeStep> steps;
 
-    public TradePath() {}
+    public TradeOneMarket() {}
 
-    public TradePath(TradePlan plan, BinanceController.CreatePathRequest request) {
-        this.planId = plan.getId();
-        this.accountId = plan.getAccountId();
-        this.status = TradePlanStatus.ACTIVE;
-        this.maxSteps = request.maxSteps;
-        this.startCurrency = request.startCurrency;
-        this.startAmount = request.startAmount;
-        this.destCurrency = request.destCurrency;
-        this.autoRestart = request.autoRestart;
-        this.startDate = ZonedDateTime.now();
-    }
-
-    public TradePath(TradePath origPath) {
-        this.planId = origPath.planId;
-        this.accountId = origPath.accountId;
-        this.status = TradePlanStatus.ACTIVE;
-        this.maxSteps = origPath.maxSteps;
-        this.startCurrency = origPath.startCurrency;
-        this.startAmount = origPath.startAmount;
-        this.destCurrency = origPath.destCurrency;
-        this.autoRestart = origPath.autoRestart;
-        this.setStartDate(ZonedDateTime.now());
+    public TradeOneMarket(TradePlan plan, BinanceController.CreateOneMarketRequest request) {
+        planId = plan.getId();
+        accountId = plan.getAccountId();
+        status = TradePlanStatus.ACTIVE;
+        symbol = request.symbol;
+        minProfit = request.minProfit;
+        startCurrency = request.startCurrency;
+        startAmount = request.startAmount;
+        autoRestart = request.autoRestart;
+        startDate = ZonedDateTime.now();
     }
 
     public long getId() {
         return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public long getPlanId() {
@@ -94,19 +84,20 @@ public class TradePath implements Serializable {
         this.status = status;
     }
 
-    public int getMaxSteps() {
-        return maxSteps;
+    public String getSymbol() {
+        return symbol;
     }
 
-    public void setMaxSteps(int maxSteps) {
-        this.maxSteps = maxSteps;
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
-    public int getStepsCompleted() {
-        if(steps != null) {
-            return (int)steps.stream().filter(t -> t.getStatus() == DONE).count();
-        }
-        return 0;
+    public double getMinProfit() {
+        return minProfit;
+    }
+
+    public void setMinProfit(double minProfit) {
+        this.minProfit = minProfit;
     }
 
     public String getStartCurrency() {
@@ -125,20 +116,16 @@ public class TradePath implements Serializable {
         this.startAmount = startAmount;
     }
 
-    public String getDestCurrency() {
-        return destCurrency;
+    public double getBalance() {
+        return balance;
     }
 
-    public void setDestCurrency(String destCurrency) {
-        this.destCurrency = destCurrency;
+    public void setBalance(double balance) {
+        this.balance = balance;
     }
 
-    public Double getDestAmount() {
-        return destAmount;
-    }
-
-    public void setDestAmount(Double destAmount) {
-        this.destAmount = destAmount;
+    public void addBalance(double balance) {
+        this.balance += balance;
     }
 
     public boolean isAutoRestart() {
@@ -165,17 +152,26 @@ public class TradePath implements Serializable {
         this.finishDate = finishDate;
     }
 
-    @JsonIgnore
-    public TradeStep getLatestStep() {
-        if(this.steps == null || this.steps.isEmpty()) {
-            return null;
-        } else {
-            return this.steps.get(this.steps.size() - 1);
-        }
-    }
-
     public List<TradeStep> getSteps() {
         return steps;
+    }
+
+    public TradeStep getActiveFirstStep() {
+        for(TradeStep step: steps) {
+            if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 1) {
+                return step;
+            }
+        }
+        return null;
+    }
+
+    public TradeStep getActiveStepBack() {
+        for(TradeStep step: steps) {
+            if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 2) {
+                return step;
+            }
+        }
+        return null;
     }
 
     public void setSteps(List<TradeStep> steps) {
@@ -186,6 +182,6 @@ public class TradePath implements Serializable {
         if(this.steps == null) {
             this.steps = new ArrayList<>();
         }
-        this.steps.add(step);
+        this.steps.add(0, step);
     }
 }

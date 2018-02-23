@@ -1,14 +1,14 @@
 package io.pacworx.atp.autotrade.controller;
 
-import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
-import io.pacworx.atp.autotrade.service.BinanceCircleService;
-import io.pacworx.atp.autotrade.service.BinanceDepthService;
-import io.pacworx.atp.autotrade.service.BinancePathService;
-import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.autotrade.domain.*;
 import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
 import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
+import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
+import io.pacworx.atp.autotrade.service.BinanceDepthService;
+import io.pacworx.atp.autotrade.service.BinanceOneMarketService;
+import io.pacworx.atp.autotrade.service.BinancePathService;
+import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.exception.BadRequestException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,31 +29,31 @@ public class BinanceController {
     private static final Logger log = LogManager.getLogger();
 
     private final BinanceService binanceService;
-    private final BinanceCircleService circleService;
     private final BinancePathService pathService;
+    private final BinanceOneMarketService oneMarketService;
     private final BinanceDepthService depthService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
-    private final TradeCircleRepository tradeCircleRepository;
     private final TradePathRepository tradePathRepository;
+    private final TradeOneMarketRepository tradeOneMarketRepository;
 
     @Autowired
     public BinanceController(BinanceService binanceService,
-                             BinanceCircleService circleService,
                              BinancePathService pathService,
+                             BinanceOneMarketService oneMarketService,
                              BinanceDepthService depthService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
-                             TradeCircleRepository tradeCircleRepository,
-                             TradePathRepository tradePathRepository) {
+                             TradePathRepository tradePathRepository,
+                             TradeOneMarketRepository tradeOneMarketRepository) {
         this.binanceService = binanceService;
-        this.circleService = circleService;
         this.pathService = pathService;
+        this.oneMarketService = oneMarketService;
         this.depthService = depthService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
-        this.tradeCircleRepository = tradeCircleRepository;
         this.tradePathRepository = tradePathRepository;
+        this.tradeOneMarketRepository = tradeOneMarketRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
@@ -97,37 +97,20 @@ public class BinanceController {
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/plan/circle", method = RequestMethod.POST)
-    public ResponseEntity<TradePlan> createCirclePlan(@ModelAttribute("tradeuser") TradeUser user,
-                                                      @Valid @RequestBody CreateCircleRequest request) {
+    @RequestMapping(value = "/plan/onemarket", method = RequestMethod.POST)
+    public ResponseEntity<TradePlan> createOneMarket(@ModelAttribute("tradeuser") TradeUser user,
+                                                     @Valid @RequestBody CreateOneMarketRequest request) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = new TradePlan(binance, TradePlanType.CIRCLE);
+        TradePlan plan = new TradePlan(binance, TradePlanType.ONEMARKET);
         plan.setDescription(request.createDescription());
         this.tradePlanRepository.save(plan);
 
-        TradeCircle circle = new TradeCircle();
-        circle.setPlanId(plan.getId());
-        circle.setStatus(TradePlanStatus.ACTIVE);
-        circle.setStartCurrency(request.startCurrency);
-        circle.setStartAmount(request.startAmount);
-        circle.setRisk(request.risk);
-        circle.setTreshold(request.treshold);
-        circle.setCancelOnTreshold(request.cancelOnTreshold);
-        int stepCount = 0;
-        for(CreateCircleStep createStep: request.steps) {
-            TradeStep step = new TradeStep();
-            step.setStep(++stepCount);
-            step.setStatus(TradeStatus.IDLE);
-            step.setSymbol(createStep.symbol);
-            step.setSide(createStep.side);
-            step.setPrice(createStep.price);
-            circle.addStep(step);
-        }
-        this.tradeCircleRepository.save(circle);
-        this.circleService.startCircle(binance, circle);
+        TradeOneMarket oneMarket = new TradeOneMarket(plan, request);
+        this.oneMarketService.startPlan(binance, oneMarket);
+
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
@@ -139,6 +122,21 @@ public class BinanceController {
         }
         List<TradePlan> plans = this.tradePlanRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
         return new ResponseEntity<>(plans, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/plan/{planId}/onemarket", method = RequestMethod.GET)
+    public ResponseEntity<TradeOneMarket> getOneMarket(@ModelAttribute("tradeuser") TradeUser user,
+                                                       @PathVariable long planId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
+        }
+        TradeOneMarket oneMarket = tradeOneMarketRepository.findByPlanId(planId);
+        return new ResponseEntity<>(oneMarket, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan/{planId}/paths", method = RequestMethod.GET)
@@ -157,7 +155,7 @@ public class BinanceController {
     }
 
     @RequestMapping(value = "/plan/{planId}/autorepeat/{autorepeat}", method = RequestMethod.PUT)
-    public ResponseEntity<List<TradePath>> changePathAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
+    public ResponseEntity<Object> changePathAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
                                                                 @PathVariable long planId,
                                                                 @PathVariable boolean autorepeat) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
@@ -168,28 +166,22 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
-        if(!paths.isEmpty()) {
-            TradePath latestPath = paths.get(0);
-            latestPath.setAutoRestart(autorepeat);
-            this.tradePathRepository.save(latestPath);
+        if(plan.getType() == TradePlanType.PATH) {
+            List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
+            if(!paths.isEmpty()) {
+                TradePath latestPath = paths.get(0);
+                latestPath.setAutoRestart(autorepeat);
+                this.tradePathRepository.save(latestPath);
+            }
+            return new ResponseEntity<>(paths, HttpStatus.OK);
         }
-        return new ResponseEntity<>(paths, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/plan/{planId}/circles", method = RequestMethod.GET)
-    public ResponseEntity<List<TradeCircle>> getCircle(@ModelAttribute("tradeuser") TradeUser user,
-                                                       @PathVariable long planId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
-        if(binance == null) {
-            throw new BadRequestException("User doesn't have a binance account");
+        if(plan.getType() == TradePlanType.ONEMARKET) {
+            TradeOneMarket oneMarket = this.tradeOneMarketRepository.findByPlanId(planId);
+            oneMarket.setAutoRestart(autorepeat);
+            this.tradeOneMarketRepository.save(oneMarket);
+            return new ResponseEntity<>(oneMarket, HttpStatus.OK);
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
-        if(plan == null || plan.getUserId() != user.getId()) {
-            throw new BadRequestException("User is not the owner of requested plan");
-        }
-        List<TradeCircle> circles = this.tradeCircleRepository.findAllByPlanId(planId);
-        return new ResponseEntity<>(circles, HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(value = "/plan/{planId}/cancel", method = RequestMethod.GET)
@@ -206,8 +198,8 @@ public class BinanceController {
         log.info("User " + user.getId() + " manually cancelled plan " + planId);
         if(plan.getType() == TradePlanType.PATH) {
             this.pathService.cancelPaths(binance, plan);
-        } else if(plan.getType() == TradePlanType.CIRCLE) {
-            this.circleService.cancelCircles(binance, plan);
+        } else if(plan.getType() == TradePlanType.ONEMARKET) {
+            this.oneMarketService.cancelPlan(binance, plan);
         }
         plan.setStatus(TradePlanStatus.CANCELLED);
         this.tradePlanRepository.save(plan);
@@ -231,8 +223,8 @@ public class BinanceController {
         log.info("User " + user.getId() + " manually deleted plan " + planId);
         if(plan.getType() == TradePlanType.PATH) {
             this.pathService.deletePaths(plan);
-        } else if(plan.getType() == TradePlanType.CIRCLE) {
-            this.circleService.deleteCircles(plan);
+        } else if(plan.getType() == TradePlanType.ONEMARKET) {
+            this.oneMarketService.deletePlan(plan);
         }
         tradePlanRepository.delete(plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
@@ -256,37 +248,19 @@ public class BinanceController {
         }
     }
 
-    private static final class CreateCircleRequest {
+    public static final class CreateOneMarketRequest {
+        @NotNull
+        public String symbol;
+        @NotNull
+        public double minProfit;
         @NotNull
         public String startCurrency;
         @NotNull
         public double startAmount;
-        @NotNull
-        public TradeCircleRisk risk;
-        @NotNull
-        public Integer treshold;
-        @NotNull
-        public Boolean cancelOnTreshold;
-        @NotNull
-        public List<CreateCircleStep> steps;
+        public boolean autoRestart;
 
         public String createDescription() {
-            String desc = "" + startAmount + " " + startCurrency;
-            String prevCur = startCurrency;
-            for(CreateCircleStep step: steps) {
-                prevCur = step.symbol.replaceFirst(prevCur, "");
-                desc += "->" + prevCur;
-            }
-            return desc;
+            return "Trade " + startAmount + " " + startCurrency + " in " + symbol;
         }
-    }
-
-    private static final class CreateCircleStep {
-        @NotNull
-        public String symbol;
-        @NotNull
-        public String side;
-        @NotNull
-        public double price;
     }
 }
