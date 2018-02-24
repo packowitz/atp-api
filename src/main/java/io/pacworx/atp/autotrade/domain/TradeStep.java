@@ -82,6 +82,10 @@ public class TradeStep {
         this.orderFilled = orderFilled;
     }
 
+    public void addOrderFilled(double orderFilled) {
+        this.orderFilled += orderFilled;
+    }
+
     public Double getOrderAltcoinQty() {
         return orderAltcoinQty;
     }

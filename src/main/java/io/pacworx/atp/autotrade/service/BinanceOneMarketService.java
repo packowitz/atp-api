@@ -178,7 +178,7 @@ public class BinanceOneMarketService {
 
         // step set orderFilling and update step in and out filling
         calcStepFillings(step, orderResult);
-        step.setOrderFilled(executedQty);
+        step.addOrderFilled(executedQty);
 
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep got a part fill. Move traded coins to stepBack.");
