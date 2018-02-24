@@ -36,6 +36,7 @@ public class BinanceController {
     private final TradePlanRepository tradePlanRepository;
     private final TradePathRepository tradePathRepository;
     private final TradeOneMarketRepository tradeOneMarketRepository;
+    private final TradeStepRepository tradeStepRepository;
 
     @Autowired
     public BinanceController(BinanceService binanceService,
@@ -45,7 +46,8 @@ public class BinanceController {
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
                              TradePathRepository tradePathRepository,
-                             TradeOneMarketRepository tradeOneMarketRepository) {
+                             TradeOneMarketRepository tradeOneMarketRepository,
+                             TradeStepRepository tradeStepRepository) {
         this.binanceService = binanceService;
         this.pathService = pathService;
         this.oneMarketService = oneMarketService;
@@ -54,6 +56,7 @@ public class BinanceController {
         this.tradePlanRepository = tradePlanRepository;
         this.tradePathRepository = tradePathRepository;
         this.tradeOneMarketRepository = tradeOneMarketRepository;
+        this.tradeStepRepository = tradeStepRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
@@ -136,6 +139,8 @@ public class BinanceController {
             throw new BadRequestException("User is not the owner of requested plan");
         }
         TradeOneMarket oneMarket = tradeOneMarketRepository.findByPlanId(planId);
+        List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(oneMarket.getPlanId(), oneMarket.getId());
+        oneMarket.setSteps(steps);
         return new ResponseEntity<>(oneMarket, HttpStatus.OK);
     }
 
@@ -179,6 +184,8 @@ public class BinanceController {
             TradeOneMarket oneMarket = this.tradeOneMarketRepository.findByPlanId(planId);
             oneMarket.setAutoRestart(autorepeat);
             this.tradeOneMarketRepository.save(oneMarket);
+            List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(oneMarket.getPlanId(), oneMarket.getId());
+            oneMarket.setSteps(steps);
             return new ResponseEntity<>(oneMarket, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

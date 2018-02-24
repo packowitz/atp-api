@@ -119,6 +119,7 @@ public class BinanceService {
         step.setOrderAltcoinQty(Double.parseDouble(result.getOrigQty()));
         step.setOrderBasecoinQty(step.getOrderAltcoinQty() * Double.parseDouble(result.getPrice()));
         step.setStatus(TradeStatus.ACTIVE);
+        step.setDirty();
 
         String logMsg = "Opened order " + result.getOrderId() + " for plan #" + step.getPlanId() + "-" + step.getStep() + ": ";
         if(TradeUtil.isBuy(result.getSide())) {
@@ -159,12 +160,9 @@ public class BinanceService {
     }
 
     public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
-        try {
-            cancelOrder(account, step.getSymbol(), step.getOrderId());
-        } catch(Exception e) {
-            // just a temporary fix because there is somewhere a bug where we want to cancel an already canceled order
-        }
+        cancelOrder(account, step.getSymbol(), step.getOrderId());
         step.setStatus(TradeStatus.CANCELLED);
+        step.setDirty();
         return getOrderStatus(account, step.getSymbol(), step.getOrderId());
     }
 

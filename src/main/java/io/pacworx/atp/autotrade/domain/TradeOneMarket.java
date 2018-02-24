@@ -30,12 +30,7 @@ public class TradeOneMarket implements Serializable {
     private boolean autoRestart;
     private ZonedDateTime startDate;
     private ZonedDateTime finishDate;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumns({
-            @JoinColumn(name = "subplan_id", referencedColumnName = "id"),
-            @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
-    })
-    @OrderBy("startDate desc")
+    @Transient
     private List<TradeStep> steps;
 
     public TradeOneMarket() {}
@@ -156,19 +151,37 @@ public class TradeOneMarket implements Serializable {
         return steps;
     }
 
+    @JsonIgnore
     public TradeStep getActiveFirstStep() {
-        for(TradeStep step: steps) {
-            if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 1) {
-                return step;
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 1) {
+                    return step;
+                }
             }
         }
         return null;
     }
 
+    @JsonIgnore
+    public TradeStep getLatesFirstStep() {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStep() == 1) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
     public TradeStep getActiveStepBack() {
-        for(TradeStep step: steps) {
-            if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 2) {
-                return step;
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 2) {
+                    return step;
+                }
             }
         }
         return null;

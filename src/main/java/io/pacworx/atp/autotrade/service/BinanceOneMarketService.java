@@ -22,6 +22,7 @@ public class BinanceOneMarketService {
     private final TradeOneMarketRepository oneMarketRepository;
     private final TradeAccountRepository accountRepository;
     private final TradePlanRepository planRepository;
+    private final TradeStepRepository stepRepository;
 
     @Autowired
     public BinanceOneMarketService(BinanceService binanceService,
@@ -29,33 +30,37 @@ public class BinanceOneMarketService {
                                    BinanceExchangeInfoService exchangeInfoService,
                                    TradeOneMarketRepository microRepository,
                                    TradeAccountRepository accountRepository,
-                                   TradePlanRepository planRepository) {
+                                   TradePlanRepository planRepository,
+                                   TradeStepRepository stepRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.exchangeInfoService = exchangeInfoService;
         this.oneMarketRepository = microRepository;
         this.accountRepository = accountRepository;
         this.planRepository = planRepository;
+        this.stepRepository = stepRepository;
     }
 
     public void startPlan(TradeAccount account, TradeOneMarket oneMarket) {
         startFirstStep(account, oneMarket);
-        oneMarketRepository.save(oneMarket);
+        saveSubplan(oneMarket);
     }
 
     public void cancelPlan(TradeAccount account, TradePlan plan) {
-        TradeOneMarket activePlan = this.oneMarketRepository.findByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
+        TradeOneMarket activePlan = loadSubplan(plan.getId());
         cancel(account, activePlan);
     }
 
     public void deletePlan(TradePlan plan) {
         oneMarketRepository.deleteAllByPlanId(plan.getId());
+        stepRepository.deleteAllByPlanId(plan.getId());
     }
 
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
         List<TradeOneMarket> activePlans = this.oneMarketRepository.findAllByStatus(TradePlanStatus.ACTIVE);
         for(TradeOneMarket activePlan: activePlans) {
+            addStepsToMarket(activePlan);
             TradeAccount account = accountRepository.findOne(activePlan.getAccountId());
             //check first step first then step back
             TradeStep firstStep = activePlan.getActiveFirstStep();
@@ -94,23 +99,21 @@ public class BinanceOneMarketService {
     private void cancel(TradeAccount account, TradeOneMarket oneMarket) {
         TradeStep firstStep = oneMarket.getActiveFirstStep();
         if(firstStep != null) {
-            try {
-                binanceService.cancelOrder(account, firstStep.getSymbol(), firstStep.getOrderId());
-            } catch(Exception e) {}
+            binanceService.cancelOrder(account, firstStep.getSymbol(), firstStep.getOrderId());
             firstStep.setStatus(TradeStatus.CANCELLED);
             firstStep.setFinishDate(ZonedDateTime.now());
+            firstStep.setDirty();
         }
         TradeStep stepBack = oneMarket.getActiveStepBack();
         if(stepBack != null) {
-            try {
-                binanceService.cancelOrder(account, stepBack.getSymbol(), stepBack.getOrderId());
-            } catch(Exception e) {}
+            binanceService.cancelOrder(account, stepBack.getSymbol(), stepBack.getOrderId());
             stepBack.setStatus(TradeStatus.CANCELLED);
             stepBack.setFinishDate(ZonedDateTime.now());
+            stepBack.setDirty();
         }
         oneMarket.setStatus(TradePlanStatus.CANCELLED);
         oneMarket.setFinishDate(ZonedDateTime.now());
-        oneMarketRepository.save(oneMarket);
+        saveSubplan(oneMarket);
         planRepository.updateStatus(oneMarket.getPlanId(), TradePlanStatus.CANCELLED.name());
     }
 
@@ -119,6 +122,7 @@ public class BinanceOneMarketService {
         calcStepFillings(step, orderResult);
         step.setFinishDate(ZonedDateTime.now());
         step.setStatus(TradeStatus.DONE);
+        step.setDirty();
 
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep filled. Move traded coins to stepBack.");
@@ -135,16 +139,17 @@ public class BinanceOneMarketService {
                     // means that in the meantime firstStep got some filling
                     step.setInAmount(firstStep.getOutAmount());
                     binanceService.openStepOrder(account, step);
-                    oneMarketRepository.save(oneMarket);
+                    saveSubplan(oneMarket);
                     return;
                 }
             }
             // calculate balance
             double balance;
-            if(firstStep != null) {
-                balance = step.getOutAmount() - firstStep.getInFilled();
+            TradeStep latestFirstStep = oneMarket.getLatesFirstStep();
+            if(latestFirstStep != null) {
+                balance = step.getOutAmount() - latestFirstStep.getInFilled();
             } else {
-                // no active first step -> assumption that the full in amount was traded
+                // no latest first step (was maybe deleted) -> use plan startAmount as approximate
                 balance = step.getOutAmount() - oneMarket.getStartAmount();
             }
             oneMarket.addBalance(balance);
@@ -157,7 +162,7 @@ public class BinanceOneMarketService {
                 oneMarket.setStatus(TradePlanStatus.FINISHED);
             }
         }
-        oneMarketRepository.save(oneMarket);
+        saveSubplan(oneMarket);
     }
 
     private void handlePartFilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
@@ -184,6 +189,7 @@ public class BinanceOneMarketService {
 
         // step set orderFilling and update step in and out filling
         calcStepFillings(step, orderResult);
+        step.setDirty();
         step.addOrderFilled(executedQty);
 
         if(step.getStep() == 1) {
@@ -193,7 +199,7 @@ public class BinanceOneMarketService {
             log.info("Plan #" + oneMarket.getPlanId() + " stepBack got a part fill. Keep going.");
             handleUnfilledOrder(account, oneMarket, step, orderResult);
         }
-        oneMarketRepository.save(oneMarket);
+        saveSubplan(oneMarket);
     }
 
     private void handleUnfilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
@@ -217,7 +223,7 @@ public class BinanceOneMarketService {
             // start the step again with new price
             step.setPrice(goodPrice);
             binanceService.openStepOrder(account, step);
-            oneMarketRepository.save(oneMarket);
+            saveSubplan(oneMarket);
         }
     }
 
@@ -230,6 +236,7 @@ public class BinanceOneMarketService {
     private void startStepBack(TradeAccount account, TradeOneMarket oneMarket, TradeStep firstStep, BinanceOrderResult orderResult) {
         TradeStep stepBack = oneMarket.getActiveStepBack();
         if(stepBack != null) {
+            stepBack.setDirty();
             log.info("Plan #" + oneMarket.getPlanId() + " add traded coins to existing stepBack.");
             // cancel stepBack then add traded coins to it, recalc priceThreshold and restart it
             BinanceOrderResult cancelResult = binanceService.cancelStep(account, stepBack);
@@ -256,6 +263,7 @@ public class BinanceOneMarketService {
     private TradeStep createFirstStep(TradeOneMarket oneMarket) {
         boolean isBuy = TradeUtil.isBaseCurrency(oneMarket.getStartCurrency());
         TradeStep step = new TradeStep();
+        step.setDirty();
         step.setStep(1);
         step.setPlanId(oneMarket.getPlanId());
         step.setStatus(TradeStatus.ACTIVE);
@@ -271,6 +279,7 @@ public class BinanceOneMarketService {
     private TradeStep createStepBack(TradeOneMarket oneMarket, TradeStep firstStep, BinanceOrderResult orderResult) {
         boolean isBuy = !TradeUtil.isBuy(firstStep.getSide());
         TradeStep step = new TradeStep();
+        step.setDirty();
         step.setStep(2);
         step.setPlanId(oneMarket.getPlanId());
         step.setStatus(TradeStatus.ACTIVE);
@@ -311,5 +320,28 @@ public class BinanceOneMarketService {
     private double avgPriceThreshold(String symbol, double amount1, double threshold1, double amount2, double threshold2) {
         double avg = ((amount1 * threshold1) + (amount2 * threshold2)) / (amount1 + amount2);
         return exchangeInfoService.polishPrice(symbol, avg);
+    }
+
+    private TradeOneMarket loadSubplan(long planId) {
+        TradeOneMarket oneMarket = oneMarketRepository.findByPlanId(planId);
+        addStepsToMarket(oneMarket);
+        return oneMarket;
+    }
+
+    private void addStepsToMarket(TradeOneMarket oneMarket) {
+        List<TradeStep> steps = stepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(oneMarket.getPlanId(), oneMarket.getId());
+        oneMarket.setSteps(steps);
+    }
+
+    private void saveSubplan(TradeOneMarket oneMarket) {
+        oneMarketRepository.save(oneMarket);
+        if(oneMarket.getSteps() != null) {
+            for(TradeStep step: oneMarket.getSteps()) {
+                if(step.isDirty()) {
+                    step.setSubplanId(oneMarket.getId());
+                    stepRepository.save(step);
+                }
+            }
+        }
     }
 }

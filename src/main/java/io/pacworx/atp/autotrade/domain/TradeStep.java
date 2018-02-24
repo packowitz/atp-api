@@ -12,8 +12,10 @@ public class TradeStep {
     @JsonIgnore
     private long id;
     @Column(name = "plan_id")
+    @JsonIgnore
     private long planId;
     @Column(name = "subplan_id")
+    @JsonIgnore
     private long subplanId;
     private int step;
     private Long orderId;
@@ -37,6 +39,9 @@ public class TradeStep {
     private double outAmount = 0d;
     private ZonedDateTime startDate;
     private ZonedDateTime finishDate;
+    @Transient
+    @JsonIgnore
+    private boolean dirty = false;
 
     public long getId() {
         return id;
@@ -204,5 +209,13 @@ public class TradeStep {
 
     public void setFinishDate(ZonedDateTime finishDate) {
         this.finishDate = finishDate;
+    }
+
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    public void setDirty() {
+        this.dirty = true;
     }
 }
