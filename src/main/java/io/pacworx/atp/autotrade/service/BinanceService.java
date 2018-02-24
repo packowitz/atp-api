@@ -159,7 +159,11 @@ public class BinanceService {
     }
 
     public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
-        cancelOrder(account, step.getSymbol(), step.getOrderId());
+        try {
+            cancelOrder(account, step.getSymbol(), step.getOrderId());
+        } catch(Exception e) {
+            // just a temporary fix because there is somewhere a bug where we want to cancel an already canceled order
+        }
         step.setStatus(TradeStatus.CANCELLED);
         return getOrderStatus(account, step.getSymbol(), step.getOrderId());
     }
