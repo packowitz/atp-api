@@ -23,18 +23,21 @@ public class BinancePathService {
     private final TradePathRepository pathRepository;
     private final TradeAccountRepository accountRepository;
     private final TradePlanRepository planRepository;
+    private final TradeStepRepository stepRepository;
 
     @Autowired
     public BinancePathService(BinanceService binanceService,
                               BinanceDepthService depthService,
                               TradePathRepository pathRepository,
                               TradeAccountRepository accountRepository,
-                              TradePlanRepository planRepository) {
+                              TradePlanRepository planRepository,
+                              TradeStepRepository stepRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.pathRepository = pathRepository;
         this.accountRepository = accountRepository;
         this.planRepository = planRepository;
+        this.stepRepository = stepRepository;
     }
 
     public void startPath(TradeAccount account, TradePath path) {
@@ -45,12 +48,13 @@ public class BinancePathService {
         path.addStep(firstStep);
 
         binanceService.openStepOrder(account, firstStep);
-        pathRepository.save(path);
+        saveSubplan(path);
     }
 
     public void cancelPaths(TradeAccount account, TradePlan plan) {
         List<TradePath> paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
         for(TradePath path: paths) {
+            addStepsToMarket(path);
             path.setStatus(TradePlanStatus.CANCELLED);
             path.setFinishDate(ZonedDateTime.now());
             TradeStep latestStep = path.getLatestStep();
@@ -60,18 +64,26 @@ public class BinancePathService {
                 }
                 latestStep.setStatus(TradeStatus.CANCELLED);
             }
-            pathRepository.save(path);
+            saveSubplan(path);
+        }
+        paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.PAUSED);
+        for(TradePath path: paths) {
+            path.setStatus(TradePlanStatus.CANCELLED);
+            path.setFinishDate(ZonedDateTime.now());
+            saveSubplan(path);
         }
     }
 
     public void deletePaths(TradePlan plan) {
         pathRepository.deleteAllByPlanId(plan.getId());
+        stepRepository.deleteAllByPlanId(plan.getId());
     }
 
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
         List<TradePath> activePaths = pathRepository.findAllByStatus(TradePlanStatus.ACTIVE);
         for(TradePath activePath: activePaths) {
+            addStepsToMarket(activePath);
             TradeStep latestStep = activePath.getLatestStep();
             if(latestStep != null && latestStep.getStatus() == TradeStatus.ACTIVE) {
                 TradeAccount account = accountRepository.findOne(activePath.getAccountId());
@@ -81,6 +93,7 @@ public class BinancePathService {
     }
 
     private void checkStep(TradeAccount account, TradePath path, TradeStep step) {
+        step.setDirty();
         try {
             BinanceOrderResult orderResult = binanceService.getOrderStatus(account, step.getSymbol(), step.getOrderId());
             if ("FILLED".equals(orderResult.getStatus())) {
@@ -92,7 +105,7 @@ public class BinancePathService {
                 path.setStatus(TradePlanStatus.CANCELLED);
                 path.setFinishDate(ZonedDateTime.now());
                 step.setStatus(TradeStatus.CANCELLED);
-                pathRepository.save(path);
+                saveSubplan(path);
             } else if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
                 double percExecuted = 100d * Double.parseDouble(orderResult.getExecutedQty()) / Double.parseDouble(orderResult.getOrigQty());
                 if(percExecuted >= 99) {
@@ -129,7 +142,7 @@ public class BinancePathService {
             BinanceOrderResult result = binanceService.openStepOrder(account, newStep);
 
             newStep.setSymbol(step.getSymbol());
-            pathRepository.save(path);
+            saveSubplan(path);
         } else {
             checkPrice(account, path, step, orderResult);
         }
@@ -148,7 +161,7 @@ public class BinancePathService {
 
             step.setPrice(price);
             binanceService.openStepOrder(account, step);
-            pathRepository.save(path);
+            saveSubplan(path);
         }
     }
 
@@ -172,7 +185,7 @@ public class BinancePathService {
             path.setStatus(TradePlanStatus.FINISHED);
             path.setFinishDate(ZonedDateTime.now());
             path.setDestAmount(currentStep.getOutAmount());
-            pathRepository.save(path);
+            saveSubplan(path);
 
             if(path.isAutoRestart()) {
                 startPath(account, new TradePath(path));
@@ -180,7 +193,7 @@ public class BinancePathService {
                 planRepository.updateStatus(path.getPlanId(), TradePlanStatus.FINISHED.name());
             }
         } else {
-            pathRepository.save(path);
+            saveSubplan(path);
             RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getOutCurrency(), path.getDestCurrency());
             RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
@@ -190,11 +203,12 @@ public class BinancePathService {
             binanceService.openStepOrder(account, step);
             step.setSymbol(step.getSymbol());
         }
-        pathRepository.save(path);
+        saveSubplan(path);
     }
 
     private TradeStep createTradeStep(RouteCalculator.RouteStep routeStep, int stepNumber, String inCurrency, double inAmount) {
         TradeStep step = new TradeStep();
+        step.setDirty();
         step.setStep(stepNumber);
         step.setStatus(TradeStatus.IDLE);
         step.setSymbol(routeStep.ticker.getSymbol());
@@ -217,4 +231,30 @@ public class BinancePathService {
         return calculator.searchBestRoute();
     }
 
+    private TradePath loadActiveSubplan(long planId) {
+        List<TradePath> paths = pathRepository.findAllByPlanIdAndStatus(planId, TradePlanStatus.ACTIVE);
+        if(paths.size() > 0) {
+            TradePath path = paths.get(0);
+            addStepsToMarket(path);
+            return path;
+        }
+        return null;
+    }
+
+    private void addStepsToMarket(TradePath path) {
+        List<TradeStep> steps = stepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
+        path.setSteps(steps);
+    }
+
+    private void saveSubplan(TradePath path) {
+        pathRepository.save(path);
+        if(path.getSteps() != null) {
+            for(TradeStep step: path.getSteps()) {
+                if(step.isDirty()) {
+                    step.setSubplanId(path.getId());
+                    stepRepository.save(step);
+                }
+            }
+        }
+    }
 }

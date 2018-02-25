@@ -32,12 +32,7 @@ public class TradePath implements Serializable {
     private boolean autoRestart;
     private ZonedDateTime startDate;
     private ZonedDateTime finishDate;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumns({
-            @JoinColumn(name = "subplan_id", referencedColumnName = "id"),
-            @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
-    })
-    @OrderBy("startDate asc")
+    @Transient
     private List<TradeStep> steps;
 
     public TradePath() {}
@@ -170,7 +165,7 @@ public class TradePath implements Serializable {
         if(this.steps == null || this.steps.isEmpty()) {
             return null;
         } else {
-            return this.steps.get(this.steps.size() - 1);
+            return this.steps.get(0);
         }
     }
 

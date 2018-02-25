@@ -156,6 +156,10 @@ public class BinanceController {
             throw new BadRequestException("User is not the owner of requested plan");
         }
         List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
+        for(TradePath path: paths) {
+            List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
+            path.setSteps(steps);
+        }
         return new ResponseEntity<>(paths, HttpStatus.OK);
     }
 
@@ -177,6 +181,10 @@ public class BinanceController {
                 TradePath latestPath = paths.get(0);
                 latestPath.setAutoRestart(autorepeat);
                 this.tradePathRepository.save(latestPath);
+            }
+            for(TradePath path: paths) {
+                List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
+                path.setSteps(steps);
             }
             return new ResponseEntity<>(paths, HttpStatus.OK);
         }
