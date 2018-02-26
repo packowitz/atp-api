@@ -160,7 +160,12 @@ public class BinanceService {
     }
 
     public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
-        cancelOrder(account, step.getSymbol(), step.getOrderId());
+        try {
+            cancelOrder(account, step.getSymbol(), step.getOrderId());
+        } catch(Exception e) {
+            // this happens when the order is already filled or canceled
+            // TODO add check it the exception is caused by this
+        }
         step.setStatus(TradeStatus.CANCELLED);
         step.setDirty();
         return getOrderStatus(account, step.getSymbol(), step.getOrderId());

@@ -175,11 +175,10 @@ public class BinanceOneMarketService {
             return;
         }
 
-        // is rest of filling lower than minimum trade amount? handle as filled and cancel order
+        // is rest of filling lower than minimum trade amount? cancel rest order and handle as filled
         double origQty = Double.parseDouble(orderResult.getOrigQty());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), (origQty - executedQty), price)) {
             if(!"CANCELED".equals(orderResult.getStatus())) {
-                //TODO when cancel firstStep check if it got filling in the meantime and react on that
                 try {
                     binanceService.cancelOrder(account, step.getSymbol(), step.getOrderId());
                 } catch (Exception e) {}
