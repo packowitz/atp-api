@@ -124,6 +124,10 @@ public class BinanceOneMarketService {
         step.setStatus(TradeStatus.DONE);
         step.setDirty();
 
+        // update lastActionDate on plan
+        TradePlan plan = planRepository.findOne(oneMarket.getPlanId());
+        plan.setLastActionDate(ZonedDateTime.now());
+
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep filled. Move traded coins to stepBack.");
             startStepBack(account, oneMarket, step, orderResult);
@@ -154,14 +158,21 @@ public class BinanceOneMarketService {
             }
             oneMarket.addBalance(balance);
 
+            //update plan info
+            double balancePerc = oneMarket.getBalance() / oneMarket.getStartAmount();
+            plan.setBalancePerc(balancePerc);
+            plan.incRunsDone();
+
             // restart plan if auto restart is turned on
             if(oneMarket.isAutoRestart()) {
                 log.info("Restart plan #" + oneMarket.getPlanId());
                 startFirstStep(account, oneMarket);
             } else {
                 oneMarket.setStatus(TradePlanStatus.FINISHED);
+                plan.setStatus(TradePlanStatus.FINISHED);
             }
         }
+        planRepository.save(plan);
         saveSubplan(oneMarket);
     }
 

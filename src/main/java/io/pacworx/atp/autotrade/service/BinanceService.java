@@ -123,8 +123,8 @@ public class BinanceService {
 
         String logMsg = "Opened order " + result.getOrderId() + " for plan #" + step.getPlanId() + "-" + step.getStep() + ": ";
         if(TradeUtil.isBuy(result.getSide())) {
-            logMsg += "BUY " + step.getOrderAltcoinQty() + " " + step.getOutCurrency() + " for ";
-            logMsg += step.getOrderBasecoinQty() + " " + step.getInCurrency();
+            logMsg += "BUY " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getOutCurrency() + " for ";
+            logMsg += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getInCurrency();
         } else {
             logMsg += "SELL " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getInCurrency() + " to ";
             logMsg += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getOutCurrency();

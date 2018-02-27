@@ -3,6 +3,7 @@ package io.pacworx.atp.autotrade.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import java.time.ZonedDateTime;
 
 @Entity
 public class TradePlan {
@@ -18,6 +19,10 @@ public class TradePlan {
     @Enumerated(EnumType.STRING)
     TradePlanStatus status;
     private String description;
+    private double balancePerc = 0d;
+    private ZonedDateTime startDate;
+    private ZonedDateTime lastActionDate;
+    private int runsDone = 0;
 
     public TradePlan() {}
 
@@ -26,6 +31,7 @@ public class TradePlan {
         this.accountId = account.getId();
         this.type = type;
         this.status = TradePlanStatus.ACTIVE;
+        this.startDate = ZonedDateTime.now();
     }
 
     public long getId() {
@@ -70,5 +76,41 @@ public class TradePlan {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public double getBalancePerc() {
+        return balancePerc;
+    }
+
+    public void setBalancePerc(double balancePerc) {
+        this.balancePerc = balancePerc;
+    }
+
+    public ZonedDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(ZonedDateTime startedDate) {
+        this.startDate = startedDate;
+    }
+
+    public ZonedDateTime getLastActionDate() {
+        return lastActionDate;
+    }
+
+    public void setLastActionDate(ZonedDateTime lastActionDate) {
+        this.lastActionDate = lastActionDate;
+    }
+
+    public int getRunsDone() {
+        return runsDone;
+    }
+
+    public void setRunsDone(int runsDone) {
+        this.runsDone = runsDone;
+    }
+
+    public void incRunsDone() {
+        this.runsDone ++;
     }
 }
