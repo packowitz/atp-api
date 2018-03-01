@@ -47,6 +47,16 @@ public class TradeOneMarket implements Serializable {
         startDate = ZonedDateTime.now();
     }
 
+    public void cancel() {
+        this.status = TradePlanStatus.CANCELLED;
+        this.finishDate = ZonedDateTime.now();
+    }
+
+    public void finish() {
+        this.status = TradePlanStatus.FINISHED;
+        this.finishDate = ZonedDateTime.now();
+    }
+
     public long getId() {
         return id;
     }

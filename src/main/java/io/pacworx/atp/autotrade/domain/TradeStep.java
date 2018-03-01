@@ -17,31 +17,56 @@ public class TradeStep {
     @Column(name = "subplan_id")
     @JsonIgnore
     private long subplanId;
+    /** Indicates where this step is in your algorithm **/
     private int step;
+    /** last known orderId **/
     private Long orderId;
     /** Indicates how much was traded in the current order. Set to 0 for every new order */
     private double orderFilled = 0d;
+    /** How many altcoins are in the current order **/
     private Double orderAltcoinQty;
+    /** How many basecoins (BTC, ETH or BNB) are in the current order **/
     private Double orderBasecoinQty;
     @Enumerated(EnumType.STRING)
     private TradeStatus status;
+    /** Market. e.g. LTCBTC **/
     private String symbol;
+    /** BUY or SELL **/
     private String side;
+    /** Price of last order **/
     private double price;
+    /** Optional. Threshold used by price calculations **/
     private Double priceThreshold;
+    /** Currency you want to give **/
     private String inCurrency;
     /** Possible amount to trade with. */
     private Double inAmount;
     /** Indicates how much was traded in the current step. Set to 0 every time a new step is created */
     private double inFilled = 0d;
+    /** Currency you want to get **/
     private String outCurrency;
     /** Amount of traded outCurrency. Usually the inAmount for the next step. */
     private double outAmount = 0d;
+    /** When was this step created **/
     private ZonedDateTime startDate;
+    /** When was step finished. NULL as long as it is active. **/
     private ZonedDateTime finishDate;
+    /** temporary indicator if the step has changed and needs to be saved **/
     @Transient
     @JsonIgnore
     private boolean dirty = false;
+
+    public void cancel() {
+        this.status = TradeStatus.CANCELLED;
+        this.finishDate = ZonedDateTime.now();
+        this.dirty = true;
+    }
+
+    public void finish() {
+        this.status = TradeStatus.DONE;
+        this.finishDate = ZonedDateTime.now();
+        this.dirty = true;
+    }
 
     public long getId() {
         return id;

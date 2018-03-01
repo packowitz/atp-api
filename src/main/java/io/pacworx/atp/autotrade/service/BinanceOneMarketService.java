@@ -100,19 +100,14 @@ public class BinanceOneMarketService {
         TradeStep firstStep = oneMarket.getActiveFirstStep();
         if(firstStep != null) {
             binanceService.cancelOrder(account, firstStep.getSymbol(), firstStep.getOrderId());
-            firstStep.setStatus(TradeStatus.CANCELLED);
-            firstStep.setFinishDate(ZonedDateTime.now());
-            firstStep.setDirty();
+            firstStep.cancel();
         }
         TradeStep stepBack = oneMarket.getActiveStepBack();
         if(stepBack != null) {
             binanceService.cancelOrder(account, stepBack.getSymbol(), stepBack.getOrderId());
-            stepBack.setStatus(TradeStatus.CANCELLED);
-            stepBack.setFinishDate(ZonedDateTime.now());
-            stepBack.setDirty();
+            stepBack.cancel();
         }
-        oneMarket.setStatus(TradePlanStatus.CANCELLED);
-        oneMarket.setFinishDate(ZonedDateTime.now());
+        oneMarket.finish();
         saveSubplan(oneMarket);
         planRepository.updateStatus(oneMarket.getPlanId(), TradePlanStatus.CANCELLED.name());
     }
@@ -120,9 +115,7 @@ public class BinanceOneMarketService {
     private void handleFilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
         // update status and calc step in and out filling
         calcStepFillings(step, orderResult);
-        step.setFinishDate(ZonedDateTime.now());
-        step.setStatus(TradeStatus.DONE);
-        step.setDirty();
+        step.finish();
 
         // update lastActionDate on plan
         TradePlan plan = planRepository.findOne(oneMarket.getPlanId());
@@ -168,7 +161,7 @@ public class BinanceOneMarketService {
                 log.info("Restart plan #" + oneMarket.getPlanId());
                 startFirstStep(account, oneMarket);
             } else {
-                oneMarket.setStatus(TradePlanStatus.FINISHED);
+                oneMarket.finish();
                 plan.setStatus(TradePlanStatus.FINISHED);
             }
         }
