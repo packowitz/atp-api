@@ -86,6 +86,10 @@ public class TradePlan {
         this.balancePerc = balancePerc;
     }
 
+    public void addBalancePerc(double balancePerc) {
+        this.balancePerc += balancePerc;
+    }
+
     public ZonedDateTime getStartDate() {
         return startDate;
     }

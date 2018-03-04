@@ -24,6 +24,7 @@ public class BinancePathService {
     private final TradeAccountRepository accountRepository;
     private final TradePlanRepository planRepository;
     private final TradeStepRepository stepRepository;
+    private final BinanceExchangeInfoService exchangeInfoService;
 
     @Autowired
     public BinancePathService(BinanceService binanceService,
@@ -31,13 +32,15 @@ public class BinancePathService {
                               TradePathRepository pathRepository,
                               TradeAccountRepository accountRepository,
                               TradePlanRepository planRepository,
-                              TradeStepRepository stepRepository) {
+                              TradeStepRepository stepRepository,
+                              BinanceExchangeInfoService exchangeInfoService) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.pathRepository = pathRepository;
         this.accountRepository = accountRepository;
         this.planRepository = planRepository;
         this.stepRepository = stepRepository;
+        this.exchangeInfoService = exchangeInfoService;
     }
 
     public void startPath(TradeAccount account, TradePath path) {
@@ -45,6 +48,7 @@ public class BinancePathService {
         RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
         TradeStep firstStep = createTradeStep(routeFirstStep, 1, path.getStartCurrency(), path.getStartAmount());
+        firstStep.setPlanId(path.getPlanId());
         path.addStep(firstStep);
 
         binanceService.openStepOrder(account, firstStep);
@@ -55,21 +59,19 @@ public class BinancePathService {
         List<TradePath> paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.ACTIVE);
         for(TradePath path: paths) {
             addStepsToMarket(path);
-            path.setStatus(TradePlanStatus.CANCELLED);
-            path.setFinishDate(ZonedDateTime.now());
+            path.cancel();
             TradeStep latestStep = path.getLatestStep();
             if(latestStep != null) {
                 if(latestStep.getStatus() == TradeStatus.ACTIVE) {
                     binanceService.cancelOrder(account, latestStep.getSymbol(), latestStep.getOrderId());
                 }
-                latestStep.setStatus(TradeStatus.CANCELLED);
+                latestStep.cancel();
             }
             saveSubplan(path);
         }
         paths = pathRepository.findAllByPlanIdAndStatus(plan.getId(), TradePlanStatus.PAUSED);
         for(TradePath path: paths) {
-            path.setStatus(TradePlanStatus.CANCELLED);
-            path.setFinishDate(ZonedDateTime.now());
+            path.cancel();
             saveSubplan(path);
         }
     }
@@ -98,23 +100,12 @@ public class BinancePathService {
             BinanceOrderResult orderResult = binanceService.getOrderStatus(account, step.getSymbol(), step.getOrderId());
             if ("FILLED".equals(orderResult.getStatus())) {
                 log.info("Order " + orderResult.getOrderId() + " from path plan #" + step.getPlanId() + " is filled. Setting up next path step.");
-                startNextStep(account, path, step, orderResult);
+                handleFilledOrder(account, path, step, orderResult);
             } else if("CANCELED".equals(orderResult.getStatus())) {
-                log.info("Order " + orderResult.getOrderId() + " was cancelled. Deleting observer.");
-                planRepository.updateStatus(step.getPlanId(), TradePlanStatus.CANCELLED.name());
-                path.setStatus(TradePlanStatus.CANCELLED);
-                path.setFinishDate(ZonedDateTime.now());
-                step.setStatus(TradeStatus.CANCELLED);
-                saveSubplan(path);
+                log.info("Order " + orderResult.getOrderId() + " was cancelled. Cancel path plan #" + path.getPlanId());
+                handleCanceledOrder(path, step, orderResult);
             } else if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
-                double percExecuted = 100d * Double.parseDouble(orderResult.getExecutedQty()) / Double.parseDouble(orderResult.getOrigQty());
-                if(percExecuted >= 99) {
-                    log.info("Order " + orderResult.getOrderId() + " from path plan #" + step.getPlanId() + " is filled over 99%. Setting up next path step.");
-                    binanceService.cancelOrder(account, step.getSymbol(), step.getOrderId());
-                    startNextStep(account, path, step, orderResult);
-                } else {
-                    log.info("Order " + orderResult.getOrderId() + " is partially filled under 99%.");
-                }
+                handlePartFilledOrder(account, path, step, orderResult);
             } else if("NEW".equals(orderResult.getStatus())) {
                 checkRoute(account, path, step, orderResult);
             } else {
@@ -127,21 +118,108 @@ public class BinancePathService {
         }
     }
 
+    private void handleCanceledOrder(TradePath path, TradeStep step, BinanceOrderResult orderResult) {
+        step.calcFilling(orderResult);
+        path.cancel();
+        step.cancel();
+
+        saveSubplan(path);
+        planRepository.updateStatus(step.getPlanId(), TradePlanStatus.CANCELLED.name());
+    }
+
+    private void handleFilledOrder(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
+        // update status and calc step in and out filling
+        step.calcFilling(orderResult);
+        step.finish();
+
+        // update lastActionDate on plan
+        TradePlan plan = planRepository.findOne(path.getPlanId());
+        plan.setLastActionDate(ZonedDateTime.now());
+
+        if(step.getOutCurrency().equals(path.getDestCurrency())) {
+            //Path finished
+            path.finish();
+            path.setDestAmount(step.getOutAmount());
+
+            // calculate balance
+            double balance;
+            TradeStep firstStep = path.getFirstStep();
+            if(firstStep != null) {
+                balance = step.getOutAmount() - firstStep.getInFilled();
+            } else {
+                // no first step (was maybe deleted) -> use plan startAmount as approximate
+                balance = step.getOutAmount() - path.getStartAmount();
+            }
+            //update plan info
+            plan.addBalancePerc(balance / path.getStartAmount());
+            plan.incRunsDone();
+
+            if(path.isAutoRestart()) {
+                startPath(account, new TradePath(path));
+            } else {
+                plan.setStatus(TradePlanStatus.FINISHED);
+            }
+        } else {
+            startNextStep(account, path, step);
+        }
+        planRepository.save(plan);
+        saveSubplan(path);
+    }
+
+    private void handlePartFilledOrder(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
+        // is filling lower than minimum trade amount or filling equals to orderFilling? handle as unfilled
+        String symbol = orderResult.getSymbol();
+        double executedQty = Double.parseDouble(orderResult.getExecutedQty()) - step.getOrderFilled();
+        double price = Double.parseDouble(orderResult.getPrice());
+        if(step.getInFilled() == 0 && !exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
+            checkRoute(account, path, step, orderResult);
+            return;
+        }
+
+        // is rest of filling lower than minimum trade amount? cancel rest order and handle as filled
+        double origQty = Double.parseDouble(orderResult.getOrigQty());
+        if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), (origQty - executedQty), price)) {
+            if(!"CANCELED".equals(orderResult.getStatus())) {
+                orderResult = binanceService.cancelStep(account, step);
+            }
+            handleFilledOrder(account, path, step, orderResult);
+            return;
+        }
+
+        // step set orderFilling and update step in and out filling
+        step.calcFilling(orderResult);
+        step.addOrderFilled(executedQty);
+
+        log.info("Path plan #" + path.getPlanId() + " step-" + step.getStep() + " got a part fill. Keep going.");
+        checkPrice(account, path, step, orderResult);
+    }
+
     private void checkRoute(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
+        //TODO skip route calculation when it is the last step
         RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), step.getInCurrency(), path.getDestCurrency());
         RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
         if(!routeFirstStep.ticker.getSymbol().equals(step.getSymbol())) {
             log.info("Path #" + path.getPlanId() + " found a better route to reach " + path.getDestCurrency() + " in " + (path.getMaxSteps() - path.getStepsCompleted()) + " steps.");
-            binanceService.cancelOrder(account, step.getSymbol(), step.getOrderId());
-            step.setStatus(TradeStatus.CANCELLED);
+            BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
+            // check if there was a filling in meantime
+            String symbol = cancelResult.getSymbol();
+            double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
+            double price = Double.parseDouble(cancelResult.getPrice());
+            if(exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
+                // there was a meaningful filling
+                log.info("Path plan #" + path.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
+                handlePartFilledOrder(account, path, step, cancelResult);
+                return;
+            }
 
-            TradeStep newStep = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, step.getInCurrency(), step.getInAmount());
-            path.addStep(step);
+            step.setSymbol(routeFirstStep.ticker.getSymbol());
+            step.setSide(routeFirstStep.isBuy ? "BUY" : "SELL");
+            step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
+            step.setOutAmount(0);
+            step.setPrice(depthService.getGoodTradePrice(step));
 
-            BinanceOrderResult result = binanceService.openStepOrder(account, newStep);
-
-            newStep.setSymbol(step.getSymbol());
+            binanceService.openStepOrder(account, step);
             saveSubplan(path);
         } else {
             checkPrice(account, path, step, orderResult);
@@ -149,79 +227,51 @@ public class BinancePathService {
     }
 
     private void checkPrice(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
-        double price;
-        if(TradeUtil.isBuy(orderResult.getSide())) {
-            price = depthService.getGoodBuyPoint(step.getSymbol(), Double.parseDouble(orderResult.getPrice()));
-        } else {
-            price = depthService.getGoodSellPoint(step.getSymbol(), Double.parseDouble(orderResult.getPrice()));
-        }
-        if(price != Double.parseDouble(orderResult.getPrice())) {
-            log.info("Order " + step.getOrderId() + " best trade price has changed from " + orderResult.getPrice() + " to " + String.format("%.8f", price) + ". Will adjust it.");
-            binanceService.cancelOrder(account, step.getSymbol(), step.getOrderId());
-
-            step.setPrice(price);
+        double goodPrice = depthService.getGoodTradePrice(step);
+        if(goodPrice != step.getPrice()) {
+            log.info("Order " + step.getOrderId() + " best trade price has changed from " + orderResult.getPrice() + " to " + String.format("%.8f", goodPrice) + ". Will adjust it.");
+            if(!"CANCELED".equals(orderResult.getStatus())) {
+                BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
+                // check if there was a filling in meantime
+                String symbol = cancelResult.getSymbol();
+                double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
+                double price = Double.parseDouble(cancelResult.getPrice());
+                if(exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
+                    // there was a meaningful filling
+                    log.info("Path plan #" + path.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
+                    handlePartFilledOrder(account, path, step, cancelResult);
+                    return;
+                }
+            }
+            // start the step again with new price
+            step.setPrice(goodPrice);
             binanceService.openStepOrder(account, step);
             saveSubplan(path);
         }
     }
 
-    private void startNextStep(TradeAccount account, TradePath path, TradeStep currentStep, BinanceOrderResult orderResult) {
-        currentStep.setStatus(TradeStatus.DONE);
-        currentStep.setFinishDate(ZonedDateTime.now());
-        currentStep.setOutCurrency(TradeUtil.otherCur(orderResult.getSymbol(), currentStep.getInCurrency()));
-        double inAmount, outAmount;
-        if(TradeUtil.isBuy(orderResult.getSide())) {
-            inAmount = Double.parseDouble(orderResult.getExecutedQty()) * Double.parseDouble(orderResult.getPrice());
-            outAmount = Double.parseDouble(orderResult.getExecutedQty());
-        } else {
-            inAmount = Double.parseDouble(orderResult.getExecutedQty());
-            outAmount = Double.parseDouble(orderResult.getExecutedQty()) * Double.parseDouble(orderResult.getPrice());
-        }
-        currentStep.setInAmount(inAmount);
-        currentStep.setOutAmount(outAmount);
+    private void startNextStep(TradeAccount account, TradePath path, TradeStep currentStep) {
+        RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getOutCurrency(), path.getDestCurrency());
+        RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
-        if(currentStep.getOutCurrency().equals(path.getDestCurrency())) {
-            //Path finished
-            path.setStatus(TradePlanStatus.FINISHED);
-            path.setFinishDate(ZonedDateTime.now());
-            path.setDestAmount(currentStep.getOutAmount());
-            saveSubplan(path);
+        TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getOutCurrency(), currentStep.getOutAmount());
+        step.setPlanId(path.getPlanId());
+        path.addStep(step);
 
-            if(path.isAutoRestart()) {
-                startPath(account, new TradePath(path));
-            } else {
-                planRepository.updateStatus(path.getPlanId(), TradePlanStatus.FINISHED.name());
-            }
-        } else {
-            saveSubplan(path);
-            RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getOutCurrency(), path.getDestCurrency());
-            RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
-
-            TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getOutCurrency(), currentStep.getOutAmount());
-            path.addStep(step);
-
-            binanceService.openStepOrder(account, step);
-            step.setSymbol(step.getSymbol());
-        }
-        saveSubplan(path);
+        binanceService.openStepOrder(account, step);
     }
 
     private TradeStep createTradeStep(RouteCalculator.RouteStep routeStep, int stepNumber, String inCurrency, double inAmount) {
         TradeStep step = new TradeStep();
         step.setDirty();
         step.setStep(stepNumber);
-        step.setStatus(TradeStatus.IDLE);
+        step.setStatus(TradeStatus.ACTIVE);
         step.setSymbol(routeStep.ticker.getSymbol());
-        if(routeStep.isBuy) {
-            step.setSide("BUY");
-            step.setPrice(depthService.getGoodBuyPoint(step.getSymbol(), 0d));
-        } else {
-            step.setSide("SELL");
-            step.setPrice(depthService.getGoodSellPoint(step.getSymbol(), 0d));
-        }
         step.setInCurrency(inCurrency);
         step.setInAmount(inAmount);
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
+        step.setSide(routeStep.isBuy ? "BUY" : "SELL");
+        step.setPrice(depthService.getGoodTradePrice(step));
         return step;
     }
 

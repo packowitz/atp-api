@@ -1,6 +1,8 @@
 package io.pacworx.atp.autotrade.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.pacworx.atp.autotrade.domain.binance.BinanceOrderResult;
+import io.pacworx.atp.autotrade.service.TradeUtil;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
@@ -65,6 +67,19 @@ public class TradeStep {
     public void finish() {
         this.status = TradeStatus.DONE;
         this.finishDate = ZonedDateTime.now();
+        this.dirty = true;
+    }
+
+    public void calcFilling(BinanceOrderResult orderResult) {
+        double executedAltCoin = Double.parseDouble(orderResult.getExecutedQty()) - orderFilled;
+        double executedBaseCoin = executedAltCoin * Double.parseDouble(orderResult.getPrice());
+        if(TradeUtil.isBuy(side)) {
+            addInFilled(executedBaseCoin);
+            addOutAmount(executedAltCoin);
+        } else {
+            addInFilled(executedAltCoin);
+            addOutAmount(executedBaseCoin);
+        }
         this.dirty = true;
     }
 

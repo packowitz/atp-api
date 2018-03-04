@@ -61,6 +61,16 @@ public class TradePath implements Serializable {
         this.setStartDate(ZonedDateTime.now());
     }
 
+    public void cancel() {
+        this.status = TradePlanStatus.CANCELLED;
+        this.finishDate = ZonedDateTime.now();
+    }
+
+    public void finish() {
+        this.status = TradePlanStatus.FINISHED;
+        this.finishDate = ZonedDateTime.now();
+    }
+
     public long getId() {
         return id;
     }
@@ -169,6 +179,18 @@ public class TradePath implements Serializable {
         }
     }
 
+    @JsonIgnore
+    public TradeStep getFirstStep() {
+        if(this.steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStep() == 1) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
     public List<TradeStep> getSteps() {
         return steps;
     }
@@ -181,6 +203,6 @@ public class TradePath implements Serializable {
         if(this.steps == null) {
             this.steps = new ArrayList<>();
         }
-        this.steps.add(step);
+        this.steps.add(0, step);
     }
 }
