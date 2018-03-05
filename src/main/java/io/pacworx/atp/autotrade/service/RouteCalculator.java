@@ -82,7 +82,7 @@ public class RouteCalculator {
         }).collect(Collectors.toList());
     }
 
-    public static final class Route {
+    static final class Route {
         String startCur;
         double startAmount;
         String destCur;
@@ -91,14 +91,14 @@ public class RouteCalculator {
 
         double finalAmount;
 
-        public Route(String startCur, double startAmount, String destCur) {
+        Route(String startCur, double startAmount, String destCur) {
             this.startCur = startCur;
             this.startAmount = startAmount;
             this.lastCur = startCur;
             this.destCur = destCur;
         }
 
-        public Route(Route orig) {
+        Route(Route orig) {
             this(orig.startCur, orig.startAmount, orig.destCur);
             lastCur = orig.lastCur;
             steps = new ArrayList<>(orig.steps);
@@ -129,17 +129,37 @@ public class RouteCalculator {
         }
     }
 
-    public static final class RouteStep {
+    static final class RouteStep {
         boolean isBuy;
         BinanceTicker ticker;
+        /** Identifier where in the gap between highest bid and lowest ask to place the bid **/
         double tradePerc = 1;
         double tradePoint;
         String cur;
         double amount;
 
-        public RouteStep(boolean isBuy, BinanceTicker ticker) {
+        RouteStep(boolean isBuy, BinanceTicker ticker) {
             this.isBuy = isBuy;
             this.ticker = ticker;
+            this.adjustTradePercByActivity();
+        }
+
+        private void adjustTradePercByActivity() {
+            //check the last24h stats (1440 minutes)
+            long trades = this.ticker.getStats24h().getCount();
+            //over 2 trades per minute -> active market
+            //over 1 trade per minute -> slightly inactive market
+            //over 0.5 trades per minute -> inactive market
+            //less than 0.5 trades per minute -> avoid market
+            if(trades >= 2880) {
+                tradePerc = 1;
+            } else if(trades >= 1440) {
+                tradePerc = 0.8;
+            } else if(trades >= 720) {
+                tradePerc = 0.5;
+            } else {
+                tradePerc = 0;
+            }
         }
 
         void calc(String inCur, double inAmount) {
