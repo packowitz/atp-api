@@ -44,15 +44,24 @@ public class BinancePathService {
     }
 
     public void startPath(TradeAccount account, TradePath path) {
-        RouteCalculator.Route route = findBestRoute(path.getMaxSteps(), path.getStartCurrency(), path.getDestCurrency());
-        RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
+        RouteCalculator.Route route = findBestRoute(path, path.getStartCurrency(), path.getStartAmount());
+        if(route != null) {
+            path.setStatus(TradePlanStatus.ACTIVE);
+            RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
-        TradeStep firstStep = createTradeStep(routeFirstStep, 1, path.getStartCurrency(), path.getStartAmount());
-        firstStep.setPlanId(path.getPlanId());
-        path.addStep(firstStep);
+            TradeStep firstStep = createTradeStep(routeFirstStep, 1, path.getStartCurrency(), path.getStartAmount());
+            firstStep.setPlanId(path.getPlanId());
+            path.addStep(firstStep);
 
-        binanceService.openStepOrder(account, firstStep);
-        saveSubplan(path);
+            binanceService.openStepOrder(account, firstStep);
+            saveSubplan(path);
+        } else {
+            if(path.getStatus() != TradePlanStatus.PAUSED) {
+                log.info("Cannot (re)start path plan #" + path.getPlanId() + " because there is no profitable route. PAUSE it for now");
+                path.setStatus(TradePlanStatus.PAUSED);
+                saveSubplan(path);
+            }
+        }
     }
 
     public void cancelPaths(TradeAccount account, TradePlan plan) {
@@ -79,6 +88,21 @@ public class BinancePathService {
     public void deletePaths(TradePlan plan) {
         pathRepository.deleteAllByPlanId(plan.getId());
         stepRepository.deleteAllByPlanId(plan.getId());
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    public void checkPausedPlans() {
+        List<TradePath> pausedPaths = pathRepository.findAllByStatus(TradePlanStatus.PAUSED);
+        for(TradePath pausedPath: pausedPaths) {
+            addStepsToMarket(pausedPath);
+            TradeStep latestStep = pausedPath.getLatestStep();
+            TradeAccount account = accountRepository.findOne(pausedPath.getAccountId());
+            if(latestStep != null) {
+                startNextStep(account, pausedPath, latestStep);
+            } else {
+                startPath(account, pausedPath);
+            }
+        }
     }
 
     @Scheduled(fixedDelay = 20000)
@@ -195,11 +219,16 @@ public class BinancePathService {
     }
 
     private void checkRoute(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
-        //TODO skip route calculation when it is the last step
-        RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), step.getInCurrency(), path.getDestCurrency());
-        RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
+        RouteCalculator.RouteStep routeFirstStep = null;
+        // check for better route if it is not the last step
+        if(step.getStep() < path.getMaxSteps()) {
+            RouteCalculator.Route route = findBestRoute(path, step.getInCurrency(), step.getInAmount());
+            if(route != null) {
+                routeFirstStep = route.steps.get(0);
+            }
+        }
 
-        if(!routeFirstStep.ticker.getSymbol().equals(step.getSymbol())) {
+        if(routeFirstStep != null && !routeFirstStep.ticker.getSymbol().equals(step.getSymbol())) {
             log.info("Path #" + path.getPlanId() + " found a better route to reach " + path.getDestCurrency() + " in " + (path.getMaxSteps() - path.getStepsCompleted()) + " steps.");
             BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
             // check if there was a filling in meantime
@@ -217,11 +246,15 @@ public class BinancePathService {
             step.setSide(routeFirstStep.isBuy ? "BUY" : "SELL");
             step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
             step.setOutAmount(0);
+            step.setPriceThreshold(routeFirstStep.tradePoint);
             step.setPrice(depthService.getGoodTradePrice(step));
 
             binanceService.openStepOrder(account, step);
             saveSubplan(path);
         } else {
+            if(routeFirstStep != null) {
+                step.setPriceThreshold(routeFirstStep.tradePoint);
+            }
             checkPrice(account, path, step, orderResult);
         }
     }
@@ -251,14 +284,31 @@ public class BinancePathService {
     }
 
     private void startNextStep(TradeAccount account, TradePath path, TradeStep currentStep) {
-        RouteCalculator.Route route = findBestRoute(path.getMaxSteps() - path.getStepsCompleted(), currentStep.getOutCurrency(), path.getDestCurrency());
-        RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
+        RouteCalculator.Route route = findBestRoute(path, currentStep.getOutCurrency(), currentStep.getOutAmount());
+        if(route != null) {
+            path.setStatus(TradePlanStatus.ACTIVE);
+            RouteCalculator.RouteStep routeFirstStep = route.steps.get(0);
 
-        TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getOutCurrency(), currentStep.getOutAmount());
-        step.setPlanId(path.getPlanId());
-        path.addStep(step);
+            TradeStep step = createTradeStep(routeFirstStep, path.getStepsCompleted() + 1, currentStep.getOutCurrency(), currentStep.getOutAmount());
+            step.setPlanId(path.getPlanId());
+            if(step.getStep() == path.getMaxSteps()) {
+                // give the last step a threshold to ensure profit
+                double threshold;
+                double minDestAmount = path.getStartAmount() * 1.005;
+                if(TradeUtil.isBuy(step.getSide())) {
+                    threshold = step.getInAmount() / minDestAmount;
+                } else {
+                    threshold = minDestAmount / step.getInAmount();
+                }
+                step.setPriceThreshold(threshold);
+            }
+            path.addStep(step);
 
-        binanceService.openStepOrder(account, step);
+            binanceService.openStepOrder(account, step);
+        } else {
+            log.info("Cannot start next step for path plan #" + path.getPlanId() + " because there is no profitable route. PAUSE plan for now");
+            path.setStatus(TradePlanStatus.PAUSED);
+        }
     }
 
     private TradeStep createTradeStep(RouteCalculator.RouteStep routeStep, int stepNumber, String inCurrency, double inAmount) {
@@ -271,13 +321,26 @@ public class BinancePathService {
         step.setInAmount(inAmount);
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
         step.setSide(routeStep.isBuy ? "BUY" : "SELL");
+        step.setPriceThreshold(routeStep.tradePoint);
         step.setPrice(depthService.getGoodTradePrice(step));
         return step;
     }
 
-    private RouteCalculator.Route findBestRoute(int maxSteps, String startCur, String destCur) {
+    private RouteCalculator.Route findBestRoute(int maxSteps, String startCur, double startAmount, String destCur, double minDestAmount) {
         List<BinanceTicker> tickers = Arrays.asList(binanceService.getAllTicker());
-        RouteCalculator calculator = new RouteCalculator(maxSteps, startCur, destCur, tickers);
+        RouteCalculator calculator = new RouteCalculator(maxSteps, startCur, startAmount, destCur, minDestAmount, tickers);
+        return calculator.searchBestRoute();
+    }
+
+    private RouteCalculator.Route findBestRoute(TradePath path, String startCurrency, double startAmount) {
+        int maxSteps = path.getMaxSteps() - path.getStepsCompleted();
+        double minDestAmount = path.getStartAmount() * 1.005;
+        if(maxSteps == 1) {
+            // skip minDestAmount for last step as there is no other choice for it
+            minDestAmount = 0;
+        }
+        List<BinanceTicker> tickers = Arrays.asList(binanceService.getAllTicker());
+        RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), minDestAmount, tickers);
         return calculator.searchBestRoute();
     }
 

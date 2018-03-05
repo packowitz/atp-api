@@ -7,26 +7,34 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RouteCalculator {
-    int maxSteps;
-    String startCur;
-    String destCur;
-    List<BinanceTicker> tickers;
-    Route bestRoute;
+    private int maxSteps;
+    private String startCur;
+    private double startAmount;
+    private String destCur;
+    private double minDestAmount;
+    private List<BinanceTicker> tickers;
+    private Route bestRoute;
 
-    public RouteCalculator(int maxSteps, String startCur, String destCur, List<BinanceTicker> tickers) {
+    public RouteCalculator(int maxSteps, String startCur, double startAmount, String destCur, double minDestAmount, List<BinanceTicker> tickers) {
         this.maxSteps = maxSteps;
         this.startCur = startCur;
+        this.startAmount = startAmount;
         this.destCur = destCur;
+        this.minDestAmount = minDestAmount;
         this.tickers = tickers;
     }
 
     public Route searchBestRoute() {
-        Route route = new Route(startCur, destCur);
+        Route route = new Route(startCur, startAmount, destCur);
         nextSteps(route);
-        return bestRoute;
+        if(bestRoute != null && bestRoute.finalAmount >= minDestAmount) {
+            return bestRoute;
+        } else {
+            return null;
+        }
     }
 
-    void nextSteps(Route route) {
+    private void nextSteps(Route route) {
         List<BinanceTicker> buys = this.findBuys(route.lastCur);
         for(BinanceTicker ticker: buys) {
             addStepToRoute(route, new RouteStep(true, ticker));
@@ -76,20 +84,22 @@ public class RouteCalculator {
 
     public static final class Route {
         String startCur;
+        double startAmount;
         String destCur;
         String lastCur;
         List<RouteStep> steps = new ArrayList<>();
 
         double finalAmount;
 
-        public Route(String startCur, String destCur) {
+        public Route(String startCur, double startAmount, String destCur) {
             this.startCur = startCur;
+            this.startAmount = startAmount;
             this.lastCur = startCur;
             this.destCur = destCur;
         }
 
         public Route(Route orig) {
-            this(orig.startCur, orig.destCur);
+            this(orig.startCur, orig.startAmount, orig.destCur);
             lastCur = orig.lastCur;
             steps = new ArrayList<>(orig.steps);
         }
@@ -109,7 +119,7 @@ public class RouteCalculator {
 
         void calc() {
             String tradeCur = startCur;
-            double tradeAmount = 1d;
+            double tradeAmount = startAmount;
             for(RouteStep step: steps) {
                 step.calc(tradeCur, tradeAmount);
                 tradeCur = step.cur;
@@ -130,18 +140,7 @@ public class RouteCalculator {
         public RouteStep(boolean isBuy, BinanceTicker ticker) {
             this.isBuy = isBuy;
             this.ticker = ticker;
-            //this.optimizeTradePerc();
         }
-
-//        private void optimizeTradePerc() {
-//            if(ticker.getPerc() < 0.002) {
-//                tradePerc = 0;
-//            } else if(ticker.getPerc() < 0.005) {
-//                tradePerc = 0.5;
-//            } else {
-//                tradePerc = 0.9;
-//            }
-//        }
 
         void calc(String inCur, double inAmount) {
             cur = TradeUtil.otherCur(ticker.getSymbol(), inCur);
