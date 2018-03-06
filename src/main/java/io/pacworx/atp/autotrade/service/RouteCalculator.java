@@ -21,15 +21,17 @@ public class RouteCalculator {
 //        BinanceService service = new BinanceService(exchange);
 //        List<BinanceTicker> tickers = Arrays.asList(service.getAllTicker());
 //
-//        int maxSteps = 3;
-//        String startCurrency = "BTC";
-//        double startAmount = 0.00120697;
-//        String destCurrency = "ICX";
+//        int maxSteps = 2;
+//        String startCurrency = "ICN";
+//        double startAmount = 22;
+//        String destCurrency = "POA";
 //
 //        RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, destCurrency, tickers);
 //        RouteCalculator.Route bestRoute = calculator.searchBestRoute();
 //
 //        System.out.println("Best route has final amount of " + bestRoute.finalAmount + " " + destCurrency);
+//        bestRoute.recalcWithoutActivityPenalties();
+//        System.out.println("After removing inactivity penalties: " + bestRoute.finalAmount + " " + destCurrency);
 //    }
 
     public RouteCalculator(int maxSteps, String startCur, double startAmount, String destCur, List<BinanceTicker> tickers) {
@@ -127,6 +129,13 @@ public class RouteCalculator {
             } else {
                 return destCur.equals(lastCur);
             }
+        }
+
+        void recalcWithoutActivityPenalties() {
+            for(RouteStep step: steps) {
+                step.tradePerc = 1;
+            }
+            calc();
         }
 
         void calc() {

@@ -341,8 +341,8 @@ public class BinancePathService {
 
         RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), tickers);
         RouteCalculator.Route bestRoute = calculator.searchBestRoute();
-
-        if(maxSteps == 1 || bestRoute.finalAmount >= (path.getStartAmount() * 1.002)) {
+        bestRoute.recalcWithoutActivityPenalties();
+        if(maxSteps == 1 || bestRoute.finalAmount >= path.getStartAmount()) {
             return bestRoute;
         }
         return null;
