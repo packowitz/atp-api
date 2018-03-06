@@ -216,6 +216,7 @@ public class BinancePathService {
 
         log.info("Path plan #" + path.getPlanId() + " step-" + step.getStep() + " got a part fill. Keep going.");
         checkPrice(account, path, step, orderResult);
+        saveSubplan(path);
     }
 
     private void checkRoute(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
