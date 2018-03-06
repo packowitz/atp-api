@@ -2,6 +2,7 @@ package io.pacworx.atp.autotrade.service;
 
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,6 +14,23 @@ public class RouteCalculator {
     private String destCur;
     private List<BinanceTicker> tickers;
     private Route bestRoute;
+
+//    public static void main(String[] args) {
+//        BinanceExchangeInfoService exchange = new BinanceExchangeInfoService();
+//        exchange.loadInfos();
+//        BinanceService service = new BinanceService(exchange);
+//        List<BinanceTicker> tickers = Arrays.asList(service.getAllTicker());
+//
+//        int maxSteps = 3;
+//        String startCurrency = "BTC";
+//        double startAmount = 0.00120697;
+//        String destCurrency = "ICX";
+//
+//        RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, destCurrency, tickers);
+//        RouteCalculator.Route bestRoute = calculator.searchBestRoute();
+//
+//        System.out.println("Best route has final amount of " + bestRoute.finalAmount + " " + destCurrency);
+//    }
 
     public RouteCalculator(int maxSteps, String startCur, double startAmount, String destCur, List<BinanceTicker> tickers) {
         this.maxSteps = maxSteps;
