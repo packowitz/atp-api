@@ -328,14 +328,15 @@ public class BinancePathService {
 
     private RouteCalculator.Route findBestRoute(TradePath path, String startCurrency, double startAmount) {
         int maxSteps = path.getMaxSteps() - path.getStepsCompleted();
-        double minDestAmount = path.getStartAmount() * 1.005;
-        if(maxSteps == 1) {
-            // skip minDestAmount for last step as there is no other choice for it
-            minDestAmount = 0;
-        }
         List<BinanceTicker> tickers = Arrays.asList(binanceService.getAllTicker());
-        RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), minDestAmount, tickers);
-        return calculator.searchBestRoute();
+
+        RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), tickers);
+        RouteCalculator.Route bestRoute = calculator.searchBestRoute();
+
+        if(maxSteps == 1 || bestRoute.finalAmount >= (path.getStartAmount() * 1.002)) {
+            return bestRoute;
+        }
+        return null;
     }
 
     private TradePath loadActiveSubplan(long planId) {

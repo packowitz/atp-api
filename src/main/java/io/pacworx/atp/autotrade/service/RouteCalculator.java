@@ -11,27 +11,21 @@ public class RouteCalculator {
     private String startCur;
     private double startAmount;
     private String destCur;
-    private double minDestAmount;
     private List<BinanceTicker> tickers;
     private Route bestRoute;
 
-    public RouteCalculator(int maxSteps, String startCur, double startAmount, String destCur, double minDestAmount, List<BinanceTicker> tickers) {
+    public RouteCalculator(int maxSteps, String startCur, double startAmount, String destCur, List<BinanceTicker> tickers) {
         this.maxSteps = maxSteps;
         this.startCur = startCur;
         this.startAmount = startAmount;
         this.destCur = destCur;
-        this.minDestAmount = minDestAmount;
         this.tickers = tickers;
     }
 
     public Route searchBestRoute() {
         Route route = new Route(startCur, startAmount, destCur);
         nextSteps(route);
-        if(bestRoute != null && bestRoute.finalAmount >= minDestAmount) {
-            return bestRoute;
-        } else {
-            return null;
-        }
+        return bestRoute;
     }
 
     private void nextSteps(Route route) {
