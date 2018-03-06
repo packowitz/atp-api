@@ -131,7 +131,7 @@ public class BinancePathService {
             } else if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
                 handlePartFilledOrder(account, path, step, orderResult);
             } else if("NEW".equals(orderResult.getStatus())) {
-                checkRoute(account, path, step, orderResult);
+                handleUnfilledOrder(account, path, step, orderResult);
             } else {
                 log.info("Order " + orderResult.getOrderId() + " from path " + step.getSubplanId() + " is in status: " + orderResult.getStatus());
             }
@@ -196,7 +196,7 @@ public class BinancePathService {
         double executedQty = Double.parseDouble(orderResult.getExecutedQty()) - step.getOrderFilled();
         double price = Double.parseDouble(orderResult.getPrice());
         if(step.getInFilled() == 0 && !exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
-            checkRoute(account, path, step, orderResult);
+            handleUnfilledOrder(account, path, step, orderResult);
             return;
         }
 
@@ -217,6 +217,14 @@ public class BinancePathService {
         log.info("Path plan #" + path.getPlanId() + " step-" + step.getStep() + " got a part fill. Keep going.");
         checkPrice(account, path, step, orderResult);
         saveSubplan(path);
+    }
+
+    private void handleUnfilledOrder(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
+        if(step.getOutAmount() == 0) {
+            checkRoute(account, path, step, orderResult);
+        } else {
+            checkPrice(account, path, step, orderResult);
+        }
     }
 
     private void checkRoute(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
