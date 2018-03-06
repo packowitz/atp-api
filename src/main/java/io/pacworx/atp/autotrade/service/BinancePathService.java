@@ -102,6 +102,10 @@ public class BinancePathService {
             } else {
                 startPath(account, pausedPath);
             }
+            if(pausedPath.getStatus() == TradePlanStatus.ACTIVE) {
+                log.info("Paused path plan #" + pausedPath.getPlanId() + " reactivated.");
+                saveSubplan(pausedPath);
+            }
         }
     }
 
