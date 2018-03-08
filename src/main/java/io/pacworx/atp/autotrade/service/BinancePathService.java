@@ -307,7 +307,7 @@ public class BinancePathService {
             if(step.getStep() == path.getMaxSteps()) {
                 // give the last step a threshold to ensure profit
                 double threshold;
-                double minDestAmount = path.getStartAmount() * 1.005;
+                double minDestAmount = path.getFirstStep().getInFilled() * 1.005;
                 if(TradeUtil.isBuy(step.getSide())) {
                     threshold = step.getInAmount() / minDestAmount;
                 } else {
@@ -346,7 +346,11 @@ public class BinancePathService {
         RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), tickers);
         RouteCalculator.Route bestRoute = calculator.searchBestRoute();
         bestRoute.recalcWithoutActivityPenalties();
-        if(maxSteps == 1 || bestRoute.finalAmount >= path.getStartAmount()) {
+        double pathStartAmount = path.getStartAmount();
+        if(path.getFirstStep() != null) {
+            pathStartAmount = path.getFirstStep().getInFilled();
+        }
+        if(maxSteps == 1 || bestRoute.finalAmount >= pathStartAmount) {
             return bestRoute;
         }
         return null;
