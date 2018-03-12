@@ -116,6 +116,7 @@ public class BinanceService {
         }
         step.setOrderId(result.getOrderId());
         step.setOrderFilled(0d);
+        step.setPrice(Double.parseDouble(result.getPrice()));
         step.setOrderAltcoinQty(Double.parseDouble(result.getOrigQty()));
         step.setOrderBasecoinQty(step.getOrderAltcoinQty() * Double.parseDouble(result.getPrice()));
         step.setStatus(TradeStatus.ACTIVE);
@@ -134,7 +135,7 @@ public class BinanceService {
         return result;
     }
 
-    public BinanceOrderResult openLimitOrder(TradeAccount account, TradeOffer offer) {
+    private BinanceOrderResult openLimitOrder(TradeAccount account, TradeOffer offer) {
         this.exchangeInfoService.polishTradeOffer(offer);
         String params = "symbol=" + offer.getSymbol();
         params += "&side=" + offer.getSide();

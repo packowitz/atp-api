@@ -60,8 +60,7 @@ public class BinanceExchangeInfoService {
 
     public double polishPrice(String symbol, double price) {
         BinanceExchangeInfo info = getInfo(symbol);
-        double polishedPrice = info.getPriceStepSize() * Math.round(price / info.getPriceStepSize());
-        return polishedPrice;
+        return info.getPriceStepSize() * Math.round(price / info.getPriceStepSize());
     }
 
     private static final class ExchangeInfoResponse {

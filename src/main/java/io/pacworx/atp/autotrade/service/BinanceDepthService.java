@@ -2,6 +2,7 @@ package io.pacworx.atp.autotrade.service;
 
 import io.pacworx.atp.autotrade.domain.TradeOffer;
 import io.pacworx.atp.autotrade.domain.TradeStep;
+import io.pacworx.atp.autotrade.domain.TradeStepRepository;
 import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,9 +21,12 @@ public class BinanceDepthService {
     private static final double thresholdPerc = 0.75;
 
     private final BinanceExchangeInfoService exchangeInfoService;
+    private final TradeStepRepository stepRepository;
 
-    public BinanceDepthService(BinanceExchangeInfoService exchangeInfoService) {
+    public BinanceDepthService(BinanceExchangeInfoService exchangeInfoService,
+                               TradeStepRepository stepRepository) {
         this.exchangeInfoService = exchangeInfoService;
+        this.stepRepository = stepRepository;
     }
 
     public BinanceDepth getDepth(String symbol) {
@@ -36,15 +40,15 @@ public class BinanceDepthService {
     }
 
     public double getGoodTradePrice(TradeStep step) {
-        double ignoreBid = step.getPrice();
         double price;
+        List<Double> ignorePrices = stepRepository.findActivePrices(step.getSymbol());
         if(TradeUtil.isBuy(step.getSide())) {
-            price = getGoodBuyPoint(step.getSymbol(), ignoreBid);
+            price = getGoodBuyPoint(step.getSymbol(), ignorePrices);
             if(step.getPriceThreshold() != null && price > step.getPriceThreshold()) {
                 price = step.getPriceThreshold();
             }
         } else {
-            price = getGoodSellPoint(step.getSymbol(), ignoreBid);
+            price = getGoodSellPoint(step.getSymbol(), ignorePrices);
             if(step.getPriceThreshold() != null && price < step.getPriceThreshold()) {
                 price = step.getPriceThreshold();
             }
@@ -52,12 +56,12 @@ public class BinanceDepthService {
         return price;
     }
 
-    public double getGoodBuyPoint(String symbol, double ignoreBid) {
+    private double getGoodBuyPoint(String symbol, List<Double> ignoreBids) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
         double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
         double threshold = thresholdPerc / depth.getBids().size();
         List<TradeOffer> overTreshold = depth.getBids().stream().filter(
-                t -> t.getPrice() != ignoreBid && (t.getQuantity() / depth.getBidVolume()) > threshold).collect(Collectors.toList());
+                t -> !ignoreBids.contains(t.getPrice()) && (t.getQuantity() / depth.getBidVolume()) > threshold).collect(Collectors.toList());
         double priceDiffToHighest = depth.getBids().get(0).getPrice() / overTreshold.get(0).getPrice();
         // if first offer over threshhold is 0.3% away from highest bid use the first offer over threshold
         if(priceDiffToHighest > 1.003) {
@@ -73,12 +77,12 @@ public class BinanceDepthService {
         return overTreshold.get(0).getPrice() + priceStep;
     }
 
-    public double getGoodSellPoint(String symbol, double ignoreAsk) {
+    private double getGoodSellPoint(String symbol, List<Double> ignoreAsks) {
         BinanceDepth depth = getDepth(symbol, DepthLimit.L20);
         double priceStep = exchangeInfoService.getInfo(symbol).getPriceStepSize();
         double threshold = thresholdPerc / depth.getAsks().size();
         List<TradeOffer> overTreshold = depth.getAsks().stream().filter(
-                t -> t.getPrice() != ignoreAsk && (t.getQuantity() / depth.getAskVolume()) > threshold).collect(Collectors.toList());
+                t -> !ignoreAsks.contains(t.getPrice()) && (t.getQuantity() / depth.getAskVolume()) > threshold).collect(Collectors.toList());
         double priceDiffToLowest = overTreshold.get(0).getPrice() / depth.getAsks().get(0).getPrice();
         // if first offer over threshhold is 0.3% away from lowest ask use the first offer over threshold
         if(priceDiffToLowest > 1.003) {
