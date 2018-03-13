@@ -6,6 +6,8 @@ import io.pacworx.atp.autotrade.service.TradeUtil;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity(name = "trade_step")
 public class TradeStep {
@@ -57,6 +59,9 @@ public class TradeStep {
     @Transient
     @JsonIgnore
     private boolean dirty = false;
+    @Transient
+    @JsonIgnore
+    private List<TradeAuditLog> newAuditLogs;
 
     public void cancel() {
         this.status = TradeStatus.CANCELLED;
@@ -256,6 +261,37 @@ public class TradeStep {
     }
 
     public void setDirty() {
+        this.dirty = true;
+    }
+
+    public List<TradeAuditLog> getNewAuditLogs() {
+        return newAuditLogs;
+    }
+
+    public void addInfoAuditLog(String title) {
+        this.addInfoAuditLog(title, null);
+    }
+
+    public void addInfoAuditLog(String title, String message) {
+        this.addAuditLog("INFO", title, message);
+    }
+
+    public void addErrorAuditLog(String title, String message) {
+        this.addAuditLog("ERROR", title, message);
+    }
+
+    private void addAuditLog(String level, String title, String message) {
+        TradeAuditLog newAuditLog = new TradeAuditLog();
+        //ids must be set before saving
+        newAuditLog.setTimestamp(ZonedDateTime.now());
+        newAuditLog.setLevel(level);
+        newAuditLog.setTitle(title);
+        newAuditLog.setMessage(message);
+
+        if(this.newAuditLogs == null) {
+            this.newAuditLogs = new ArrayList<>();
+        }
+        this.newAuditLogs.add(newAuditLog);
         this.dirty = true;
     }
 }

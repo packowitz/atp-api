@@ -37,6 +37,7 @@ public class BinanceController {
     private final TradePathRepository tradePathRepository;
     private final TradeOneMarketRepository tradeOneMarketRepository;
     private final TradeStepRepository tradeStepRepository;
+    private final TradeAuditLogRepository auditLogRepository;
 
     @Autowired
     public BinanceController(BinanceService binanceService,
@@ -47,7 +48,8 @@ public class BinanceController {
                              TradePlanRepository tradePlanRepository,
                              TradePathRepository tradePathRepository,
                              TradeOneMarketRepository tradeOneMarketRepository,
-                             TradeStepRepository tradeStepRepository) {
+                             TradeStepRepository tradeStepRepository,
+                             TradeAuditLogRepository auditLogRepository) {
         this.binanceService = binanceService;
         this.pathService = pathService;
         this.oneMarketService = oneMarketService;
@@ -57,6 +59,7 @@ public class BinanceController {
         this.tradePathRepository = tradePathRepository;
         this.tradeOneMarketRepository = tradeOneMarketRepository;
         this.tradeStepRepository = tradeStepRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
@@ -71,7 +74,7 @@ public class BinanceController {
 
     @RequestMapping(value = "/trades/{symbol}", method = RequestMethod.GET)
     public ResponseEntity<BinanceTrade[]> getTrades(@PathVariable String symbol) throws Exception {
-        return new ResponseEntity<>(binanceService.getLastTrades(symbol), HttpStatus.OK);
+        return new ResponseEntity<>(binanceService.getLastTrades(symbol, 500), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)
@@ -161,6 +164,12 @@ public class BinanceController {
             path.setSteps(steps);
         }
         return new ResponseEntity<>(paths, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/step/{stepId}/logs", method = RequestMethod.GET)
+    public ResponseEntity<List<TradeAuditLog>> getAuditLogs(@PathVariable long stepId) {
+        List<TradeAuditLog> logs = auditLogRepository.findAllByStepIdOrderByTimestampDesc(stepId);
+        return new ResponseEntity<>(logs, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan/{planId}/autorepeat/{autorepeat}", method = RequestMethod.PUT)

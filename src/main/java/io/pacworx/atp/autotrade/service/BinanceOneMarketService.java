@@ -23,6 +23,7 @@ public class BinanceOneMarketService {
     private final TradeAccountRepository accountRepository;
     private final TradePlanRepository planRepository;
     private final TradeStepRepository stepRepository;
+    private final TradeAuditLogRepository auditLogRepository;
 
     @Autowired
     public BinanceOneMarketService(BinanceService binanceService,
@@ -31,7 +32,8 @@ public class BinanceOneMarketService {
                                    TradeOneMarketRepository microRepository,
                                    TradeAccountRepository accountRepository,
                                    TradePlanRepository planRepository,
-                                   TradeStepRepository stepRepository) {
+                                   TradeStepRepository stepRepository,
+                                   TradeAuditLogRepository auditLogRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.exchangeInfoService = exchangeInfoService;
@@ -39,6 +41,7 @@ public class BinanceOneMarketService {
         this.accountRepository = accountRepository;
         this.planRepository = planRepository;
         this.stepRepository = stepRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     public void startPlan(TradeAccount account, TradeOneMarket oneMarket) {
@@ -116,6 +119,8 @@ public class BinanceOneMarketService {
         // update status and calc step in and out filling
         step.calcFilling(orderResult);
         step.finish();
+        step.addInfoAuditLog("Step filled");
+        binanceService.addMarketInfoAsAuditLog(step);
 
         // update lastActionDate on plan
         TradePlan plan = planRepository.findOne(oneMarket.getPlanId());
@@ -194,6 +199,7 @@ public class BinanceOneMarketService {
         // step set orderFilling and update step in and out filling
         step.calcFilling(orderResult);
         step.addOrderFilled(executedQty);
+        step.addInfoAuditLog("Part filled", "Got " + String.format("%.8f", executedQty) + " at " + String.format("%.8f", price));
 
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep got a part fill. Move traded coins to stepBack.");
@@ -206,20 +212,27 @@ public class BinanceOneMarketService {
     }
 
     private void handleUnfilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
+        // if step is cancelled then don't handle it (again)
+        if("CANCELED".equals(orderResult.getStatus())) {
+            return;
+        }
         // adjust price if necessary
         double goodPrice = depthService.getGoodTradePrice(step);
         if(goodPrice != step.getPrice()) {
             log.info("Plan #" + oneMarket.getPlanId() + (step.getStep() == 1 ? " firstStep" : " stepBack") + " price adjusting");
-            if(!"CANCELED".equals(orderResult.getStatus())) {
-                BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
-                // check if there was a filling in meantime
-                String symbol = cancelResult.getSymbol();
-                double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
-                double price = Double.parseDouble(cancelResult.getPrice());
-                if(exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
-                    // there was a meaningful filling
-                    log.info("Plan #" + oneMarket.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
-                    handlePartFilledOrder(account, oneMarket, step, cancelResult);
+            step.addInfoAuditLog("Adjust price to " + String.format("%.8f", goodPrice));
+            BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
+            // check if there was a filling in meantime
+            String symbol = cancelResult.getSymbol();
+            double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
+            double price = Double.parseDouble(cancelResult.getPrice());
+            if(exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
+                // there was a meaningful filling
+                log.info("Plan #" + oneMarket.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
+                step.addInfoAuditLog("Received filling in meantime");
+                handlePartFilledOrder(account, oneMarket, step, cancelResult);
+                if(step.getStatus() == TradeStatus.DONE) {
+                    // if cancelled step was fully filled then it doesn't need to restart anymore
                     return;
                 }
             }
@@ -331,6 +344,14 @@ public class BinanceOneMarketService {
                 if(step.isDirty()) {
                     step.setSubplanId(oneMarket.getId());
                     stepRepository.save(step);
+                    if(step.getNewAuditLogs() != null) {
+                        for(TradeAuditLog log: step.getNewAuditLogs()) {
+                            log.setPlanId(step.getPlanId());
+                            log.setSubplanId(step.getSubplanId());
+                            log.setStepId(step.getId());
+                            auditLogRepository.save(log);
+                        }
+                    }
                 }
             }
         }

@@ -25,6 +25,7 @@ public class BinancePathService {
     private final TradePlanRepository planRepository;
     private final TradeStepRepository stepRepository;
     private final BinanceExchangeInfoService exchangeInfoService;
+    private final TradeAuditLogRepository auditLogRepository;
 
     @Autowired
     public BinancePathService(BinanceService binanceService,
@@ -33,7 +34,8 @@ public class BinancePathService {
                               TradeAccountRepository accountRepository,
                               TradePlanRepository planRepository,
                               TradeStepRepository stepRepository,
-                              BinanceExchangeInfoService exchangeInfoService) {
+                              BinanceExchangeInfoService exchangeInfoService,
+                              TradeAuditLogRepository auditLogRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.pathRepository = pathRepository;
@@ -41,6 +43,7 @@ public class BinancePathService {
         this.planRepository = planRepository;
         this.stepRepository = stepRepository;
         this.exchangeInfoService = exchangeInfoService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     public void startPath(TradeAccount account, TradePath path) {
@@ -378,6 +381,14 @@ public class BinancePathService {
                 if(step.isDirty()) {
                     step.setSubplanId(path.getId());
                     stepRepository.save(step);
+                    if(step.getNewAuditLogs() != null) {
+                        for(TradeAuditLog log: step.getNewAuditLogs()) {
+                            log.setPlanId(step.getPlanId());
+                            log.setSubplanId(step.getSubplanId());
+                            log.setStepId(step.getId());
+                            auditLogRepository.save(log);
+                        }
+                    }
                 }
             }
         }

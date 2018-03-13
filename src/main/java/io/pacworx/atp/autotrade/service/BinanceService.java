@@ -54,6 +54,20 @@ public class BinanceService {
         log.info("Found a time difference to binance of " + serverTimeDifference + "ms.");
     }
 
+    public void addMarketInfoAsAuditLog(TradeStep step) {
+        String msg = "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
+        BinanceTicker ticker = getTicker(step.getSymbol());
+        msg += "Current gap: " + String.format("%.2f", ticker.getPerc()) + "; ";
+        msg += "24h high/low: " + ticker.getStats24h().getLowPrice() + "/" + ticker.getStats24h().getHighPrice() + "; ";
+        BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
+        msg += "Last trades:";
+        for(BinanceTrade trade: lastTrades) {
+            msg += trade.getIsBuyerMaker() ? " S" : " B";
+        }
+
+        step.addInfoAuditLog("Market info", msg);
+    }
+
     public BinanceTicker[] getAllTicker() {
         if(System.currentTimeMillis() - tickerLoadTimestamp < 10000) {
             return tickerCache;
@@ -80,6 +94,16 @@ public class BinanceService {
         this.tickerLoadTimestamp = System.currentTimeMillis();
         return tickerCache;
     }
+
+    public BinanceTicker getTicker(String symbol) {
+        BinanceTicker[] tickers = getAllTicker();
+        for(BinanceTicker ticker: tickers) {
+            if(ticker.getSymbol().equals(symbol)) {
+                return ticker;
+            }
+        }
+        return null;
+    }
     
     public BinanceTickerStatistics[] get24HrPriceStatistics(){
     	if(System.currentTimeMillis() - statsLoadTimestamp < 900000) { // every 15 minutes
@@ -93,9 +117,9 @@ public class BinanceService {
     	return statsCache;
     }
 
-    public BinanceTrade[] getLastTrades(String symbol) {
+    public BinanceTrade[] getLastTrades(String symbol, int limit) {
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.getForObject(SERVER + "/v1/trades?symbol=" + symbol, BinanceTrade[].class);
+        return restTemplate.getForObject(SERVER + "/v1/trades?symbol=" + symbol + "&limit=" + limit, BinanceTrade[].class);
     }
 
     public BinanceAccount getBinanceAccount(TradeAccount account) {
@@ -123,15 +147,18 @@ public class BinanceService {
         step.setDirty();
 
         String logMsg = "Opened order " + result.getOrderId() + " for plan #" + step.getPlanId() + "-" + step.getStep() + ": ";
+        String auditLog;
         if(TradeUtil.isBuy(result.getSide())) {
-            logMsg += "BUY " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getOutCurrency() + " for ";
-            logMsg += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getInCurrency();
+            auditLog = "BUY " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getOutCurrency() + " for ";
+            auditLog += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getInCurrency();
         } else {
-            logMsg += "SELL " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getInCurrency() + " to ";
-            logMsg += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getOutCurrency();
+            auditLog = "SELL " + String.format("%.8f", step.getOrderAltcoinQty()) + " " + step.getInCurrency() + " to ";
+            auditLog += String.format("%.8f", step.getOrderBasecoinQty()) + " " + step.getOutCurrency();
         }
-        logMsg += " at " + String.format("%.8f", step.getPrice());
-        log.info(logMsg);
+        auditLog += " at " + String.format("%.8f", step.getPrice());
+        log.info(logMsg + auditLog);
+        step.addInfoAuditLog("Order " + result.getOrderId() + " created", auditLog);
+        addMarketInfoAsAuditLog(step);
         return result;
     }
 
@@ -167,6 +194,7 @@ public class BinanceService {
             // this happens when the order is already filled or canceled
             // TODO add check it the exception is caused by this
         }
+        step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
         step.setStatus(TradeStatus.CANCELLED);
         step.setDirty();
         return getOrderStatus(account, step.getSymbol(), step.getOrderId());
