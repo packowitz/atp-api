@@ -57,6 +57,7 @@ public class BinanceOneMarketService {
     public void deletePlan(TradePlan plan) {
         oneMarketRepository.deleteAllByPlanId(plan.getId());
         stepRepository.deleteAllByPlanId(plan.getId());
+        auditLogRepository.deleteAllByPlanId(plan.getId());
     }
 
     @Scheduled(fixedDelay = 20000)

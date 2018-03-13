@@ -91,6 +91,7 @@ public class BinancePathService {
     public void deletePaths(TradePlan plan) {
         pathRepository.deleteAllByPlanId(plan.getId());
         stepRepository.deleteAllByPlanId(plan.getId());
+        auditLogRepository.deleteAllByPlanId(plan.getId());
     }
 
     @Scheduled(fixedDelay = 60000)

@@ -13,7 +13,6 @@ import java.util.List;
 public class TradeStep {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     private long id;
     @Column(name = "plan_id")
     @JsonIgnore
