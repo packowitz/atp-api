@@ -57,13 +57,22 @@ public class BinanceService {
     public void addMarketInfoAsAuditLog(TradeStep step) {
         String msg = "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
         BinanceTicker ticker = getTicker(step.getSymbol());
-        msg += "Current gap: " + String.format("%.2f", ticker.getPerc()) + "; ";
-        msg += "24h high/low: " + ticker.getStats24h().getLowPrice() + "/" + ticker.getStats24h().getHighPrice() + "; ";
+        msg += "Current gap: " + String.format("%.2f", 100d * ticker.getPerc()) + "%; ";
+        msg += "24h high: " + ticker.getStats24h().getHighPrice() + "; ";
+        msg += "24h low: " + ticker.getStats24h().getLowPrice() + "; ";
         BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
-        msg += "Last trades:";
+        String sellBuys = "";
+        int sells = 0, buys = 0;
         for(BinanceTrade trade: lastTrades) {
-            msg += trade.getIsBuyerMaker() ? " S" : " B";
+            if(trade.getIsBuyerMaker()) {
+                sellBuys += "S ";
+                sells ++;
+            } else {
+                sellBuys += "B ";
+                buys ++;
+            }
         }
+        msg += "Last 20 trades: " + buys + " buys, " + sells + " sells; " + sellBuys;
 
         step.addInfoAuditLog("Market info", msg);
     }
