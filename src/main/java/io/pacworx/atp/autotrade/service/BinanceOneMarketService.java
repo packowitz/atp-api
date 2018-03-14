@@ -2,6 +2,7 @@ package io.pacworx.atp.autotrade.service;
 
 import io.pacworx.atp.autotrade.domain.*;
 import io.pacworx.atp.autotrade.domain.binance.BinanceOrderResult;
+import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.exception.BadRequestException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -218,7 +219,7 @@ public class BinanceOneMarketService {
             return;
         }
         // adjust price if necessary
-        double goodPrice = depthService.getGoodTradePrice(step);
+        double goodPrice = getGoodTradePoint(step, oneMarket.getMinProfit());
         if(goodPrice != step.getPrice()) {
             log.info("Plan #" + oneMarket.getPlanId() + (step.getStep() == 1 ? " firstStep" : " stepBack") + " price adjusting");
             step.addInfoAuditLog("Adjust price to " + String.format("%.8f", goodPrice));
@@ -268,7 +269,7 @@ public class BinanceOneMarketService {
             stepBack.setPriceThreshold(avgThreshold);
 
             stepBack.setPrice(0d);
-            stepBack.setPrice(depthService.getGoodTradePrice(stepBack));
+            stepBack.setPrice(getGoodTradePoint(stepBack, oneMarket.getMinProfit()));
         } else {
             log.info("Plan #" + oneMarket.getPlanId() + " create new stepBack.");
             stepBack = createStepBack(oneMarket, firstStep, orderResult);
@@ -286,7 +287,7 @@ public class BinanceOneMarketService {
         step.setStatus(TradeStatus.ACTIVE);
         step.setSymbol(oneMarket.getSymbol());
         step.setSide(isBuy ? "BUY" : "SELL");
-        step.setPrice(depthService.getGoodTradePrice(step));
+        step.setPrice(getGoodTradePoint(step, oneMarket.getMinProfit()));
         step.setInCurrency(oneMarket.getStartCurrency());
         step.setInAmount(oneMarket.getStartAmount());
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
@@ -303,11 +304,28 @@ public class BinanceOneMarketService {
         step.setSymbol(firstStep.getSymbol());
         step.setSide(isBuy ? "BUY" : "SELL");
         step.setPriceThreshold(calcPriceThreshold(orderResult, oneMarket.getMinProfit()));
-        step.setPrice(depthService.getGoodTradePrice(step));
+        step.setPrice(getGoodTradePoint(step, oneMarket.getMinProfit()));
         step.setInCurrency(firstStep.getOutCurrency());
         step.setInAmount(firstStep.getOutAmount());
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
         return step;
+    }
+
+    private double getGoodTradePoint(TradeStep step, double minProfit) {
+        if(step.getStep() == 1) {
+            // first step should be at least {minProfit} away from other side
+            BinanceTicker ticker = binanceService.getTicker(step.getSymbol());
+            double threshold;
+            if(TradeUtil.isBuy(step.getSide())) {
+                threshold = Double.parseDouble(ticker.getAskPrice());
+                threshold /= (1d + minProfit);
+            } else {
+                threshold = Double.parseDouble(ticker.getBidPrice());
+                threshold *= (1d + minProfit);
+            }
+            step.setPriceThreshold(threshold);
+        }
+        return depthService.getGoodTradePrice(step);
     }
 
     private double calcPriceThreshold(BinanceOrderResult orderResult, double minProfit) {
