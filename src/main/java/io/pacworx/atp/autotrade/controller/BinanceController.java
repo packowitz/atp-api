@@ -172,6 +172,27 @@ public class BinanceController {
         return new ResponseEntity<>(logs, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/plan/{planId}/step/{stepId}/removeThreshold", method = RequestMethod.POST)
+    public ResponseEntity<TradeStep> removeThreshold(@ModelAttribute("tradeuser") TradeUser user,
+                                                     @PathVariable long planId,
+                                                     @PathVariable long stepId) {
+        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        if(binance == null) {
+            throw new BadRequestException("User doesn't have a binance account");
+        }
+        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        if(plan == null || plan.getUserId() != user.getId()) {
+            throw new BadRequestException("User is not the owner of requested plan");
+        }
+        TradeStep step = tradeStepRepository.findOne(stepId);
+        if(step == null || step.getPlanId() != planId) {
+            throw new BadRequestException("Unknown step");
+        }
+        step.setPriceThreshold(null);
+        tradeStepRepository.save(step);
+        return new ResponseEntity<>(step, HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/plan/{planId}/autorepeat/{autorepeat}", method = RequestMethod.PUT)
     public ResponseEntity<Object> changePathAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
                                                                 @PathVariable long planId,
