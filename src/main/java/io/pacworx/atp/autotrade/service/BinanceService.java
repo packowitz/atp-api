@@ -7,6 +7,7 @@ import io.pacworx.atp.autotrade.domain.TradeStatus;
 import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.*;
 import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.BinanceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -199,9 +200,11 @@ public class BinanceService {
     public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
         try {
             cancelOrder(account, step.getSymbol(), step.getOrderId());
-        } catch(Exception e) {
-            // this happens when the order is already filled or canceled
-            // TODO add check it the exception is caused by this
+        } catch(BinanceException e) {
+            if(e.getCode() != -2011) {
+                // -2011 is UNKNOWN_ORDER and this can happen when the order is already filled or cancelled
+                throw e;
+            }
         }
         step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
         step.setStatus(TradeStatus.CANCELLED);
@@ -257,15 +260,16 @@ public class BinanceService {
 
     private void handleBinanceError(HttpClientErrorException e) {
         try {
-            BinanceErrorResponse errorResponse = new ObjectMapper().readValue(e.getResponseBodyAsString(), BinanceErrorResponse.class);
-            log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.code + " and msg " + errorResponse.msg);
-            if(errorResponse.code == -1021) {
+            BinanceException errorResponse = new ObjectMapper().readValue(e.getResponseBodyAsString(), BinanceException.class);
+            log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.getCode() + " and msg " + errorResponse.getMsg());
+            if(errorResponse.getCode() == -1021) {
                 calcServerTimeDifference();
             }
+            throw errorResponse;
         } catch (Exception ex) {
             log.error("Not able to parse binance error: " + e.getResponseBodyAsString());
+            throw new RuntimeException();
         }
-        throw new BadRequestException();
     }
 
     private String signParams(TradeAccount account, String params) {
@@ -307,10 +311,5 @@ public class BinanceService {
 
     private static final class ServerTimeResponse {
         public long serverTime;
-    }
-
-    private static final class BinanceErrorResponse {
-        public int code;
-        public String msg;
     }
 }

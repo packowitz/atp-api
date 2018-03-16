@@ -3,7 +3,7 @@ package io.pacworx.atp.autotrade.service;
 import io.pacworx.atp.autotrade.domain.*;
 import io.pacworx.atp.autotrade.domain.binance.BinanceOrderResult;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
-import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.BinanceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,8 +94,11 @@ public class BinanceOneMarketService {
             } else {
                 log.info("Order " + orderResult.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " is in status: " + orderResult.getStatus());
             }
-        } catch (BadRequestException e) {
-            log.info("Order " + step.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " failed to check status");
+        } catch (BinanceException e) {
+            log.warn("Order " + step.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " failed to check status");
+            if(step.getId() != 0) {
+                auditLogRepository.save(new TradeAuditLog(step, e));
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

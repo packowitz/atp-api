@@ -1,6 +1,7 @@
 package io.pacworx.atp.autotrade.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.pacworx.atp.exception.BinanceException;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -24,6 +25,18 @@ public class TradeAuditLog {
     private String level;
     private String title;
     private String message;
+
+    public TradeAuditLog() {}
+
+    public TradeAuditLog(TradeStep step, BinanceException e) {
+        stepId = step.getId();
+        subplanId = step.getSubplanId();
+        planId = step.getPlanId();
+        level = "ERROR";
+        timestamp = ZonedDateTime.now();
+        title = "Binance Error " + e.getCode();
+        message = e.getMsg();
+    }
 
     public long getId() {
         return id;
