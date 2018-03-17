@@ -107,13 +107,11 @@ public class BinanceOneMarketService {
     private void cancel(TradeAccount account, TradeOneMarket oneMarket) {
         TradeStep firstStep = oneMarket.getActiveFirstStep();
         if(firstStep != null) {
-            binanceService.cancelOrder(account, firstStep.getSymbol(), firstStep.getOrderId());
-            firstStep.cancel();
+            binanceService.cancelStep(account, firstStep);
         }
         TradeStep stepBack = oneMarket.getActiveStepBack();
         if(stepBack != null) {
-            binanceService.cancelOrder(account, stepBack.getSymbol(), stepBack.getOrderId());
-            stepBack.cancel();
+            binanceService.cancelStep(account, stepBack);
         }
         oneMarket.cancel();
         saveSubplan(oneMarket);
@@ -193,9 +191,7 @@ public class BinanceOneMarketService {
         double origQty = Double.parseDouble(orderResult.getOrigQty());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), (origQty - executedQty), price)) {
             if(!"CANCELED".equals(orderResult.getStatus())) {
-                try {
-                    binanceService.cancelOrder(account, step.getSymbol(), step.getOrderId());
-                } catch (Exception e) {}
+                orderResult = binanceService.cancelStep(account, step);
             }
             handleFilledOrder(account, oneMarket, step, orderResult);
             return;

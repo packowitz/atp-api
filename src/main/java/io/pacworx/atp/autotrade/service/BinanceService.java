@@ -207,8 +207,7 @@ public class BinanceService {
             }
         }
         step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
-        step.setStatus(TradeStatus.CANCELLED);
-        step.setDirty();
+        step.cancel();
         return getOrderStatus(account, step.getSymbol(), step.getOrderId());
     }
 
@@ -312,5 +311,26 @@ public class BinanceService {
 
     private static final class ServerTimeResponse {
         public long serverTime;
+    }
+
+    public static void main(String[] args) {
+        BinanceService service = new BinanceService(null);
+        service.calcServerTimeDifference();
+
+        TradeAccount account = new TradeAccount();
+        account.setApiKey("mLXAuEQDhIjdhxZJgOtjcZli625SbE0CPwYCtPbE60gDQnJdwBLPNBtk4ieShKS4");
+        account.setPrivateKey("0zertXCt1KvilUYG6lBhwQclFBlRZSmI0i1xn2F9ARjlULccgEnlkeBLfM1yEOEI");
+
+        String params = "symbol=RCNBTC";
+        params += "&orderId=7627140";
+
+        TradeStep step = new TradeStep();
+        step.setSymbol("RCNBTC");
+        step.setOrderId(7627140L);
+
+        service.cancelStep(account, step);
+
+        BinanceOrderResult result = service.doSignedGet("/v3/order", params, account, BinanceOrderResult.class);
+        System.out.println(result.getStatus());
     }
 }
