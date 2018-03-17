@@ -34,8 +34,8 @@ public class TradeAuditLog {
         planId = step.getPlanId();
         level = "ERROR";
         timestamp = ZonedDateTime.now();
-        title = "Binance Error " + e.getCode();
-        message = e.getMsg();
+        title = "Binance Error for " + step.getOrderId();
+        message = e.getCode() + " - " + e.getMsg();
     }
 
     public long getId() {
