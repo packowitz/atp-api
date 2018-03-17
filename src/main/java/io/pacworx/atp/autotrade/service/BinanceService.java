@@ -259,17 +259,18 @@ public class BinanceService {
     }
 
     private void handleBinanceError(HttpClientErrorException e) {
+        BinanceException errorResponse;
         try {
-            BinanceException errorResponse = new ObjectMapper().readValue(e.getResponseBodyAsString(), BinanceException.class);
-            log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.getCode() + " and msg " + errorResponse.getMsg());
-            if(errorResponse.getCode() == -1021) {
-                calcServerTimeDifference();
-            }
-            throw errorResponse;
+            errorResponse = new ObjectMapper().readValue(e.getResponseBodyAsString(), BinanceException.class);
         } catch (Exception ex) {
             log.error("Not able to parse binance error: " + e.getResponseBodyAsString());
             throw new RuntimeException();
         }
+        log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.getCode() + " and msg " + errorResponse.getMsg());
+        if(errorResponse.getCode() == -1021) {
+            calcServerTimeDifference();
+        }
+        throw errorResponse;
     }
 
     private String signParams(TradeAccount account, String params) {
