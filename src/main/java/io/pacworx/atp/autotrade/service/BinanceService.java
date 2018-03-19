@@ -59,21 +59,27 @@ public class BinanceService {
         String msg = "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
         BinanceTicker ticker = getTicker(step.getSymbol());
         msg += "Current gap: " + String.format("%.2f", 100d * ticker.getPerc()) + "%; ";
-        msg += "24h high: " + ticker.getStats24h().getHighPrice() + "; ";
-        msg += "24h low: " + ticker.getStats24h().getLowPrice() + "; ";
-        BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
-        String sellBuys = "";
-        int sells = 0, buys = 0;
-        for(BinanceTrade trade: lastTrades) {
-            if(trade.getIsBuyerMaker()) {
-                sellBuys += "S ";
-                sells ++;
-            } else {
-                sellBuys += "B ";
-                buys ++;
-            }
+        if(ticker.getStats24h() != null) {
+            msg += "24h high: " + ticker.getStats24h().getHighPrice() + "; ";
+            msg += "24h low: " + ticker.getStats24h().getLowPrice() + "; ";
         }
-        msg += "Last 20 trades: " + buys + " buys, " + sells + " sells; " + sellBuys;
+        try {
+            BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
+            String sellBuys = "";
+            int sells = 0, buys = 0;
+            for (BinanceTrade trade : lastTrades) {
+                if (trade.getIsBuyerMaker()) {
+                    sellBuys += "S ";
+                    sells++;
+                } else {
+                    sellBuys += "B ";
+                    buys++;
+                }
+            }
+            msg += "Last 20 trades: " + buys + " buys, " + sells + " sells; " + sellBuys;
+        } catch (Exception e) {
+            msg += "Exception getLastTrades(): " + e.getMessage();
+        }
 
         step.addInfoAuditLog("Market info", msg);
     }

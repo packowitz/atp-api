@@ -146,10 +146,13 @@ public class BinancePathService {
         } catch (BinanceException e) {
             log.info("Order " + step.getOrderId() + " from path " + step.getSubplanId() + " failed to check status");
             if(step.getId() != 0) {
-                auditLogRepository.save(new TradeAuditLog(step, e));
+                auditLogRepository.save(TradeAuditLog.logBinanceException(step, e));
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            if(step.getId() != 0) {
+                auditLogRepository.save(TradeAuditLog.logException(step, e));
+            }
         }
     }
 
