@@ -235,8 +235,8 @@ public class BinanceOneMarketService {
                 log.info("Plan #" + oneMarket.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
                 step.addInfoAuditLog("Received filling in meantime");
                 handlePartFilledOrder(account, oneMarket, step, cancelResult);
-                if(step.getStatus() == TradeStatus.DONE) {
-                    // if cancelled step was fully filled then it doesn't need to restart anymore
+                if(step.getStatus() != TradeStatus.CANCELLED) {
+                    // if cancelled step was filled or restarted by partFilling then it doesn't need to restart anymore
                     return;
                 }
             }
