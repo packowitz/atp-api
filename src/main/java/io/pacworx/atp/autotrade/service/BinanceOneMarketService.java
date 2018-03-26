@@ -53,6 +53,7 @@ public class BinanceOneMarketService {
     public void cancelPlan(TradeAccount account, TradePlan plan) {
         TradeOneMarket activePlan = loadSubplan(plan.getId());
         cancel(account, activePlan);
+        saveSubplan(activePlan);
     }
 
     public void deletePlan(TradePlan plan) {
@@ -76,6 +77,7 @@ public class BinanceOneMarketService {
             if(stepBack != null) {
                 checkStep(account, activePlan, stepBack);
             }
+            saveSubplan(activePlan);
         }
     }
 
@@ -117,7 +119,6 @@ public class BinanceOneMarketService {
             binanceService.cancelStep(account, stepBack);
         }
         oneMarket.cancel();
-        saveSubplan(oneMarket);
         planRepository.updateStatus(oneMarket.getPlanId(), TradePlanStatus.CANCELLED.name());
     }
 
@@ -147,7 +148,6 @@ public class BinanceOneMarketService {
                     // means that in the meantime firstStep got some filling
                     step.setInAmount(firstStep.getOutAmount());
                     binanceService.openStepOrder(account, step);
-                    saveSubplan(oneMarket);
                     return;
                 }
             }
@@ -177,7 +177,6 @@ public class BinanceOneMarketService {
             }
         }
         planRepository.save(plan);
-        saveSubplan(oneMarket);
     }
 
     private void handlePartFilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
@@ -212,7 +211,6 @@ public class BinanceOneMarketService {
             log.info("Plan #" + oneMarket.getPlanId() + " stepBack got a part fill. Keep going.");
             handleUnfilledOrder(account, oneMarket, step, orderResult);
         }
-        saveSubplan(oneMarket);
     }
 
     private void handleUnfilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
@@ -243,7 +241,6 @@ public class BinanceOneMarketService {
             // start the step again with new price
             step.setPrice(goodPrice);
             binanceService.openStepOrder(account, step);
-            saveSubplan(oneMarket);
         }
     }
 
