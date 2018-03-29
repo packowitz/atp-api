@@ -54,6 +54,8 @@ public class TradeStep {
     private ZonedDateTime startDate;
     /** When was step finished. NULL as long as it is active. **/
     private ZonedDateTime finishDate;
+    /** Indicates that something went wrong starting this step and it should try to restart again **/
+    private boolean needRestart = false;
     /** temporary indicator if the step has changed and needs to be saved **/
     @Transient
     @JsonIgnore
@@ -253,6 +255,14 @@ public class TradeStep {
 
     public void setFinishDate(ZonedDateTime finishDate) {
         this.finishDate = finishDate;
+    }
+
+    public boolean isNeedRestart() {
+        return needRestart;
+    }
+
+    public void setNeedRestart(boolean needRestart) {
+        this.needRestart = needRestart;
     }
 
     public boolean isDirty() {

@@ -6,7 +6,6 @@ import io.pacworx.atp.autotrade.domain.TradeOffer;
 import io.pacworx.atp.autotrade.domain.TradeStatus;
 import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.*;
-import io.pacworx.atp.exception.BadRequestException;
 import io.pacworx.atp.exception.BinanceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +28,9 @@ import java.util.Arrays;
 public class BinanceService {
     private static final Logger log = LogManager.getLogger();
     private static final String SERVER = "https://api.binance.com/api";
+
+    public static final int ERROR_CODE_TIME_DIFF = -1021;
+    public static final int ERROR_CODE_UNKNOWN_ORDER = -2011;
 
     private final BinanceExchangeInfoService exchangeInfoService;
     private long serverTimeDifference = 0;
@@ -149,7 +151,18 @@ public class BinanceService {
         }
 
         TradeOffer offer = new TradeOffer(step.getSymbol(), step.getSide().toUpperCase(), step.getPrice(), amount);
-        BinanceOrderResult result = openLimitOrder(account, offer);
+        BinanceOrderResult result;
+        try {
+            result = openLimitOrder(account, offer);
+        } catch (BinanceException e) {
+            if(e.getCode() == ERROR_CODE_TIME_DIFF) {
+                step.setNeedRestart(true);
+            }
+            throw e;
+        } catch (Exception e) {
+            step.setNeedRestart(true);
+            throw e;
+        }
 
         if(step.getStartDate() == null) {
             step.setStartDate(ZonedDateTime.now());
@@ -161,6 +174,7 @@ public class BinanceService {
         step.setOrderBasecoinQty(step.getOrderAltcoinQty() * Double.parseDouble(result.getPrice()));
         step.setStatus(TradeStatus.ACTIVE);
         step.setDirty();
+        step.setNeedRestart(false);
 
         String logMsg = "Opened order " + result.getOrderId() + " for plan #" + step.getPlanId() + "-" + step.getStep() + ": ";
         String auditLog;
@@ -207,8 +221,7 @@ public class BinanceService {
         try {
             cancelOrder(account, step.getSymbol(), step.getOrderId());
         } catch(BinanceException e) {
-            if(e.getCode() != -2011) {
-                // -2011 is UNKNOWN_ORDER and this can happen when the order is already filled or cancelled
+            if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER) {
                 throw e;
             }
         }
@@ -272,7 +285,7 @@ public class BinanceService {
             throw new RuntimeException();
         }
         log.error("binance request ended with " + e.getStatusCode() + ", code " + errorResponse.getCode() + " and msg " + errorResponse.getMsg());
-        if(errorResponse.getCode() == -1021) {
+        if(errorResponse.getCode() == ERROR_CODE_TIME_DIFF) {
             calcServerTimeDifference();
         }
         throw errorResponse;

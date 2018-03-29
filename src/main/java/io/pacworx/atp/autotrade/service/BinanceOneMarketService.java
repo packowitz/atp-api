@@ -71,11 +71,19 @@ public class BinanceOneMarketService {
             //check first step first then step back
             TradeStep firstStep = activePlan.getActiveFirstStep();
             if(firstStep != null) {
-                checkStep(account, activePlan, firstStep);
+                if(firstStep.isNeedRestart()) {
+                    binanceService.openStepOrder(account, firstStep);
+                } else {
+                    checkStep(account, activePlan, firstStep);
+                }
             }
             TradeStep stepBack = activePlan.getActiveStepBack();
             if(stepBack != null) {
-                checkStep(account, activePlan, stepBack);
+                if(stepBack.isNeedRestart()) {
+                    binanceService.openStepOrder(account, stepBack);
+                } else {
+                    checkStep(account, activePlan, stepBack);
+                }
             }
             saveSubplan(activePlan);
         }
