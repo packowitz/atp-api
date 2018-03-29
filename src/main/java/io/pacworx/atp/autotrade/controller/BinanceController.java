@@ -168,7 +168,7 @@ public class BinanceController {
 
     @RequestMapping(value = "/step/{stepId}/logs", method = RequestMethod.GET)
     public ResponseEntity<List<TradeAuditLog>> getAuditLogs(@PathVariable long stepId) {
-        List<TradeAuditLog> logs = auditLogRepository.findAllByStepIdOrderByTimestampDesc(stepId);
+        List<TradeAuditLog> logs = auditLogRepository.findFirst100ByStepIdOrderByTimestampDesc(stepId);
         return new ResponseEntity<>(logs, HttpStatus.OK);
     }
 

@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface TradeAuditLogRepository extends CrudRepository<TradeAuditLog, Long> {
 
-    List<TradeAuditLog> findAllByStepIdOrderByTimestampDesc(long stepId);
+    List<TradeAuditLog> findFirst100ByStepIdOrderByTimestampDesc(long stepId);
 
     @Transactional
     int deleteAllByPlanId(long planId);
