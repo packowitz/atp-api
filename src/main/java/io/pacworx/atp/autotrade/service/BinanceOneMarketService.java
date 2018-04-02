@@ -16,6 +16,7 @@ import java.util.List;
 @Component
 public class BinanceOneMarketService {
     private static final Logger log = LogManager.getLogger();
+    private static final String SCHEDULE_NAME = "ONEMARKETCHECK";
 
     private final BinanceService binanceService;
     private final BinanceDepthService depthService;
@@ -25,6 +26,7 @@ public class BinanceOneMarketService {
     private final TradePlanRepository planRepository;
     private final TradeStepRepository stepRepository;
     private final TradeAuditLogRepository auditLogRepository;
+    private final TradeScheduleLockRepository scheduleLockRepository;
 
     @Autowired
     public BinanceOneMarketService(BinanceService binanceService,
@@ -34,7 +36,8 @@ public class BinanceOneMarketService {
                                    TradeAccountRepository accountRepository,
                                    TradePlanRepository planRepository,
                                    TradeStepRepository stepRepository,
-                                   TradeAuditLogRepository auditLogRepository) {
+                                   TradeAuditLogRepository auditLogRepository,
+                                   TradeScheduleLockRepository scheduleLockRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.exchangeInfoService = exchangeInfoService;
@@ -43,6 +46,7 @@ public class BinanceOneMarketService {
         this.planRepository = planRepository;
         this.stepRepository = stepRepository;
         this.auditLogRepository = auditLogRepository;
+        this.scheduleLockRepository = scheduleLockRepository;
     }
 
     public void startPlan(TradeAccount account, TradeOneMarket oneMarket) {
@@ -64,28 +68,35 @@ public class BinanceOneMarketService {
 
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
-        List<TradeOneMarket> activePlans = this.oneMarketRepository.findAllByStatus(TradePlanStatus.ACTIVE);
-        for(TradeOneMarket activePlan: activePlans) {
-            addStepsToMarket(activePlan);
-            TradeAccount account = accountRepository.findOne(activePlan.getAccountId());
-            //check first step first then step back
-            TradeStep firstStep = activePlan.getActiveFirstStep();
-            if(firstStep != null) {
-                if(firstStep.isNeedRestart()) {
-                    binanceService.openStepOrder(account, firstStep);
-                } else {
-                    checkStep(account, activePlan, firstStep);
+        if(!scheduleLockRepository.lock(SCHEDULE_NAME)) {
+            return;
+        }
+        try {
+            List<TradeOneMarket> activePlans = this.oneMarketRepository.findAllByStatus(TradePlanStatus.ACTIVE);
+            for (TradeOneMarket activePlan : activePlans) {
+                addStepsToMarket(activePlan);
+                TradeAccount account = accountRepository.findOne(activePlan.getAccountId());
+                //check first step first then step back
+                TradeStep firstStep = activePlan.getActiveFirstStep();
+                if (firstStep != null) {
+                    if (firstStep.isNeedRestart()) {
+                        binanceService.openStepOrder(account, firstStep);
+                    } else {
+                        checkStep(account, activePlan, firstStep);
+                    }
                 }
-            }
-            TradeStep stepBack = activePlan.getActiveStepBack();
-            if(stepBack != null) {
-                if(stepBack.isNeedRestart()) {
-                    binanceService.openStepOrder(account, stepBack);
-                } else {
-                    checkStep(account, activePlan, stepBack);
+                TradeStep stepBack = activePlan.getActiveStepBack();
+                if (stepBack != null) {
+                    if (stepBack.isNeedRestart()) {
+                        binanceService.openStepOrder(account, stepBack);
+                    } else {
+                        checkStep(account, activePlan, stepBack);
+                    }
                 }
+                saveSubplan(activePlan);
             }
-            saveSubplan(activePlan);
+        } finally {
+            scheduleLockRepository.unlock(SCHEDULE_NAME);
         }
     }
 
@@ -209,10 +220,12 @@ public class BinanceOneMarketService {
             return;
         }
 
-        // step set orderFilling and update step in and out filling
-        step.calcFilling(orderResult);
-        step.addOrderFilled(executedQty);
-        step.addInfoAuditLog("Part filled", "Got " + String.format("%.8f", executedQty) + " at " + String.format("%.8f", price));
+        if(step.getStatus() != TradeStatus.CANCELLED) {
+            // step set orderFilling and update step in and out filling
+            step.calcFilling(orderResult);
+            step.addOrderFilled(executedQty);
+            step.addInfoAuditLog("Part filled", "Got " + String.format("%.8f", executedQty) + " at " + String.format("%.8f", price));
+        }
 
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep got a part fill. Move traded coins to stepBack.");

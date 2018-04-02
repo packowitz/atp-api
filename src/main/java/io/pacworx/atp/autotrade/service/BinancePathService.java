@@ -17,6 +17,8 @@ import java.util.List;
 @Component
 public class BinancePathService {
     private static final Logger log = LogManager.getLogger();
+    private static final String SCHEDULE_NAME = "PATHCHECK";
+    private static final String SCHEDULE_PAUSE_NAME = "PATHPAUSEDCHECK";
 
     private final BinanceService binanceService;
     private final BinanceDepthService depthService;
@@ -26,6 +28,7 @@ public class BinancePathService {
     private final TradeStepRepository stepRepository;
     private final BinanceExchangeInfoService exchangeInfoService;
     private final TradeAuditLogRepository auditLogRepository;
+    private final TradeScheduleLockRepository scheduleLockRepository;
 
     @Autowired
     public BinancePathService(BinanceService binanceService,
@@ -35,7 +38,8 @@ public class BinancePathService {
                               TradePlanRepository planRepository,
                               TradeStepRepository stepRepository,
                               BinanceExchangeInfoService exchangeInfoService,
-                              TradeAuditLogRepository auditLogRepository) {
+                              TradeAuditLogRepository auditLogRepository,
+                              TradeScheduleLockRepository scheduleLockRepository) {
         this.binanceService = binanceService;
         this.depthService = depthService;
         this.pathRepository = pathRepository;
@@ -44,6 +48,7 @@ public class BinancePathService {
         this.stepRepository = stepRepository;
         this.exchangeInfoService = exchangeInfoService;
         this.auditLogRepository = auditLogRepository;
+        this.scheduleLockRepository = scheduleLockRepository;
     }
 
     public void startPath(TradeAccount account, TradePath path) {
@@ -96,33 +101,47 @@ public class BinancePathService {
 
     @Scheduled(fixedDelay = 60000)
     public void checkPausedPlans() {
-        List<TradePath> pausedPaths = pathRepository.findAllByStatus(TradePlanStatus.PAUSED);
-        for(TradePath pausedPath: pausedPaths) {
-            addStepsToMarket(pausedPath);
-            TradeStep latestStep = pausedPath.getLatestStep();
-            TradeAccount account = accountRepository.findOne(pausedPath.getAccountId());
-            if(latestStep != null) {
-                startNextStep(account, pausedPath, latestStep);
-            } else {
-                startPath(account, pausedPath);
+        if(!scheduleLockRepository.lock(SCHEDULE_PAUSE_NAME)) {
+            return;
+        }
+        try {
+            List<TradePath> pausedPaths = pathRepository.findAllByStatus(TradePlanStatus.PAUSED);
+            for (TradePath pausedPath : pausedPaths) {
+                addStepsToMarket(pausedPath);
+                TradeStep latestStep = pausedPath.getLatestStep();
+                TradeAccount account = accountRepository.findOne(pausedPath.getAccountId());
+                if (latestStep != null) {
+                    startNextStep(account, pausedPath, latestStep);
+                } else {
+                    startPath(account, pausedPath);
+                }
+                if (pausedPath.getStatus() == TradePlanStatus.ACTIVE) {
+                    log.info("Paused path plan #" + pausedPath.getPlanId() + " reactivated.");
+                    saveSubplan(pausedPath);
+                }
             }
-            if(pausedPath.getStatus() == TradePlanStatus.ACTIVE) {
-                log.info("Paused path plan #" + pausedPath.getPlanId() + " reactivated.");
-                saveSubplan(pausedPath);
-            }
+        } finally {
+            scheduleLockRepository.unlock(SCHEDULE_PAUSE_NAME);
         }
     }
 
     @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
-        List<TradePath> activePaths = pathRepository.findAllByStatus(TradePlanStatus.ACTIVE);
-        for(TradePath activePath: activePaths) {
-            addStepsToMarket(activePath);
-            TradeStep latestStep = activePath.getLatestStep();
-            if(latestStep != null && latestStep.getStatus() == TradeStatus.ACTIVE) {
-                TradeAccount account = accountRepository.findOne(activePath.getAccountId());
-                checkStep(account, activePath, latestStep);
+        if(!scheduleLockRepository.lock(SCHEDULE_NAME)) {
+            return;
+        }
+        try {
+            List<TradePath> activePaths = pathRepository.findAllByStatus(TradePlanStatus.ACTIVE);
+            for (TradePath activePath : activePaths) {
+                addStepsToMarket(activePath);
+                TradeStep latestStep = activePath.getLatestStep();
+                if (latestStep != null && latestStep.getStatus() == TradeStatus.ACTIVE) {
+                    TradeAccount account = accountRepository.findOne(activePath.getAccountId());
+                    checkStep(account, activePath, latestStep);
+                }
             }
+        } finally {
+            scheduleLockRepository.unlock(SCHEDULE_NAME);
         }
     }
 
