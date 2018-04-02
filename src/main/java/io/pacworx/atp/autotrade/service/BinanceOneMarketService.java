@@ -149,8 +149,7 @@ public class BinanceOneMarketService {
             log.info("Plan #" + oneMarket.getPlanId() + " stepBack filled. Check if a firstStep still exists.");
             if(firstStep != null) {
                 // cancel firstStep; restart stepBack if firstStep got filling in the meantime
-                BinanceOrderResult cancelResult = binanceService.cancelStep(account, firstStep);
-                firstStep.calcFilling(cancelResult);
+                binanceService.cancelStep(account, firstStep);
                 double diffAmount = firstStep.getOutAmount() - step.getInAmount();
                 if(exchangeInfoService.isTradeBigEnough(step.getSymbol(), step.getOutCurrency(), diffAmount, step.getPrice())) {
                     // means that in the meantime firstStep got some filling
@@ -193,14 +192,17 @@ public class BinanceOneMarketService {
         double executedQty = Double.parseDouble(orderResult.getExecutedQty()) - step.getOrderFilled();
         double price = Double.parseDouble(orderResult.getPrice());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
-            handleUnfilledOrder(account, oneMarket, step, orderResult);
+            if(step.getStatus() == TradeStatus.ACTIVE) {
+                step.calcFilling(orderResult);
+                handleUnfilledOrder(account, oneMarket, step, orderResult);
+            }
             return;
         }
 
         // is rest of filling lower than minimum trade amount? cancel rest order and handle as filled
         double origQty = Double.parseDouble(orderResult.getOrigQty());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), (origQty - executedQty), price)) {
-            if(!"CANCELED".equals(orderResult.getStatus())) {
+            if(step.getStatus() == TradeStatus.ACTIVE) {
                 orderResult = binanceService.cancelStep(account, step);
             }
             handleFilledOrder(account, oneMarket, step, orderResult);
@@ -233,13 +235,10 @@ public class BinanceOneMarketService {
             step.addInfoAuditLog("Adjust price to " + String.format("%.8f", goodPrice));
             BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
             // check if there was a filling in meantime
-            String symbol = cancelResult.getSymbol();
             double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
-            double price = Double.parseDouble(cancelResult.getPrice());
-            if(exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), executedQty, price)) {
-                // there was a meaningful filling
+            if(executedQty > 0) {
                 log.info("Plan #" + oneMarket.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
-                step.addInfoAuditLog("Received filling in meantime");
+                step.addInfoAuditLog("Received filling in meantime", "Traded " + String.format("%.8f", executedQty) + " in the meantime");
                 handlePartFilledOrder(account, oneMarket, step, cancelResult);
                 if(step.getStatus() != TradeStatus.CANCELLED) {
                     // if cancelled step was filled or restarted by partFilling then it doesn't need to restart anymore
@@ -264,8 +263,7 @@ public class BinanceOneMarketService {
             stepBack.setDirty();
             log.info("Plan #" + oneMarket.getPlanId() + " add traded coins to existing stepBack.");
             // cancel stepBack then add traded coins to it, recalc priceThreshold and restart it
-            BinanceOrderResult cancelResult = binanceService.cancelStep(account, stepBack);
-            stepBack.calcFilling(cancelResult);
+            binanceService.cancelStep(account, stepBack);
             double newAmount = firstStep.getOutAmount() - stepBack.getInAmount();
             double newThreshold = calcPriceThreshold(orderResult, oneMarket.getMinProfit());
             double oldAmount = stepBack.getInAmount() - stepBack.getInFilled();

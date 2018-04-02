@@ -227,7 +227,9 @@ public class BinanceService {
         }
         step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
         step.cancel();
-        return getOrderStatus(account, step.getSymbol(), step.getOrderId());
+        BinanceOrderResult resultAfterCancel = getOrderStatus(account, step.getSymbol(), step.getOrderId());
+        step.calcFilling(resultAfterCancel);
+        return resultAfterCancel;
     }
 
     private <T>T doSignedPost(String path, String params, TradeAccount account, Class<T> returnClass) {
