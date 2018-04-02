@@ -230,7 +230,7 @@ public class BinanceOneMarketService {
         }
         // adjust price if necessary
         double goodPrice = getGoodTradePoint(step, oneMarket.getMinProfit());
-        if(goodPrice != step.getPrice()) {
+        if(Math.abs(goodPrice - step.getPrice()) >= 0.00000001 ) { //stupid double ...
             log.info("Plan #" + oneMarket.getPlanId() + (step.getStep() == 1 ? " firstStep" : " stepBack") + " price adjusting");
             step.addInfoAuditLog("Adjust price to " + String.format("%.8f", goodPrice));
             BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
