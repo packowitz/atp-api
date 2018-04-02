@@ -59,11 +59,18 @@ public class BinanceService {
 
     public void addMarketInfoAsAuditLog(TradeStep step) {
         String msg = "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
+        if(step.getPriceThreshold() != null) {
+            msg += "Threshold: " + String.format("%.8f", step.getPriceThreshold()) + "; ";
+        }
         BinanceTicker ticker = getTicker(step.getSymbol());
-        msg += "Current gap: " + String.format("%.2f", 100d * ticker.getPerc()) + "%; ";
-        if(ticker.getStats24h() != null) {
-            msg += "24h high: " + ticker.getStats24h().getHighPrice() + "; ";
-            msg += "24h low: " + ticker.getStats24h().getLowPrice() + "; ";
+        if(ticker != null) {
+            msg += "Ticker ask: " + ticker.getAskPrice() + "; ";
+            msg += "Ticker bid: " + ticker.getBidPrice() + "; ";
+            msg += "Ticker gap: " + String.format("%.2f", 100d * ticker.getPerc()) + "%; ";
+            if(ticker.getStats24h() != null) {
+                msg += "24h high: " + ticker.getStats24h().getHighPrice() + "; ";
+                msg += "24h low: " + ticker.getStats24h().getLowPrice() + "; ";
+            }
         }
         try {
             BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
@@ -90,26 +97,30 @@ public class BinanceService {
         if(System.currentTimeMillis() - tickerLoadTimestamp < 10000) {
             return tickerCache;
         }
-        RestTemplate restTemplate = new RestTemplate();
-        BinanceTicker[] tickers = restTemplate.getForObject(SERVER + "/v1/ticker/allBookTickers", BinanceTicker[].class);
-        for(BinanceTicker ticker : tickers) {
-            double ask = Double.parseDouble(ticker.getAskPrice());
-            double bid = Double.parseDouble(ticker.getBidPrice());
-            double perc = (ask / bid) - 1;
-            ticker.setPerc(perc);
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            BinanceTicker[] tickers = restTemplate.getForObject(SERVER + "/v1/ticker/allBookTickers", BinanceTicker[].class);
+            for (BinanceTicker ticker : tickers) {
+                double ask = Double.parseDouble(ticker.getAskPrice());
+                double bid = Double.parseDouble(ticker.getBidPrice());
+                double perc = (ask / bid) - 1;
+                ticker.setPerc(perc);
+            }
+
+            Arrays.sort(tickers);
+            BinanceTickerStatistics[] stats = get24HrPriceStatistics();
+            if (stats.length == tickers.length) {
+                for (int i = 0; i < tickers.length; i++) {
+                    if (tickers[i].getSymbol().equals(stats[i].getSymbol())) {
+                        tickers[i].setStats24h(stats[i]);
+                    }
+                }
+            }
+            this.tickerCache = tickers;
+            this.tickerLoadTimestamp = System.currentTimeMillis();
+        } catch (Exception e) {
+            log.error("Error retrieving ticker from binance", e);
         }
-        
-        Arrays.sort(tickers);
-		BinanceTickerStatistics[] stats = get24HrPriceStatistics();
-		if (stats.length == tickers.length) {
-			for (int i = 0; i < tickers.length; i++) {
-				if (tickers[i].getSymbol().equals(stats[i].getSymbol())) {
-					tickers[i].setStats24h(stats[i]);
-				}
-			}
-		}        
-        this.tickerCache = tickers;
-        this.tickerLoadTimestamp = System.currentTimeMillis();
         return tickerCache;
     }
 
