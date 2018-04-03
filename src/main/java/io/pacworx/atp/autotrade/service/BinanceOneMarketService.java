@@ -79,19 +79,11 @@ public class BinanceOneMarketService {
                 //check first step first then step back
                 TradeStep firstStep = activePlan.getActiveFirstStep();
                 if (firstStep != null) {
-                    if (firstStep.isNeedRestart()) {
-                        binanceService.openStepOrder(account, firstStep);
-                    } else {
-                        checkStep(account, activePlan, firstStep);
-                    }
+                    checkStep(account, activePlan, firstStep);
                 }
                 TradeStep stepBack = activePlan.getActiveStepBack();
                 if (stepBack != null) {
-                    if (stepBack.isNeedRestart()) {
-                        binanceService.openStepOrder(account, stepBack);
-                    } else {
-                        checkStep(account, activePlan, stepBack);
-                    }
+                    checkStep(account, activePlan, stepBack);
                 }
                 saveSubplan(activePlan);
             }
@@ -102,18 +94,22 @@ public class BinanceOneMarketService {
 
     private void checkStep(TradeAccount account, TradeOneMarket oneMarket, TradeStep step) {
         try {
-            BinanceOrderResult orderResult = binanceService.getOrderStatus(account, step.getSymbol(), step.getOrderId());
-            if("CANCELED".equals(orderResult.getStatus())) {
-                log.info("Order " + orderResult.getOrderId() + " was cancelled. Cancel one-market plan #" + oneMarket.getPlanId());
-                cancel(account, oneMarket);
-            } else if ("FILLED".equals(orderResult.getStatus())) {
-                handleFilledOrder(account, oneMarket, step, orderResult);
-            } else if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
-                handlePartFilledOrder(account, oneMarket, step, orderResult);
-            } else if("NEW".equals(orderResult.getStatus())) {
-                handleUnfilledOrder(account, oneMarket, step, orderResult);
+            if(step.isNeedRestart()) {
+                binanceService.openStepOrder(account, step);
             } else {
-                log.info("Order " + orderResult.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " is in status: " + orderResult.getStatus());
+                BinanceOrderResult orderResult = binanceService.getOrderStatus(account, step.getSymbol(), step.getOrderId());
+                if("CANCELED".equals(orderResult.getStatus())) {
+                    log.info("Order " + orderResult.getOrderId() + " was cancelled. Cancel one-market plan #" + oneMarket.getPlanId());
+                    cancel(account, oneMarket);
+                } else if ("FILLED".equals(orderResult.getStatus())) {
+                    handleFilledOrder(account, oneMarket, step, orderResult);
+                } else if("PARTIALLY_FILLED".equals(orderResult.getStatus())) {
+                    handlePartFilledOrder(account, oneMarket, step, orderResult);
+                } else if("NEW".equals(orderResult.getStatus())) {
+                    handleUnfilledOrder(account, oneMarket, step, orderResult);
+                } else {
+                    log.info("Order " + orderResult.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " is in status: " + orderResult.getStatus());
+                }
             }
         } catch (BinanceException e) {
             log.warn("Order " + step.getOrderId() + " from one-market plan #" + oneMarket.getPlanId() + " failed to check status");
