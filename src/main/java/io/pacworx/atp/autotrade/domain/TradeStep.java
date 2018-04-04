@@ -86,6 +86,7 @@ public class TradeStep {
             addInFilled(executedAltCoin);
             addOutAmount(executedBaseCoin);
         }
+        this.orderFilled += executedAltCoin;
         this.dirty = true;
     }
 
@@ -131,10 +132,6 @@ public class TradeStep {
 
     public void setOrderFilled(double orderFilled) {
         this.orderFilled = orderFilled;
-    }
-
-    public void addOrderFilled(double orderFilled) {
-        this.orderFilled += orderFilled;
     }
 
     public Double getOrderAltcoinQty() {

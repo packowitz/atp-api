@@ -215,10 +215,18 @@ public class BinanceService {
         return doSignedPost("/v3/order", params, account, BinanceOrderResult.class);
     }
 
-    public BinanceOrderResult getOrderStatus(TradeAccount account, String symbol, long orderId) {
+    private BinanceOrderResult getOrderStatus(TradeAccount account, String symbol, long orderId) {
         String params = "symbol=" + symbol;
         params += "&orderId=" + orderId;
         return doSignedGet("/v3/order", params, account, BinanceOrderResult.class);
+    }
+
+    public BinanceOrderResult getStepStatus(TradeAccount account, TradeStep step) {
+        BinanceOrderResult result = getOrderStatus(account, step.getSymbol(), step.getOrderId());
+        if(!"NEW".equals(result.getStatus())) {
+            step.calcFilling(result);
+        }
+        return result;
     }
 
     public BinanceOrderResult cancelOrder(TradeAccount account, String symbol, long orderId) {
@@ -238,9 +246,7 @@ public class BinanceService {
         }
         step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
         step.cancel();
-        BinanceOrderResult resultAfterCancel = getOrderStatus(account, step.getSymbol(), step.getOrderId());
-        step.calcFilling(resultAfterCancel);
-        return resultAfterCancel;
+        return getStepStatus(account, step);
     }
 
     private <T>T doSignedPost(String path, String params, TradeAccount account, Class<T> returnClass) {

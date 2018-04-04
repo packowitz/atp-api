@@ -148,7 +148,7 @@ public class BinancePathService {
     private void checkStep(TradeAccount account, TradePath path, TradeStep step) {
         step.setDirty();
         try {
-            BinanceOrderResult orderResult = binanceService.getOrderStatus(account, step.getSymbol(), step.getOrderId());
+            BinanceOrderResult orderResult = binanceService.getStepStatus(account, step);
             if ("FILLED".equals(orderResult.getStatus())) {
                 log.info("Order " + orderResult.getOrderId() + " from path plan #" + step.getPlanId() + " is filled. Setting up next path step.");
                 handleFilledOrder(account, path, step, orderResult);
@@ -176,7 +176,6 @@ public class BinancePathService {
     }
 
     private void handleCanceledOrder(TradePath path, TradeStep step, BinanceOrderResult orderResult) {
-        step.calcFilling(orderResult);
         path.cancel();
         step.cancel();
 
@@ -186,7 +185,6 @@ public class BinancePathService {
 
     private void handleFilledOrder(TradeAccount account, TradePath path, TradeStep step, BinanceOrderResult orderResult) {
         // update status and calc step in and out filling
-        step.calcFilling(orderResult);
         step.finish();
 
         // update lastActionDate on plan
@@ -242,10 +240,6 @@ public class BinancePathService {
             handleFilledOrder(account, path, step, orderResult);
             return;
         }
-
-        // step set orderFilling and update step in and out filling
-        step.calcFilling(orderResult);
-        step.addOrderFilled(executedQty);
 
         log.info("Path plan #" + path.getPlanId() + " step-" + step.getStep() + " got a part fill. Keep going.");
         checkPrice(account, path, step, orderResult);
