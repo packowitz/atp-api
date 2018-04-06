@@ -66,7 +66,7 @@ public class BinanceOneMarketService {
         auditLogRepository.deleteAllByPlanId(plan.getId());
     }
 
-    @Scheduled(fixedDelay = 20000)
+    @Scheduled(fixedDelay = 10000)
     public void checkOrders() {
         if(!scheduleLockRepository.lock(SCHEDULE_NAME)) {
             return;

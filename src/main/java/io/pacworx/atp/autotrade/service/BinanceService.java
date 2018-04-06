@@ -76,16 +76,19 @@ public class BinanceService {
             BinanceTrade[] lastTrades = getLastTrades(step.getSymbol(), 20);
             String sellBuys = "";
             int sells = 0, buys = 0;
+            double sellVolume = 0d, buyVolume = 0d;
             for (BinanceTrade trade : lastTrades) {
                 if (trade.getIsBuyerMaker()) {
                     sellBuys += "S ";
                     sells++;
+                    sellVolume += trade.getQty();
                 } else {
                     sellBuys += "B ";
                     buys++;
+                    buyVolume += trade.getQty();
                 }
             }
-            msg += "Last 20 trades: " + buys + " buys, " + sells + " sells; " + sellBuys;
+            msg += "Last 20 trades: " + buys + " buys (" + String.format("%.8f", buyVolume) + "), " + sells + " sells (" + String.format("%.8f", sellVolume) + "); " + sellBuys;
         } catch (Exception e) {
             msg += "Exception getLastTrades(): " + e.getMessage();
         }
