@@ -263,6 +263,7 @@ public class TradeStep {
         if(needRestart) {
             this.status = TradeStatus.ACTIVE;
         }
+        this.dirty = true;
     }
 
     public boolean isDirty() {
