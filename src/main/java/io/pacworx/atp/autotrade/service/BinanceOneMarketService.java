@@ -132,19 +132,11 @@ public class BinanceOneMarketService {
     private void cancel(TradeAccount account, TradeOneMarket oneMarket) {
         TradeStep firstStep = oneMarket.getCurrentFirstStep();
         if(firstStep != null && firstStep.getStatus() != TradeStatus.CANCELLED) {
-            try {
-                binanceService.cancelStep(account, firstStep);
-            } catch (Exception e) {
-                firstStep.addErrorAuditLog(e.getMessage(), null);
-            }
+            binanceService.cancelStepAndIgnoreStatus(account, firstStep);
         }
         TradeStep stepBack = oneMarket.getCurrentStepBack();
         if(stepBack != null && stepBack.getStatus() != TradeStatus.CANCELLED) {
-            try {
-                binanceService.cancelStep(account, stepBack);
-            } catch (Exception e) {
-                stepBack.addErrorAuditLog(e.getMessage(), null);
-            }
+            binanceService.cancelStepAndIgnoreStatus(account, stepBack);
         }
         oneMarket.cancel();
         planRepository.updateStatus(oneMarket.getPlanId(), TradePlanStatus.CANCELLED.name());
@@ -153,7 +145,6 @@ public class BinanceOneMarketService {
     private void handleFilledOrder(TradeAccount account, TradeOneMarket oneMarket, TradeStep step, BinanceOrderResult orderResult) {
         // update status and calc step in and out filling
         step.finish();
-        step.addInfoAuditLog("Step filled");
         binanceService.addMarketInfoAsAuditLog(step);
 
         // update lastActionDate on plan
@@ -171,14 +162,7 @@ public class BinanceOneMarketService {
                     firstStep.setNeedRestart(false);
                 }
                 // cancel firstStep; restart stepBack if firstStep got filling in the meantime
-                try {
-                    binanceService.cancelStep(account, firstStep);
-                } catch (Exception e) {
-                    firstStep.addErrorAuditLog(e.getMessage(), null);
-                    if(firstStep.getStatus() != TradeStatus.CANCELLED) {
-                        throw e;
-                    }
-                }
+                binanceService.cancelStepAndIgnoreStatus(account, firstStep);
                 double diffAmount = firstStep.getOutAmount() - step.getInAmount();
                 if(exchangeInfoService.isTradeBigEnough(step.getSymbol(), step.getOutCurrency(), diffAmount, step.getPrice())) {
                     // means that in the meantime firstStep got some filling
@@ -228,19 +212,11 @@ public class BinanceOneMarketService {
         double restQty = Double.parseDouble(orderResult.getOrigQty()) - step.getOrderFilled();
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), restQty, price)) {
             if(step.getStatus() == TradeStatus.ACTIVE) {
-                try {
-                    orderResult = binanceService.cancelStep(account, step);
-                } catch (Exception e) {
-                    step.addErrorAuditLog(e.getMessage(), null);
-                    step.setNeedRestart(true);
-                    throw e;
-                }
+                orderResult = binanceService.cancelStepAndRestartOnError(account, step);
             }
             handleFilledOrder(account, oneMarket, step, orderResult);
             return;
         }
-
-        step.addInfoAuditLog("Part filled", "Filled " + orderResult.getExecutedQty() + " / " + orderResult.getOrigQty() + " at " + String.format("%.8f", price));
 
         if(step.getStep() == 1) {
             log.info("Plan #" + oneMarket.getPlanId() + " firstStep got a part fill. Move traded coins to stepBack.");
@@ -265,13 +241,7 @@ public class BinanceOneMarketService {
             if(step.getStatus() != TradeStatus.CANCELLED && step.getOrderId() != null) {
                 double orderFillingBeforeCancel = step.getOrderFilled();
                 BinanceOrderResult cancelResult;
-                try {
-                    cancelResult = binanceService.cancelStep(account, step);
-                } catch (Exception e) {
-                    step.addErrorAuditLog(e.getMessage(), null);
-                    step.setNeedRestart(true);
-                    throw e;
-                }
+                cancelResult = binanceService.cancelStepAndRestartOnError(account, step);
                 // check if there was a filling in meantime
                 if(Math.abs(step.getOrderFilled() - orderFillingBeforeCancel) > 0.00000001) {
                     log.info("Plan #" + oneMarket.getPlanId() + " cancelled step had filling in the meantime. Handle that now.");
@@ -303,14 +273,7 @@ public class BinanceOneMarketService {
             stepBack.setDirty();
             log.info("Plan #" + oneMarket.getPlanId() + " add traded coins to existing stepBack.");
             // cancel stepBack then add traded coins to it, recalc priceThreshold and restart it
-            try {
-                binanceService.cancelStep(account, stepBack);
-            } catch (Exception e) {
-                stepBack.addErrorAuditLog(e.getMessage(), null);
-                if(stepBack.getStatus() != TradeStatus.CANCELLED) {
-                    throw e;
-                }
-            }
+            binanceService.cancelStepAndIgnoreStatus(account, stepBack);
             double newAmount = firstStep.getOutAmount() - stepBack.getInAmount();
             double newThreshold = calcPriceThreshold(orderResult, oneMarket.getMinProfit());
             double oldAmount = stepBack.getInAmount() - stepBack.getInFilled();

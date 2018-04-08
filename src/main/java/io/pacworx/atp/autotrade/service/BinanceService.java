@@ -226,8 +226,14 @@ public class BinanceService {
 
     public BinanceOrderResult getStepStatus(TradeAccount account, TradeStep step) {
         BinanceOrderResult result = getOrderStatus(account, step.getSymbol(), step.getOrderId());
-        if(!"NEW".equals(result.getStatus())) {
+        double executedAltCoin = Double.parseDouble(result.getExecutedQty()) - step.getOrderFilled();
+        if(Math.abs(executedAltCoin) > 0.00000001) {//... stupid double
             step.calcFilling(result);
+            if(TradeUtil.isBuy(step.getSide())) {
+                step.addInfoAuditLog("Bought " + String.format("%.8f", executedAltCoin) + " " + TradeUtil.getAltCoin(step.getSymbol()), "Bought at " + result.getPrice());
+            } else {
+                step.addInfoAuditLog("Sold " + String.format("%.8f", executedAltCoin) + " " + TradeUtil.getAltCoin(step.getSymbol()), "Sold at " + result.getPrice());
+            }
         }
         return result;
     }
@@ -237,6 +243,27 @@ public class BinanceService {
         params += "&orderId=" + orderId;
         log.info("Cancel order " + orderId + " (" + symbol + ")");
         return doSignedDelete("/v3/order", params, account, BinanceOrderResult.class);
+    }
+
+    public void cancelStepAndIgnoreStatus(TradeAccount account, TradeStep step) {
+        try {
+            cancelStep(account, step);
+        } catch (Exception e) {
+            step.addErrorAuditLog(e.getMessage(), null);
+            if(step.getStatus() != TradeStatus.CANCELLED) {
+                throw e;
+            }
+        }
+    }
+
+    public BinanceOrderResult cancelStepAndRestartOnError(TradeAccount account, TradeStep step) {
+        try {
+            return cancelStep(account, step);
+        } catch (Exception e) {
+            step.addErrorAuditLog(e.getMessage(), null);
+            step.setNeedRestart(true);
+            throw e;
+        }
     }
 
     public BinanceOrderResult cancelStep(TradeAccount account, TradeStep step) {
