@@ -66,12 +66,14 @@ public class TradeStep {
 
     public void cancel() {
         this.status = TradeStatus.CANCELLED;
+        this.needRestart = false;
         this.finishDate = ZonedDateTime.now();
         this.dirty = true;
     }
 
     public void finish() {
         this.status = TradeStatus.DONE;
+        this.needRestart = false;
         this.finishDate = ZonedDateTime.now();
         this.dirty = true;
     }

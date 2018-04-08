@@ -171,7 +171,14 @@ public class BinanceOneMarketService {
                     firstStep.setNeedRestart(false);
                 }
                 // cancel firstStep; restart stepBack if firstStep got filling in the meantime
-                binanceService.cancelStep(account, firstStep);
+                try {
+                    binanceService.cancelStep(account, firstStep);
+                } catch (Exception e) {
+                    firstStep.addErrorAuditLog(e.getMessage(), null);
+                    if(firstStep.getStatus() != TradeStatus.CANCELLED) {
+                        throw e;
+                    }
+                }
                 double diffAmount = firstStep.getOutAmount() - step.getInAmount();
                 if(exchangeInfoService.isTradeBigEnough(step.getSymbol(), step.getOutCurrency(), diffAmount, step.getPrice())) {
                     // means that in the meantime firstStep got some filling
@@ -255,7 +262,7 @@ public class BinanceOneMarketService {
             log.info("Plan #" + oneMarket.getPlanId() + (step.getStep() == 1 ? " firstStep" : " stepBack") + " price adjusting");
             step.addInfoAuditLog("Adjust price to " + String.format("%.8f", goodPrice));
 
-            if(step.getStatus() != TradeStatus.CANCELLED) {
+            if(step.getStatus() != TradeStatus.CANCELLED && step.getOrderId() != null) {
                 double orderFillingBeforeCancel = step.getOrderFilled();
                 BinanceOrderResult cancelResult;
                 try {
