@@ -260,9 +260,6 @@ public class TradeStep {
 
     public void setNeedRestart(boolean needRestart) {
         this.needRestart = needRestart;
-        if(needRestart) {
-            this.status = TradeStatus.ACTIVE;
-        }
         this.dirty = true;
     }
 

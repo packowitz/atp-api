@@ -162,10 +162,10 @@ public class TradeOneMarket implements Serializable {
     }
 
     @JsonIgnore
-    public TradeStep getActiveFirstStep() {
+    public TradeStep getCurrentFirstStep() {
         if(steps != null) {
             for(TradeStep step: steps) {
-                if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 1) {
+                if((step.getStatus() == TradeStatus.ACTIVE || step.isNeedRestart()) && step.getStep() == 1) {
                     return step;
                 }
             }
@@ -186,10 +186,10 @@ public class TradeOneMarket implements Serializable {
     }
 
     @JsonIgnore
-    public TradeStep getActiveStepBack() {
+    public TradeStep getCurrentStepBack() {
         if(steps != null) {
             for(TradeStep step: steps) {
-                if(step.getStatus() == TradeStatus.ACTIVE && step.getStep() == 2) {
+                if((step.getStatus() == TradeStatus.ACTIVE || step.isNeedRestart()) && step.getStep() == 2) {
                     return step;
                 }
             }
