@@ -63,6 +63,9 @@ public class TradeStep {
     @Transient
     @JsonIgnore
     private List<TradeAuditLog> newAuditLogs;
+    @Transient
+    @JsonIgnore
+    private double newFilling = 0d;
 
     public void cancel() {
         this.status = TradeStatus.CANCELLED;
@@ -89,6 +92,7 @@ public class TradeStep {
             addOutAmount(executedBaseCoin);
         }
         this.orderFilled += executedAltCoin;
+        this.newFilling = executedAltCoin;
         this.dirty = true;
     }
 
@@ -302,5 +306,9 @@ public class TradeStep {
         }
         this.newAuditLogs.add(newAuditLog);
         this.dirty = true;
+    }
+
+    public double getNewFilling() {
+        return newFilling;
     }
 }

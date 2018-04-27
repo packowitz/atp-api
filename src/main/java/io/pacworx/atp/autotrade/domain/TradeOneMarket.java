@@ -21,15 +21,15 @@ public class TradeOneMarket implements Serializable {
     @JsonIgnore
     private long accountId;
     @Enumerated(EnumType.STRING)
-    private TradePlanStatus status;
-    private String symbol;
-    private double minProfit;
-    private String startCurrency;
-    private double startAmount;
-    private double balance = 0d;
-    private boolean autoRestart;
-    private ZonedDateTime startDate;
-    private ZonedDateTime finishDate;
+    private TradePlanStatus status; //Dupe of Plan.status
+    private String symbol; //Moved to config
+    private double minProfit; //Moved to config
+    private String startCurrency; //Moved to config
+    private double startAmount; //Moved to config
+    private double balance = 0d; //Duped to plan.balance
+    private boolean autoRestart; //Moved to config
+    private ZonedDateTime startDate; //Dupe of plan.startDate
+    private ZonedDateTime finishDate; //Duped to plan.finishDate
     @Transient
     private List<TradeStep> steps;
 

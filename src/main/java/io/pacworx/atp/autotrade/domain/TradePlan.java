@@ -19,10 +19,14 @@ public class TradePlan {
     @Enumerated(EnumType.STRING)
     TradePlanStatus status;
     private String description;
+    private double balance = 0d;
     private double balancePerc = 0d;
     private ZonedDateTime startDate;
     private ZonedDateTime lastActionDate;
+    private ZonedDateTime finishDate;
     private int runsDone = 0;
+    @Transient
+    private TradePlanConfig config;
 
     public TradePlan() {}
 
@@ -78,6 +82,14 @@ public class TradePlan {
         this.description = description;
     }
 
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
     public double getBalancePerc() {
         return balancePerc;
     }
@@ -106,6 +118,14 @@ public class TradePlan {
         this.lastActionDate = lastActionDate;
     }
 
+    public ZonedDateTime getFinishDate() {
+        return finishDate;
+    }
+
+    public void setFinishDate(ZonedDateTime finishDate) {
+        this.finishDate = finishDate;
+    }
+
     public int getRunsDone() {
         return runsDone;
     }
@@ -116,5 +136,13 @@ public class TradePlan {
 
     public void incRunsDone() {
         this.runsDone ++;
+    }
+
+    public TradePlanConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(TradePlanConfig config) {
+        this.config = config;
     }
 }
