@@ -84,6 +84,7 @@ public class BinanceOneMarketService {
         try {
             List<TradeOneMarket> activePlans = this.oneMarketRepository.findAllByStatus(TradePlanStatus.ACTIVE);
             for (TradeOneMarket activePlan : activePlans) {
+                log.info("Loading Plan #" + activePlan.getPlanId());
                 TradePlan plan = planRepository.findOne(activePlan.getPlanId());
                 loadPlanConfig(plan, activePlan);
                 loadStepsToMarket(activePlan);
@@ -105,6 +106,9 @@ public class BinanceOneMarketService {
     }
 
     private void loadPlanConfig(TradePlan plan, TradeOneMarket oneMarketPlan) {
+        if(plan == null) {
+            log.error("Plan is null");
+        }
         TradePlanConfig config = planConfigRepository.findOne(plan.getId());
         if(config == null) {
             config = new TradePlanConfig();
