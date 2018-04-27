@@ -312,6 +312,7 @@ public class BinanceOneMarketService {
             // cancel stepBack then add traded coins to it, recalc priceThreshold and restart it
             binanceService.cancelStepAndIgnoreStatus(account, stepBack);
 
+            setThreshold(plan, stepBack, prevStep);
             stepBack.setPrice(0d);
             stepBack.setPrice(getGoodTradePoint(plan, stepBack));
             stepBack.setInAmount(prevStep.getOutAmount());
@@ -338,6 +339,7 @@ public class BinanceOneMarketService {
         step.setInCurrency(plan.getConfig().getStartCurrency());
         step.setInAmount(plan.getConfig().getStartAmount());
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
+        setThreshold(plan, step, null);
         step.setPrice(getGoodTradePoint(plan, step));
         return step;
     }
@@ -355,6 +357,7 @@ public class BinanceOneMarketService {
         step.setSide(isBuy ? "BUY" : "SELL");
         step.setInCurrency(prevStep.getOutCurrency());
         step.setOutCurrency(TradeUtil.otherCur(step.getSymbol(), step.getInCurrency()));
+        setThreshold(plan, step, prevStep);
         step.setPrice(getGoodTradePoint(plan, step));
         step.setInAmount(prevStep.getOutAmount());
         return step;
@@ -367,8 +370,17 @@ public class BinanceOneMarketService {
         } else {
             priceStrategy = strategyResolver.resolveNextStepStrategy(plan.getConfig().getNextMarketStrategy());
         }
-        priceStrategy.setThresholdToStep(plan, step, null);
         return priceStrategy.getPrice(plan, step);
+    }
+
+    private void setThreshold(TradePlan plan, TradeStep step, TradeStep prevStep) {
+        PriceStrategy priceStrategy;
+        if(step.getStep() == 1) {
+            priceStrategy = strategyResolver.resolveFirstStepPriceStrategy(plan.getConfig().getFirstStepPriceStrategy());
+        } else {
+            priceStrategy = strategyResolver.resolveNextStepStrategy(plan.getConfig().getNextMarketStrategy());
+        }
+        priceStrategy.setThresholdToStep(plan, step, prevStep);
     }
 
     private boolean isLastStep(TradePlan plan, TradeStep step) {
