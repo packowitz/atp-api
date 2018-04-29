@@ -1,5 +1,8 @@
 package io.pacworx.atp.autotrade.service.strategies.nextMarket;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum NextMarketStrategies {
     DirectBackWithMinProfit("Trade in the same market directly back. Price is based on depth stat analyzer with consider a min profit.", "Min profit:percentage", "0.5");
 

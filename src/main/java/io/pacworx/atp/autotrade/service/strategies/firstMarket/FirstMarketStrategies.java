@@ -1,5 +1,8 @@
 package io.pacworx.atp.autotrade.service.strategies.firstMarket;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum FirstMarketStrategies {
     FixedMarket("Pick one specific market to start with", "market:symbol", "");
 
