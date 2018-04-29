@@ -350,7 +350,7 @@ public class BinanceOneMarketService {
 
     private TradeStep createNextStep(TradePlan plan, TradeStep prevStep) {
         NextMarketStrategy nextStepStrategy = strategyResolver.resolveNextStepStrategy(plan.getConfig().getNextMarketStrategy());
-        String symbol = nextStepStrategy.getMarket(plan, null);
+        String symbol = nextStepStrategy.getMarket(plan, prevStep);
         boolean isBuy = !TradeUtil.isBuy(prevStep.getSide());
         TradeStep step = new TradeStep();
         step.setDirty();
