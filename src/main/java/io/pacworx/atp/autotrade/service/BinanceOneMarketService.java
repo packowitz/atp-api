@@ -16,8 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PreDestroy;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class BinanceOneMarketService {
@@ -34,6 +36,9 @@ public class BinanceOneMarketService {
     private final TradeScheduleLockRepository scheduleLockRepository;
     private final TradePlanConfigRepository planConfigRepository;
     private final StrategyResolver strategyResolver;
+
+    private boolean shutdownRecognized = false;
+    private boolean checkOrdersRunning = false;
 
     @Autowired
     public BinanceOneMarketService(BinanceService binanceService,
@@ -76,14 +81,29 @@ public class BinanceOneMarketService {
         auditLogRepository.deleteAllByPlanId(plan.getId());
     }
 
+    @PreDestroy
+    public void preDestroy() throws Exception {
+        shutdownRecognized = true;
+        while(checkOrdersRunning) {
+            System.out.println("Check order is running. Wait for a graceful shutdown.");
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+        System.out.println("No scheduler running anymore.");
+    }
+
     @Scheduled(fixedDelay = 10000)
     public void checkOrders() {
-        if(!scheduleLockRepository.lock(SCHEDULE_NAME)) {
+        if(shutdownRecognized || !scheduleLockRepository.lock(SCHEDULE_NAME)) {
             return;
         }
         try {
+            checkOrdersRunning = true;
             List<TradeOneMarket> activePlans = this.oneMarketRepository.findAllByStatus(TradePlanStatus.ACTIVE);
             for (TradeOneMarket activePlan : activePlans) {
+                if(shutdownRecognized) {
+                    log.info("Shutdown recognized. Stop check orders");
+                    break;
+                }
                 log.info("Loading Plan #" + activePlan.getPlanId());
                 TradePlan plan = planRepository.findOne(activePlan.getPlanId());
                 loadPlanConfig(plan, activePlan);
@@ -102,6 +122,7 @@ public class BinanceOneMarketService {
             }
         } finally {
             scheduleLockRepository.unlock(SCHEDULE_NAME);
+            checkOrdersRunning = false;
         }
     }
 
