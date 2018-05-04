@@ -63,8 +63,11 @@ public class GapAndActive implements MarketStrategy {
         }
 
         if(!possibleMarkets.isEmpty()) {
-            //sort and filter all obvious inactive markets (less than 2 trades per minutes avg in last 24h)
-            possibleMarkets = possibleMarkets.stream().filter(t -> t.getStats24h().getCount() >= 2880).sorted(Comparator.comparing(BinanceTicker::getPerc).reversed()).collect(Collectors.toList());
+            //filter all obvious inactive markets (less than 2 trades per minutes avg in last 24h)
+            possibleMarkets = possibleMarkets.stream().filter(t -> t.getStats24h().getCount() >= 2880).collect(Collectors.toList());
+        }
+        if(possibleMarkets.size() > 1) {
+            possibleMarkets = possibleMarkets.stream().sorted(Comparator.comparing(BinanceTicker::getPerc).reversed()).collect(Collectors.toList());
         }
 
         String bestMarket = null;
