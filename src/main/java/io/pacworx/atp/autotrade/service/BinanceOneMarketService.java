@@ -440,10 +440,14 @@ public class BinanceOneMarketService {
         }
         step.setDirty();
         step.setPlanId(plan.getId());
-        step.setStatus(TradeStatus.ACTIVE);
         step.setCheckedMarketDate(ZonedDateTime.now());
         step.setPrice(0d);
-        step.setTradingMarket(symbol);
+        if(symbol != null) {
+            step.setTradingMarket(symbol);
+            step.setStatus(TradeStatus.ACTIVE);
+        } else {
+            step.setStatus(TradeStatus.CANCELLED);
+        }
         setThreshold(plan, step, prevStep);
         return step;
     }
