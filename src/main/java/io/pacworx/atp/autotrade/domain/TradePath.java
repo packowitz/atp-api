@@ -1,7 +1,6 @@
 package io.pacworx.atp.autotrade.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.pacworx.atp.autotrade.controller.BinanceController;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -36,18 +35,6 @@ public class TradePath implements Serializable {
     private List<TradeStep> steps;
 
     public TradePath() {}
-
-    public TradePath(TradePlan plan, BinanceController.CreatePathRequest request) {
-        this.planId = plan.getId();
-        this.accountId = plan.getAccountId();
-        this.status = TradePlanStatus.ACTIVE;
-        this.maxSteps = request.maxSteps;
-        this.startCurrency = request.startCurrency;
-        this.startAmount = request.startAmount;
-        this.destCurrency = request.destCurrency;
-        this.autoRestart = request.autoRestart;
-        this.startDate = ZonedDateTime.now();
-    }
 
     public TradePath(TradePath origPath) {
         this.planId = origPath.planId;

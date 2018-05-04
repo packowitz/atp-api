@@ -11,4 +11,8 @@ public class FixedMarket implements MarketStrategy {
     public String getMarket(TradePlan plan, TradeStep currentStep) {
         return plan.getConfig().getFirstMarketStrategyParams();
     }
+
+    public boolean checkMarket(TradePlan plan, TradeStep currentStep) {
+        return false;
+    }
 }

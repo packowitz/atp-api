@@ -51,6 +51,8 @@ public class BinancePathService {
         this.scheduleLockRepository = scheduleLockRepository;
     }
 
+    /* SCHEDULER DISABLED!!! THIS IS DEPRECATED CODE */
+
     public void startPath(TradeAccount account, TradePath path) {
         RouteCalculator.Route route = findBestRoute(path, path.getStartCurrency(), path.getStartAmount());
         if(route != null) {
@@ -99,7 +101,6 @@ public class BinancePathService {
         auditLogRepository.deleteAllByPlanId(plan.getId());
     }
 
-    @Scheduled(fixedDelay = 60000)
     public void checkPausedPlans() {
         if(!scheduleLockRepository.lock(SCHEDULE_PAUSE_NAME)) {
             return;
@@ -125,7 +126,6 @@ public class BinancePathService {
         }
     }
 
-    @Scheduled(fixedDelay = 20000)
     public void checkOrders() {
         if(!scheduleLockRepository.lock(SCHEDULE_NAME)) {
             return;

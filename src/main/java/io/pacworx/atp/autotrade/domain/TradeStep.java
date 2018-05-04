@@ -52,6 +52,8 @@ public class TradeStep {
     private double outAmount = 0d;
     /** When was this step created **/
     private ZonedDateTime startDate;
+    /** When was the last check of the market this step is trading in **/
+    private ZonedDateTime checkedMarketDate;
     /** When was step finished. NULL as long as it is active. **/
     private ZonedDateTime finishDate;
     /** Indicates that something went wrong starting this step and it should try to restart again **/
@@ -79,6 +81,12 @@ public class TradeStep {
         this.needRestart = false;
         this.finishDate = ZonedDateTime.now();
         this.dirty = true;
+    }
+
+    public void setTradingMarket(String symbol) {
+        this.symbol = symbol;
+        this.side = TradeUtil.getSideOfMarket(symbol, inCurrency);
+        this.outCurrency = TradeUtil.otherCur(symbol, inCurrency);
     }
 
     public void calcFilling(BinanceOrderResult orderResult) {
@@ -250,6 +258,14 @@ public class TradeStep {
 
     public void setStartDate(ZonedDateTime startDate) {
         this.startDate = startDate;
+    }
+
+    public ZonedDateTime getCheckedMarketDate() {
+        return checkedMarketDate;
+    }
+
+    public void setCheckedMarketDate(ZonedDateTime checkedMarketDate) {
+        this.checkedMarketDate = checkedMarketDate;
     }
 
     public ZonedDateTime getFinishDate() {

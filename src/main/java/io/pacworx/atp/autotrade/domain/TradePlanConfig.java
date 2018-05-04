@@ -1,15 +1,17 @@
 package io.pacworx.atp.autotrade.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrategies;
 import io.pacworx.atp.autotrade.service.strategies.firstStepPrice.FirstStepPriceStrategies;
 import io.pacworx.atp.autotrade.service.strategies.nextMarket.NextMarketStrategies;
+import io.pacworx.atp.config.EnumSerializer;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 
-@Entity
+@Entity(name = "trade_plan_config")
 public class TradePlanConfig {
     @Id
     private long planId;
@@ -17,12 +19,15 @@ public class TradePlanConfig {
     private String startCurrency;
     private double startAmount;
     @Enumerated(EnumType.STRING)
+    @JsonSerialize(using = EnumSerializer.class)
     private FirstMarketStrategies firstMarketStrategy;
     private String firstMarketStrategyParams;
     @Enumerated(EnumType.STRING)
+    @JsonSerialize(using = EnumSerializer.class)
     private FirstStepPriceStrategies firstStepPriceStrategy;
     private String firstStepPriceStrategyParams;
     @Enumerated(EnumType.STRING)
+    @JsonSerialize(using = EnumSerializer.class)
     private NextMarketStrategies nextMarketStrategy;
     private String nextMarketStrategyParams;
 

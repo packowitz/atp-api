@@ -58,7 +58,13 @@ public class BinanceService {
     }
 
     public void addMarketInfoAsAuditLog(TradeStep step) {
-        String msg = "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
+        String msg = "";
+        if(TradeUtil.isBuy(step.getSide())) {
+            msg += "BUY in " + step.getSymbol() + "; ";
+        } else {
+            msg += "SELL in " + step.getSymbol() + "; ";
+        }
+        msg += "Own price: " + String.format("%.8f", step.getPrice()) + "; ";
         if(step.getPriceThreshold() != null) {
             msg += "Threshold: " + String.format("%.8f", step.getPriceThreshold()) + "; ";
         }

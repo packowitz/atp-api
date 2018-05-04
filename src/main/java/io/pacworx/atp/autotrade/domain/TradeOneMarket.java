@@ -1,7 +1,6 @@
 package io.pacworx.atp.autotrade.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.pacworx.atp.autotrade.controller.BinanceController;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -32,20 +31,6 @@ public class TradeOneMarket implements Serializable {
     private ZonedDateTime finishDate; //Duped to plan.finishDate
     @Transient
     private List<TradeStep> steps;
-
-    public TradeOneMarket() {}
-
-    public TradeOneMarket(TradePlan plan, BinanceController.CreateOneMarketRequest request) {
-        planId = plan.getId();
-        accountId = plan.getAccountId();
-        status = TradePlanStatus.ACTIVE;
-        symbol = request.symbol;
-        minProfit = request.minProfit;
-        startCurrency = request.startCurrency;
-        startAmount = request.startAmount;
-        autoRestart = request.autoRestart;
-        startDate = ZonedDateTime.now();
-    }
 
     public void cancel() {
         this.status = TradePlanStatus.CANCELLED;
@@ -166,6 +151,18 @@ public class TradeOneMarket implements Serializable {
         if(steps != null) {
             for(TradeStep step: steps) {
                 if((step.getStatus() == TradeStatus.ACTIVE || step.isNeedRestart()) && step.getStep() == 1) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public TradeStep getLatestCancelledStep() {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStatus() == TradeStatus.CANCELLED) {
                     return step;
                 }
             }

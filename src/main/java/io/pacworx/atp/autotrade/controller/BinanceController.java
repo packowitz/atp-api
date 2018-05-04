@@ -20,10 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -93,54 +89,6 @@ public class BinanceController {
         return new ResponseEntity<>(binanceService.getBinanceAccount(binance), HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/plan/path", method = RequestMethod.POST)
-    public ResponseEntity<TradePlan> createPathPlan(@ModelAttribute("tradeuser") TradeUser user,
-                                                    @Valid @RequestBody CreatePathRequest request) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
-        if (binance == null) {
-            throw new BadRequestException("User doesn't have a binance account");
-        }
-        TradePlan plan = new TradePlan(binance, TradePlanType.PATH);
-        plan.setDescription(request.createDescription());
-
-        this.tradePlanRepository.save(plan);
-        TradePath path = new TradePath(plan, request);
-        this.pathService.startPath(binance, path);
-
-        return new ResponseEntity<>(plan, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/plan/onemarket", method = RequestMethod.POST)
-    public ResponseEntity<TradePlan> createOneMarket(@ModelAttribute("tradeuser") TradeUser user,
-                                                     @Valid @RequestBody CreateOneMarketRequest request) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
-        if(binance == null) {
-            throw new BadRequestException("User doesn't have a binance account");
-        }
-        TradePlan plan = new TradePlan(binance, TradePlanType.ONEMARKET);
-        plan.setDescription(request.createDescription());
-        this.tradePlanRepository.save(plan);
-
-        TradePlanConfig config = new TradePlanConfig();
-        config.setPlanId(plan.getId());
-        config.setAutoRestart(request.autoRestart);
-        config.setStartCurrency(request.startCurrency);
-        config.setStartAmount(request.startAmount);
-        config.setFirstMarketStrategy(FirstMarketStrategies.FixedMarket);
-        config.setFirstMarketStrategyParams(request.symbol);
-        config.setFirstStepPriceStrategy(FirstStepPriceStrategies.DepthPriceAndDistanceFromOtherSide);
-        config.setFirstStepPriceStrategyParams(Double.toString(request.minProfit));
-        config.setNextMarketStrategy(NextMarketStrategies.DirectBackWithMinProfit);
-        config.setNextMarketStrategyParams(Double.toString(request.minProfit));
-        this.tradePlanConfigRepository.save(config);
-        plan.setConfig(config);
-
-        TradeOneMarket oneMarket = new TradeOneMarket(plan, request);
-        this.oneMarketService.startPlan(binance, plan, oneMarket);
-
-        return new ResponseEntity<>(plan, HttpStatus.OK);
-    }
-
     @RequestMapping(value = "/plan", method = RequestMethod.POST)
     public ResponseEntity<TradePlan> createPlan(@ModelAttribute("tradeuser") TradeUser user,
                                                 @RequestBody TradePlanConfig config) {
@@ -161,11 +109,6 @@ public class BinanceController {
         oneMarket.setPlanId(plan.getId());
         oneMarket.setAccountId(plan.getAccountId());
         oneMarket.setStatus(TradePlanStatus.ACTIVE);
-        oneMarket.setSymbol(config.getFirstMarketStrategyParams());
-        oneMarket.setMinProfit(Double.parseDouble(config.getFirstStepPriceStrategyParams()));
-        oneMarket.setStartCurrency(config.getStartCurrency());
-        oneMarket.setStartAmount(config.getStartAmount());
-        oneMarket.setAutoRestart(config.isAutoRestart());
         oneMarket.setStartDate(ZonedDateTime.now());
         this.oneMarketService.startPlan(binance, plan, oneMarket);
 
@@ -179,6 +122,9 @@ public class BinanceController {
             throw new BadRequestException("User doesn't have a binance account");
         }
         List<TradePlan> plans = this.tradePlanRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
+        for(TradePlan plan: plans) {
+            plan.setConfig(this.tradePlanConfigRepository.findOne(plan.getId()));
+        }
         return new ResponseEntity<>(plans, HttpStatus.OK);
     }
 
@@ -246,9 +192,9 @@ public class BinanceController {
     }
 
     @RequestMapping(value = "/plan/{planId}/autorepeat/{autorepeat}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
-                                                   @PathVariable long planId,
-                                                   @PathVariable boolean autorepeat) {
+    public ResponseEntity<TradePlanConfig> updateAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
+                                                            @PathVariable long planId,
+                                                            @PathVariable boolean autorepeat) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
@@ -258,32 +204,10 @@ public class BinanceController {
             throw new BadRequestException("User is not the owner of requested plan");
         }
         TradePlanConfig config = tradePlanConfigRepository.findOne(planId);
-        if(config != null) {
-            config.setAutoRestart(autorepeat);
-            tradePlanConfigRepository.save(config);
-        }
-        if(plan.getType() == TradePlanType.PATH) {
-            List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
-            if(!paths.isEmpty()) {
-                TradePath latestPath = paths.get(0);
-                latestPath.setAutoRestart(autorepeat);
-                this.tradePathRepository.save(latestPath);
-            }
-            for(TradePath path: paths) {
-                List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
-                path.setSteps(steps);
-            }
-            return new ResponseEntity<>(paths, HttpStatus.OK);
-        }
-        if(plan.getType() == TradePlanType.ONEMARKET) {
-            TradeOneMarket oneMarket = this.tradeOneMarketRepository.findByPlanId(planId);
-            oneMarket.setAutoRestart(autorepeat);
-            this.tradeOneMarketRepository.save(oneMarket);
-            List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(oneMarket.getPlanId(), oneMarket.getId());
-            oneMarket.setSteps(steps);
-            return new ResponseEntity<>(oneMarket, HttpStatus.OK);
-        }
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        config.setAutoRestart(autorepeat);
+        tradePlanConfigRepository.save(config);
+
+        return new ResponseEntity<>(config, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan/{planId}/cancel", method = RequestMethod.GET)
@@ -345,39 +269,5 @@ public class BinanceController {
     @RequestMapping(value = "/config/nextmarket", method = RequestMethod.GET)
     public ResponseEntity<NextMarketStrategies[]> getNextMarketStrategies() {
         return new ResponseEntity<>(NextMarketStrategies.values(), HttpStatus.OK);
-    }
-
-    public static final class CreatePathRequest {
-        @NotNull
-        public String startCurrency;
-        @NotNull
-        public double startAmount;
-        @NotNull
-        public String destCurrency;
-        @NotNull
-        @Min(2)
-        @Max(6)
-        public int maxSteps;
-        public boolean autoRestart;
-
-        public String createDescription() {
-            return startAmount + " " + startCurrency + " in " + maxSteps + " steps to " + destCurrency;
-        }
-    }
-
-    public static final class CreateOneMarketRequest {
-        @NotNull
-        public String symbol;
-        @NotNull
-        public double minProfit;
-        @NotNull
-        public String startCurrency;
-        @NotNull
-        public double startAmount;
-        public boolean autoRestart;
-
-        public String createDescription() {
-            return "Trade " + startAmount + " " + startCurrency + " in " + symbol;
-        }
     }
 }

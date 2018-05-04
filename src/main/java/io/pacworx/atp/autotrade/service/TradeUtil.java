@@ -29,6 +29,16 @@ public class TradeUtil {
         return null;
     }
 
+    public static String getSideOfMarket(String symbol, String currency) {
+        if(symbol.startsWith(currency)) {
+            return "SELL";
+        }
+        if(symbol.endsWith(currency)) {
+            return "BUY";
+        }
+        throw new RuntimeException("Get side of market: " + currency + " is not part of " + symbol);
+    }
+
     public static boolean isBuy(String side) {
         return "BUY".equalsIgnoreCase(side);
     }

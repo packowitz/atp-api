@@ -21,6 +21,10 @@ public class DirectBackWithMinProfit implements NextMarketStrategy {
         return currentStep.getSymbol();
     }
 
+    public boolean checkMarket(TradePlan plan, TradeStep currentStep) {
+        return false;
+    }
+
     public boolean allowPartialNextStep() {
         return true;
     }
