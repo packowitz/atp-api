@@ -119,6 +119,7 @@ public class BinanceOneMarketService {
                     if(newMarket != null) {
                         //restart in new market
                         log.info("Plan #" + plan.getId() + " step-" + step.getStep() + " found a good market again: " + newMarket);
+                        step.addInfoAuditLog("Found good market again " + newMarket);
                         step.setTradingMarket(newMarket);
                         step.setNeedRestart(true);
                         step.setStatus(TradeStatus.ACTIVE);
@@ -342,14 +343,15 @@ public class BinanceOneMarketService {
                         if(newMarket == null) {
                             //no good trading market found atm -> pause plan
                             log.info("Plan #" + plan.getId() + " step-" + step.getStep() + " found no good market. Pause plan.");
+                            step.addInfoAuditLog("Found no good market -> PAUSE ");
                             oneMarket.setStatus(TradePlanStatus.PAUSED);
                             plan.setStatus(TradePlanStatus.PAUSED);
                             return;
                         } else {
                             //swap to new market
                             log.info("Plan #" + plan.getId() + " step-" + step.getStep() + " found new good market: " + newMarket);
+                            step.addInfoAuditLog("Found better market " + newMarket);
                             step.setTradingMarket(newMarket);
-                            step.setSide(TradeUtil.getSideOfMarket(newMarket, step.getInCurrency()));
                             step.setNeedRestart(true);
                         }
                     }

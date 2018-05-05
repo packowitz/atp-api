@@ -31,6 +31,7 @@ public class BinanceService {
 
     public static final int ERROR_CODE_TIME_DIFF = -1021;
     public static final int ERROR_CODE_UNKNOWN_ORDER = -2011;
+    public static final int ERROR_CODE_ORDER_NOT_EXIST = -2013;
 
     private final BinanceExchangeInfoService exchangeInfoService;
     private long serverTimeDifference = 0;
@@ -187,6 +188,7 @@ public class BinanceService {
         if(step.getStartDate() == null) {
             step.setStartDate(ZonedDateTime.now());
         }
+        step.setFinishDate(null);
         step.setOrderId(result.getOrderId());
         step.setOrderFilled(0d);
         step.setPrice(Double.parseDouble(result.getPrice()));
@@ -276,7 +278,7 @@ public class BinanceService {
         try {
             cancelOrder(account, step.getSymbol(), step.getOrderId());
         } catch(BinanceException e) {
-            if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER) {
+            if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER && e.getCode() != ERROR_CODE_ORDER_NOT_EXIST) {
                 throw e;
             }
         }
