@@ -122,7 +122,6 @@ public class BinanceOneMarketService {
                         step.addInfoAuditLog("Found good market again " + newMarket);
                         step.setTradingMarket(newMarket);
                         step.setNeedRestart(true);
-                        step.setStatus(TradeStatus.ACTIVE);
                         plan.setStatus(TradePlanStatus.ACTIVE);
                         pausedPlan.setStatus(TradePlanStatus.ACTIVE);
                         TradeAccount account = accountRepository.findOne(pausedPlan.getAccountId());
@@ -182,7 +181,7 @@ public class BinanceOneMarketService {
     private void checkStep(TradeAccount account, TradePlan plan, TradeOneMarket oneMarket, TradeStep step) {
         try {
             if(step.isNeedRestart()) {
-                if(step.getOrderId() == null) {
+                if(step.getOrderId() == null || step.getStatus() == TradeStatus.CANCELLED) {
                     marketAndPriceCheck(account, plan, oneMarket, step);
                 } else {
                     BinanceOrderResult orderResult = binanceService.getStepStatus(account, step);
