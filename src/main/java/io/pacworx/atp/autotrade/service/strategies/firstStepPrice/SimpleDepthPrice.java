@@ -17,6 +17,10 @@ public class SimpleDepthPrice implements PriceStrategy {
         return depthService.getGoodTradePrice(step);
     }
 
+    public boolean isThresholdDynamic() {
+        return false;
+    }
+
     public void setThresholdToStep(TradePlan plan, TradeStep step, TradeStep prevStep) {
         step.setPriceThreshold(null);
     }

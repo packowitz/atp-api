@@ -7,5 +7,7 @@ public interface PriceStrategy {
 
     double getPrice(TradePlan plan, TradeStep step);
 
+    boolean isThresholdDynamic();
+
     void setThresholdToStep(TradePlan plan, TradeStep step, TradeStep prevStep);
 }

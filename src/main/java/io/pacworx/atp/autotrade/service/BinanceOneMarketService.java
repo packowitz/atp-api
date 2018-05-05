@@ -358,6 +358,21 @@ public class BinanceOneMarketService {
             }
         }
 
+        //Check for threshold
+        PriceStrategy priceStrategy;
+        if(step.getStep() == 1) {
+            priceStrategy = strategyResolver.resolveFirstStepPriceStrategy(plan.getConfig().getFirstStepPriceStrategy());
+        } else {
+            priceStrategy = strategyResolver.resolveNextStepStrategy(plan.getConfig().getNextMarketStrategy());
+        }
+        if(priceStrategy.isThresholdDynamic()) {
+            TradeStep prevStep = null;
+            if(step.getStep() != 1) {
+                prevStep = oneMarket.getLatesFirstStep();
+            }
+            setThreshold(plan, step, prevStep);
+        }
+
         // adjust price if necessary
         double goodPrice = getGoodTradePoint(plan, step);
         if(step.isNeedRestart() || Math.abs(goodPrice - step.getPrice()) >= 0.00000001 ) { //stupid double ...
@@ -446,10 +461,10 @@ public class BinanceOneMarketService {
         if(symbol != null) {
             step.setTradingMarket(symbol);
             step.setStatus(TradeStatus.ACTIVE);
+            setThreshold(plan, step, prevStep);
         } else {
             step.setStatus(TradeStatus.CANCELLED);
         }
-        setThreshold(plan, step, prevStep);
         return step;
     }
 

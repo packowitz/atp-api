@@ -23,6 +23,10 @@ public class DepthPriceAndDistanceFromOtherSide implements PriceStrategy {
         return depthService.getGoodTradePrice(step);
     }
 
+    public boolean isThresholdDynamic() {
+        return true;
+    }
+
     public void setThresholdToStep(TradePlan plan, TradeStep step, TradeStep prevStep) {
         //Set step's threshold to configured distance from other side
         BinanceTicker ticker = binanceService.getTicker(step.getSymbol());

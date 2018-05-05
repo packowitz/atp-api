@@ -33,6 +33,10 @@ public class DirectBackWithMinProfit implements NextMarketStrategy {
         return depthService.getGoodTradePrice(step);
     }
 
+    public boolean isThresholdDynamic() {
+        return false;
+    }
+
     public void setThresholdToStep(TradePlan plan, TradeStep step, TradeStep prevStep) {
         double minProfit = Double.parseDouble(plan.getConfig().getNextMarketStrategyParams());
         double threshold = calcPriceThreshold(step, prevStep.getPrice(), minProfit);
