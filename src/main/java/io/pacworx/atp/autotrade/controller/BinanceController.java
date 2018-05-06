@@ -6,7 +6,7 @@ import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
 import io.pacworx.atp.autotrade.service.BinanceDepthService;
-import io.pacworx.atp.autotrade.service.BinanceOneMarketService;
+import io.pacworx.atp.autotrade.service.BinancePlanService;
 import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrategies;
 import io.pacworx.atp.autotrade.service.strategies.firstStepPrice.FirstStepPriceStrategies;
@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @RestController
@@ -28,22 +27,20 @@ public class BinanceController {
     private static final Logger log = LogManager.getLogger();
 
     private final BinanceService binanceService;
-    private final BinanceOneMarketService oneMarketService;
+    private final BinancePlanService oneMarketService;
     private final BinanceDepthService depthService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
-    private final TradeOneMarketRepository tradeOneMarketRepository;
     private final TradeStepRepository tradeStepRepository;
     private final TradeAuditLogRepository auditLogRepository;
     private final TradePlanConfigRepository tradePlanConfigRepository;
 
     @Autowired
     public BinanceController(BinanceService binanceService,
-                             BinanceOneMarketService oneMarketService,
+                             BinancePlanService oneMarketService,
                              BinanceDepthService depthService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
-                             TradeOneMarketRepository tradeOneMarketRepository,
                              TradeStepRepository tradeStepRepository,
                              TradeAuditLogRepository auditLogRepository,
                              TradePlanConfigRepository tradePlanConfigRepository) {
@@ -52,7 +49,6 @@ public class BinanceController {
         this.depthService = depthService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
-        this.tradeOneMarketRepository = tradeOneMarketRepository;
         this.tradeStepRepository = tradeStepRepository;
         this.auditLogRepository = auditLogRepository;
         this.tradePlanConfigRepository = tradePlanConfigRepository;
@@ -96,14 +92,7 @@ public class BinanceController {
         config.setPlanId(plan.getId());
         this.tradePlanConfigRepository.save(config);
         plan.setConfig(config);
-
-        //set the values to oneMarket for the time we still need oneMarket
-        TradeOneMarket oneMarket = new TradeOneMarket();
-        oneMarket.setPlanId(plan.getId());
-        oneMarket.setAccountId(plan.getAccountId());
-        oneMarket.setStatus(TradePlanStatus.ACTIVE);
-        oneMarket.setStartDate(ZonedDateTime.now());
-        this.oneMarketService.startPlan(binance, plan, oneMarket);
+        this.oneMarketService.startPlan(binance, plan);
 
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
@@ -119,23 +108,6 @@ public class BinanceController {
             plan.setConfig(this.tradePlanConfigRepository.findOne(plan.getId()));
         }
         return new ResponseEntity<>(plans, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/plan/{planId}/onemarket", method = RequestMethod.GET)
-    public ResponseEntity<TradeOneMarket> getOneMarket(@ModelAttribute("tradeuser") TradeUser user,
-                                                       @PathVariable long planId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
-        if(binance == null) {
-            throw new BadRequestException("User doesn't have a binance account");
-        }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
-        if(plan == null || plan.getUserId() != user.getId()) {
-            throw new BadRequestException("User is not the owner of requested plan");
-        }
-        TradeOneMarket oneMarket = tradeOneMarketRepository.findByPlanId(planId);
-        List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(oneMarket.getPlanId(), oneMarket.getId());
-        oneMarket.setSteps(steps);
-        return new ResponseEntity<>(oneMarket, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan/{planId}", method = RequestMethod.GET)

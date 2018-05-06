@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity(name = "trade_plan")
 public class TradePlan {
@@ -39,6 +41,16 @@ public class TradePlan {
         this.type = type;
         this.status = TradePlanStatus.ACTIVE;
         this.startDate = ZonedDateTime.now();
+    }
+
+    public void cancel() {
+        this.status = TradePlanStatus.CANCELLED;
+        this.finishDate = ZonedDateTime.now();
+    }
+
+    public void finish() {
+        this.status = TradePlanStatus.FINISHED;
+        this.finishDate = ZonedDateTime.now();
     }
 
     public long getId() {
@@ -91,6 +103,10 @@ public class TradePlan {
 
     public void setBalance(double balance) {
         this.balance = balance;
+    }
+
+    public void addBalance(double balance) {
+        this.balance += balance;
     }
 
     public double getBalancePerc() {
@@ -153,7 +169,70 @@ public class TradePlan {
         return steps;
     }
 
+    @JsonIgnore
+    public TradeStep getActiveFirstStep() {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if((step.getStatus() == TradeStatus.ACTIVE || step.isNeedRestart()) && step.getStep() == 1) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public TradeStep getLatestFirstStep() {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStep() == 1) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public TradeStep getLatestCancelledStep() {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if(step.getStatus() == TradeStatus.CANCELLED) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public TradeStep getActiveStep(int stepNumber) {
+        if(steps != null) {
+            for(TradeStep step: steps) {
+                if((step.getStatus() == TradeStatus.ACTIVE || step.isNeedRestart()) && step.getStep() == stepNumber) {
+                    return step;
+                }
+            }
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public List<TradeStep> getActiveSteps() {
+        if(steps != null) {
+            return steps.stream().filter(s -> s.getStatus() == TradeStatus.ACTIVE || s.isNeedRestart()).collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
+
     public void setSteps(List<TradeStep> steps) {
         this.steps = steps;
+    }
+
+    public void addStep(TradeStep step) {
+        if(this.steps == null) {
+            this.steps = new ArrayList<>();
+        }
+        this.steps.add(0, step);
     }
 }
