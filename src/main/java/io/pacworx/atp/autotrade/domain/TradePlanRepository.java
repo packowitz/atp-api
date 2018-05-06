@@ -18,4 +18,6 @@ public interface TradePlanRepository extends CrudRepository<TradePlan, Long> {
     int updateStatus(@Param("id")long id, @Param("status")String status);
 
     List<TradePlan> findAllByAccountIdOrderByIdDesc(long accountId);
+
+    List<TradePlan> findAllByStatus(TradePlanStatus status);
 }

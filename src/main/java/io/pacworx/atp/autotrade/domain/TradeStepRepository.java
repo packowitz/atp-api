@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface TradeStepRepository extends CrudRepository<TradeStep, Long> {
 
+    List<TradeStep> findAllByPlanIdOrderByIdDesc(long planId);
+
     List<TradeStep> findAllByPlanIdAndSubplanIdOrderByIdDesc(long planId, long subplanId);
 
     @Query(value="SELECT price FROM trade_step WHERE symbol = :symbol and status = 'ACTIVE'")

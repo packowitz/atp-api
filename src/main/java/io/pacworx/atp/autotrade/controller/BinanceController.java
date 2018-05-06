@@ -7,7 +7,6 @@ import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
 import io.pacworx.atp.autotrade.service.BinanceDepthService;
 import io.pacworx.atp.autotrade.service.BinanceOneMarketService;
-import io.pacworx.atp.autotrade.service.BinancePathService;
 import io.pacworx.atp.autotrade.service.BinanceService;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrategies;
 import io.pacworx.atp.autotrade.service.strategies.firstStepPrice.FirstStepPriceStrategies;
@@ -29,12 +28,10 @@ public class BinanceController {
     private static final Logger log = LogManager.getLogger();
 
     private final BinanceService binanceService;
-    private final BinancePathService pathService;
     private final BinanceOneMarketService oneMarketService;
     private final BinanceDepthService depthService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
-    private final TradePathRepository tradePathRepository;
     private final TradeOneMarketRepository tradeOneMarketRepository;
     private final TradeStepRepository tradeStepRepository;
     private final TradeAuditLogRepository auditLogRepository;
@@ -42,23 +39,19 @@ public class BinanceController {
 
     @Autowired
     public BinanceController(BinanceService binanceService,
-                             BinancePathService pathService,
                              BinanceOneMarketService oneMarketService,
                              BinanceDepthService depthService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
-                             TradePathRepository tradePathRepository,
                              TradeOneMarketRepository tradeOneMarketRepository,
                              TradeStepRepository tradeStepRepository,
                              TradeAuditLogRepository auditLogRepository,
                              TradePlanConfigRepository tradePlanConfigRepository) {
         this.binanceService = binanceService;
-        this.pathService = pathService;
         this.oneMarketService = oneMarketService;
         this.depthService = depthService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
-        this.tradePathRepository = tradePathRepository;
         this.tradeOneMarketRepository = tradeOneMarketRepository;
         this.tradeStepRepository = tradeStepRepository;
         this.auditLogRepository = auditLogRepository;
@@ -145,9 +138,9 @@ public class BinanceController {
         return new ResponseEntity<>(oneMarket, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/plan/{planId}/paths", method = RequestMethod.GET)
-    public ResponseEntity<List<TradePath>> getPaths(@ModelAttribute("tradeuser") TradeUser user,
-                                                    @PathVariable long planId) {
+    @RequestMapping(value = "/plan/{planId}", method = RequestMethod.GET)
+    public ResponseEntity<TradePlan> getPlan(@ModelAttribute("tradeuser") TradeUser user,
+                                             @PathVariable long planId) {
         TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
@@ -156,12 +149,10 @@ public class BinanceController {
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        List<TradePath> paths = this.tradePathRepository.findAllByPlanIdOrderByStartDateDesc(planId);
-        for(TradePath path: paths) {
-            List<TradeStep> steps = tradeStepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
-            path.setSteps(steps);
-        }
-        return new ResponseEntity<>(paths, HttpStatus.OK);
+        plan.setConfig(this.tradePlanConfigRepository.findOne(plan.getId()));
+        List<TradeStep> steps = tradeStepRepository.findAllByPlanIdOrderByIdDesc(plan.getId());
+        plan.setSteps(steps);
+        return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/step/{stepId}/logs", method = RequestMethod.GET)
@@ -222,13 +213,7 @@ public class BinanceController {
             throw new BadRequestException("User is not the owner of requested plan");
         }
         log.info("User " + user.getId() + " manually cancelled plan " + planId);
-        if(plan.getType() == TradePlanType.PATH) {
-            this.pathService.cancelPaths(binance, plan);
-        } else if(plan.getType() == TradePlanType.ONEMARKET) {
-            this.oneMarketService.cancelPlan(binance, plan);
-        }
-        plan.setStatus(TradePlanStatus.CANCELLED);
-        this.tradePlanRepository.save(plan);
+        this.oneMarketService.cancelPlan(binance, plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
@@ -247,12 +232,7 @@ public class BinanceController {
             throw new BadRequestException("Cannot delete plan " + planId + " because it is active.");
         }
         log.info("User " + user.getId() + " manually deleted plan " + planId);
-        if(plan.getType() == TradePlanType.PATH) {
-            this.pathService.deletePaths(plan);
-        } else if(plan.getType() == TradePlanType.ONEMARKET) {
-            this.oneMarketService.deletePlan(plan);
-        }
-        tradePlanRepository.delete(plan);
+        this.oneMarketService.deletePlan(plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 

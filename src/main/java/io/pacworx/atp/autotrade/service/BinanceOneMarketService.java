@@ -63,6 +63,7 @@ public class BinanceOneMarketService {
 
     public void startPlan(TradeAccount account, TradePlan plan, TradeOneMarket oneMarket) {
         startFirstStep(account, plan, oneMarket);
+        plan.setLastActionDate(ZonedDateTime.now());
         savePlan(plan, oneMarket);
     }
 
@@ -74,6 +75,7 @@ public class BinanceOneMarketService {
 
     public void deletePlan(TradePlan plan) {
         oneMarketRepository.deleteAllByPlanId(plan.getId());
+        planRepository.delete(plan);
         planConfigRepository.deleteAllByPlanId(plan.getId());
         stepRepository.deleteAllByPlanId(plan.getId());
         auditLogRepository.deleteAllByPlanId(plan.getId());

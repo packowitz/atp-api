@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Entity(name = "trade_plan")
 public class TradePlan {
@@ -27,6 +28,8 @@ public class TradePlan {
     private int runsDone = 0;
     @Transient
     private TradePlanConfig config;
+    @Transient
+    private List<TradeStep> steps;
 
     public TradePlan() {}
 
@@ -144,5 +147,13 @@ public class TradePlan {
 
     public void setConfig(TradePlanConfig config) {
         this.config = config;
+    }
+
+    public List<TradeStep> getSteps() {
+        return steps;
+    }
+
+    public void setSteps(List<TradeStep> steps) {
+        this.steps = steps;
     }
 }
