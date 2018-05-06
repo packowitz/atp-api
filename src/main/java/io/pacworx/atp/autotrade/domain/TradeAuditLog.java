@@ -18,8 +18,6 @@ public class TradeAuditLog {
     @JsonIgnore
     private long planId;
     @JsonIgnore
-    private long subplanId;
-    @JsonIgnore
     private long stepId;
     private ZonedDateTime timestamp;
     private String level;
@@ -31,7 +29,6 @@ public class TradeAuditLog {
     public static TradeAuditLog logBinanceException(TradeStep step, BinanceException e) {
         TradeAuditLog log = new TradeAuditLog();
         log.stepId = step.getId();
-        log.subplanId = step.getSubplanId();
         log.planId = step.getPlanId();
         log.level = "ERROR";
         log.timestamp = ZonedDateTime.now();
@@ -43,7 +40,6 @@ public class TradeAuditLog {
     public static TradeAuditLog logException(TradeStep step, Exception e) {
         TradeAuditLog log = new TradeAuditLog();
         log.stepId = step.getId();
-        log.subplanId = step.getSubplanId();
         log.planId = step.getPlanId();
         log.level = "ERROR";
         log.timestamp = ZonedDateTime.now();
@@ -62,14 +58,6 @@ public class TradeAuditLog {
 
     public void setPlanId(long planId) {
         this.planId = planId;
-    }
-
-    public long getSubplanId() {
-        return subplanId;
-    }
-
-    public void setSubplanId(long subplanId) {
-        this.subplanId = subplanId;
     }
 
     public long getStepId() {

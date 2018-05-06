@@ -17,9 +17,6 @@ public class TradeStep {
     @Column(name = "plan_id")
     @JsonIgnore
     private long planId;
-    @Column(name = "subplan_id")
-    @JsonIgnore
-    private long subplanId;
     /** Indicates where this step is in your algorithm **/
     private int step;
     /** last known orderId **/
@@ -114,14 +111,6 @@ public class TradeStep {
 
     public void setPlanId(long planId) {
         this.planId = planId;
-    }
-
-    public long getSubplanId() {
-        return subplanId;
-    }
-
-    public void setSubplanId(long subplanId) {
-        this.subplanId = subplanId;
     }
 
     public int getStep() {

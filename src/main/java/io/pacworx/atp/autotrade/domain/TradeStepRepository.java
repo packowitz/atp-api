@@ -13,8 +13,6 @@ public interface TradeStepRepository extends CrudRepository<TradeStep, Long> {
 
     List<TradeStep> findAllByPlanIdOrderByIdDesc(long planId);
 
-    List<TradeStep> findAllByPlanIdAndSubplanIdOrderByIdDesc(long planId, long subplanId);
-
     @Query(value="SELECT price FROM trade_step WHERE symbol = :symbol and status = 'ACTIVE'")
     List<Double> findActivePrices(@Param("symbol") String symbol);
 

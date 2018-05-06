@@ -160,10 +160,10 @@ public class BinancePathService {
             } else if("NEW".equals(orderResult.getStatus())) {
                 handleUnfilledOrder(account, path, step, orderResult);
             } else {
-                log.info("Order " + orderResult.getOrderId() + " from path " + step.getSubplanId() + " is in status: " + orderResult.getStatus());
+                log.info("Order " + orderResult.getOrderId() + " from path " + step.getPlanId() + " is in status: " + orderResult.getStatus());
             }
         } catch (BinanceException e) {
-            log.info("Order " + step.getOrderId() + " from path " + step.getSubplanId() + " failed to check status");
+            log.info("Order " + step.getOrderId() + " from path " + step.getPlanId() + " failed to check status");
             if(step.getId() != 0) {
                 auditLogRepository.save(TradeAuditLog.logBinanceException(step, e));
             }
@@ -390,7 +390,7 @@ public class BinancePathService {
     }
 
     private void addStepsToMarket(TradePath path) {
-        List<TradeStep> steps = stepRepository.findAllByPlanIdAndSubplanIdOrderByIdDesc(path.getPlanId(), path.getId());
+        List<TradeStep> steps = stepRepository.findAllByPlanIdOrderByIdDesc(path.getPlanId());
         path.setSteps(steps);
     }
 
@@ -399,12 +399,10 @@ public class BinancePathService {
         if(path.getSteps() != null) {
             for(TradeStep step: path.getSteps()) {
                 if(step.isDirty()) {
-                    step.setSubplanId(path.getId());
                     stepRepository.save(step);
                     if(step.getNewAuditLogs() != null) {
                         for(TradeAuditLog log: step.getNewAuditLogs()) {
                             log.setPlanId(step.getPlanId());
-                            log.setSubplanId(step.getSubplanId());
                             log.setStepId(step.getId());
                             auditLogRepository.save(log);
                         }
