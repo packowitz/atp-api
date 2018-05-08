@@ -65,6 +65,8 @@ public class BinancePlanService {
     }
 
     public void cancelPlan(TradeAccount account, TradePlan plan) {
+        loadPlanConfig(plan);
+        loadStepsToPlan(plan);
         cancel(account, plan);
         savePlan(plan);
     }
