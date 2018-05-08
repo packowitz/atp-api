@@ -111,13 +111,19 @@ public class GapAndActive implements MarketStrategy {
 
         //Volume check
         List<BinanceTrade> last30trades = tradesLast30min.subList(Math.max(0, tradesLast30min.size() - 30), tradesLast30min.size());
+        int buys = 0, sells = 0;
         double sellVolume = 0d, buyVolume = 0d;
         for (BinanceTrade trade : last30trades) {
             if (trade.getIsBuyerMaker()) {
+                sells++;
                 sellVolume += trade.getQty();
             } else {
+                buys++;
                 buyVolume += trade.getQty();
             }
+        }
+        if(buys < 5 || sells < 5) {
+            return -1;
         }
         double ratio = Math.abs((buyVolume / (sellVolume + buyVolume)) - 0.5); //0 best, 0.5 worst
         if(ratio > 0.3) {
