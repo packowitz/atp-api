@@ -27,7 +27,7 @@ public class BinanceController {
     private static final Logger log = LogManager.getLogger();
 
     private final BinanceService binanceService;
-    private final BinancePlanService oneMarketService;
+    private final BinancePlanService planService;
     private final BinanceDepthService depthService;
     private final TradeAccountRepository tradeAccountRepository;
     private final TradePlanRepository tradePlanRepository;
@@ -37,7 +37,7 @@ public class BinanceController {
 
     @Autowired
     public BinanceController(BinanceService binanceService,
-                             BinancePlanService oneMarketService,
+                             BinancePlanService planService,
                              BinanceDepthService depthService,
                              TradeAccountRepository tradeAccountRepository,
                              TradePlanRepository tradePlanRepository,
@@ -45,7 +45,7 @@ public class BinanceController {
                              TradeAuditLogRepository auditLogRepository,
                              TradePlanConfigRepository tradePlanConfigRepository) {
         this.binanceService = binanceService;
-        this.oneMarketService = oneMarketService;
+        this.planService = planService;
         this.depthService = depthService;
         this.tradeAccountRepository = tradeAccountRepository;
         this.tradePlanRepository = tradePlanRepository;
@@ -92,7 +92,7 @@ public class BinanceController {
         config.setPlanId(plan.getId());
         this.tradePlanConfigRepository.save(config);
         plan.setConfig(config);
-        this.oneMarketService.startPlan(binance, plan);
+        this.planService.startPlan(binance, plan);
 
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
@@ -185,7 +185,7 @@ public class BinanceController {
             throw new BadRequestException("User is not the owner of requested plan");
         }
         log.info("User " + user.getId() + " manually cancelled plan " + planId);
-        this.oneMarketService.cancelPlan(binance, plan);
+        this.planService.cancelPlan(binance, plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
@@ -204,7 +204,7 @@ public class BinanceController {
             throw new BadRequestException("Cannot delete plan " + planId + " because it is active.");
         }
         log.info("User " + user.getId() + " manually deleted plan " + planId);
-        this.oneMarketService.deletePlan(plan);
+        this.planService.deletePlan(plan);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 
