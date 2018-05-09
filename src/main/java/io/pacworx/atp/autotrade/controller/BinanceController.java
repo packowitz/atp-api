@@ -6,8 +6,9 @@ import io.pacworx.atp.autotrade.domain.binance.BinanceDepth;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
 import io.pacworx.atp.autotrade.service.BinanceDepthService;
+import io.pacworx.atp.autotrade.service.BinanceMarketService;
 import io.pacworx.atp.autotrade.service.BinancePlanService;
-import io.pacworx.atp.autotrade.service.BinanceService;
+import io.pacworx.atp.autotrade.service.BinanceOrderService;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrategies;
 import io.pacworx.atp.autotrade.service.strategies.firstStepPrice.FirstStepPriceStrategies;
 import io.pacworx.atp.autotrade.service.strategies.nextMarket.NextMarketStrategies;
@@ -26,37 +27,40 @@ import java.util.List;
 public class BinanceController {
     private static final Logger log = LogManager.getLogger();
 
-    private final BinanceService binanceService;
+    private final BinanceOrderService orderService;
+    private final BinanceMarketService marketService;
     private final BinancePlanService planService;
     private final BinanceDepthService depthService;
-    private final TradeAccountRepository tradeAccountRepository;
-    private final TradePlanRepository tradePlanRepository;
-    private final TradeStepRepository tradeStepRepository;
+    private final TradeAccountRepository accountRepository;
+    private final TradePlanRepository planRepository;
+    private final TradeStepRepository stepRepository;
     private final TradeAuditLogRepository auditLogRepository;
-    private final TradePlanConfigRepository tradePlanConfigRepository;
+    private final TradePlanConfigRepository planConfigRepository;
 
     @Autowired
-    public BinanceController(BinanceService binanceService,
+    public BinanceController(BinanceOrderService orderService,
+                             BinanceMarketService marketService,
                              BinancePlanService planService,
                              BinanceDepthService depthService,
-                             TradeAccountRepository tradeAccountRepository,
-                             TradePlanRepository tradePlanRepository,
-                             TradeStepRepository tradeStepRepository,
+                             TradeAccountRepository accountRepository,
+                             TradePlanRepository planRepository,
+                             TradeStepRepository stepRepository,
                              TradeAuditLogRepository auditLogRepository,
-                             TradePlanConfigRepository tradePlanConfigRepository) {
-        this.binanceService = binanceService;
+                             TradePlanConfigRepository planConfigRepository) {
+        this.orderService = orderService;
+        this.marketService = marketService;
         this.planService = planService;
         this.depthService = depthService;
-        this.tradeAccountRepository = tradeAccountRepository;
-        this.tradePlanRepository = tradePlanRepository;
-        this.tradeStepRepository = tradeStepRepository;
+        this.accountRepository = accountRepository;
+        this.planRepository = planRepository;
+        this.stepRepository = stepRepository;
         this.auditLogRepository = auditLogRepository;
-        this.tradePlanConfigRepository = tradePlanConfigRepository;
+        this.planConfigRepository = planConfigRepository;
     }
 
     @RequestMapping(value = "/ticker", method = RequestMethod.GET)
     public ResponseEntity<BinanceTicker[]> getTicker() throws Exception {
-        return new ResponseEntity<>(binanceService.getAllTicker(), HttpStatus.OK);
+        return new ResponseEntity<>(marketService.getAllTicker(), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/depth/{symbol}", method = RequestMethod.GET)
@@ -66,31 +70,31 @@ public class BinanceController {
 
     @RequestMapping(value = "/trades/{symbol}", method = RequestMethod.GET)
     public ResponseEntity<BinanceTrade[]> getTrades(@PathVariable String symbol) throws Exception {
-        return new ResponseEntity<>(binanceService.getLastTrades(symbol, 500), HttpStatus.OK);
+        return new ResponseEntity<>(marketService.getLastTrades(symbol, 500), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)
     public ResponseEntity<BinanceAccount> getAccount(@ModelAttribute("tradeuser") TradeUser user) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        return new ResponseEntity<>(binanceService.getBinanceAccount(binance), HttpStatus.OK);
+        return new ResponseEntity<>(orderService.getBinanceAccount(binance), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/plan", method = RequestMethod.POST)
     public ResponseEntity<TradePlan> createPlan(@ModelAttribute("tradeuser") TradeUser user,
                                                 @RequestBody TradePlanConfig config) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
         TradePlan plan = new TradePlan(binance, TradePlanType.ONEMARKET);
         plan.setDescription("Trade " + config.getStartAmount() + " " + config.getStartCurrency());
-        this.tradePlanRepository.save(plan);
+        this.planRepository.save(plan);
 
         config.setPlanId(plan.getId());
-        this.tradePlanConfigRepository.save(config);
+        this.planConfigRepository.save(config);
         plan.setConfig(config);
         this.planService.startPlan(binance, plan);
 
@@ -99,13 +103,13 @@ public class BinanceController {
 
     @RequestMapping(value = "/plans", method = RequestMethod.GET)
     public ResponseEntity<List<TradePlan>> getPlans(@ModelAttribute("tradeuser") TradeUser user) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        List<TradePlan> plans = this.tradePlanRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
+        List<TradePlan> plans = this.planRepository.findAllByAccountIdOrderByIdDesc(binance.getId());
         for(TradePlan plan: plans) {
-            plan.setConfig(this.tradePlanConfigRepository.findOne(plan.getId()));
+            plan.setConfig(this.planConfigRepository.findOne(plan.getId()));
         }
         return new ResponseEntity<>(plans, HttpStatus.OK);
     }
@@ -113,16 +117,16 @@ public class BinanceController {
     @RequestMapping(value = "/plan/{planId}", method = RequestMethod.GET)
     public ResponseEntity<TradePlan> getPlan(@ModelAttribute("tradeuser") TradeUser user,
                                              @PathVariable long planId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        TradePlan plan = this.planRepository.findOne(planId);
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        plan.setConfig(this.tradePlanConfigRepository.findOne(plan.getId()));
-        List<TradeStep> steps = tradeStepRepository.findAllByPlanIdOrderByIdDesc(plan.getId());
+        plan.setConfig(this.planConfigRepository.findOne(plan.getId()));
+        List<TradeStep> steps = stepRepository.findAllByPlanIdOrderByIdDesc(plan.getId());
         plan.setSteps(steps);
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
@@ -137,20 +141,20 @@ public class BinanceController {
     public ResponseEntity<TradeStep> removeThreshold(@ModelAttribute("tradeuser") TradeUser user,
                                                      @PathVariable long planId,
                                                      @PathVariable long stepId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        TradePlan plan = this.planRepository.findOne(planId);
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        TradeStep step = tradeStepRepository.findOne(stepId);
+        TradeStep step = stepRepository.findOne(stepId);
         if(step == null || step.getPlanId() != planId) {
             throw new BadRequestException("Unknown step");
         }
         step.setPriceThreshold(null);
-        tradeStepRepository.save(step);
+        stepRepository.save(step);
         return new ResponseEntity<>(step, HttpStatus.OK);
     }
 
@@ -158,17 +162,17 @@ public class BinanceController {
     public ResponseEntity<TradePlanConfig> updateAutorepeat(@ModelAttribute("tradeuser") TradeUser user,
                                                             @PathVariable long planId,
                                                             @PathVariable boolean autorepeat) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        TradePlan plan = this.planRepository.findOne(planId);
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
-        TradePlanConfig config = tradePlanConfigRepository.findOne(planId);
+        TradePlanConfig config = planConfigRepository.findOne(planId);
         config.setAutoRestart(autorepeat);
-        tradePlanConfigRepository.save(config);
+        planConfigRepository.save(config);
 
         return new ResponseEntity<>(config, HttpStatus.OK);
     }
@@ -176,11 +180,11 @@ public class BinanceController {
     @RequestMapping(value = "/plan/{planId}/cancel", method = RequestMethod.GET)
     public ResponseEntity<TradePlan> cancelPlan(@ModelAttribute("tradeuser") TradeUser user,
                                                               @PathVariable long planId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        TradePlan plan = this.planRepository.findOne(planId);
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan");
         }
@@ -192,11 +196,11 @@ public class BinanceController {
     @RequestMapping(value = "/plan/{planId}", method = RequestMethod.DELETE)
     public ResponseEntity<TradePlan> deletePlan(@ModelAttribute("tradeuser") TradeUser user,
                                                 @PathVariable long planId) {
-        TradeAccount binance = tradeAccountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
+        TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
         }
-        TradePlan plan = this.tradePlanRepository.findOne(planId);
+        TradePlan plan = this.planRepository.findOne(planId);
         if(plan == null || plan.getUserId() != user.getId()) {
             throw new BadRequestException("User is not the owner of requested plan " + planId);
         }

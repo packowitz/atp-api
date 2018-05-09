@@ -4,7 +4,7 @@ import io.pacworx.atp.autotrade.domain.TradePlan;
 import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.autotrade.service.BinanceDepthService;
-import io.pacworx.atp.autotrade.service.BinanceService;
+import io.pacworx.atp.autotrade.service.BinanceMarketService;
 import io.pacworx.atp.autotrade.service.TradeUtil;
 import io.pacworx.atp.autotrade.service.strategies.PriceStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ public class DepthPriceAndDistanceFromOtherSide implements PriceStrategy {
     BinanceDepthService depthService;
 
     @Autowired
-    BinanceService binanceService;
+    BinanceMarketService marketService;
 
     public double getPrice(TradePlan plan, TradeStep step) {
         return depthService.getGoodTradePrice(step);
@@ -29,7 +29,7 @@ public class DepthPriceAndDistanceFromOtherSide implements PriceStrategy {
 
     public void setThresholdToStep(TradePlan plan, TradeStep step, TradeStep prevStep) {
         //Set step's threshold to configured distance from other side
-        BinanceTicker ticker = binanceService.getTicker(step.getSymbol());
+        BinanceTicker ticker = marketService.getTicker(step.getSymbol());
         double distance = Double.parseDouble(plan.getConfig().getFirstStepPriceStrategyParams());
         double threshold;
         if(TradeUtil.isBuy(step.getSide())) {

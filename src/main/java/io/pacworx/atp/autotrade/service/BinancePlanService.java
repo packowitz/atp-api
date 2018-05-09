@@ -23,7 +23,7 @@ public class BinancePlanService {
     private static final String PLAN_CHECK_SCHEDULE_NAME = "PLAN_CHECK";
     private static final String PAUSED_PLAN_CHECK_SCHEDULE_NAME = "PAUSED_PLAN_CHECK";
 
-    private final BinanceService binanceService;
+    private final BinanceOrderService orderService;
     private final BinanceExchangeInfoService exchangeInfoService;
     private final TradeAccountRepository accountRepository;
     private final TradePlanRepository planRepository;
@@ -38,7 +38,7 @@ public class BinancePlanService {
     private boolean checkPausedPlansRunning = false;
 
     @Autowired
-    public BinancePlanService(BinanceService binanceService,
+    public BinancePlanService(BinanceOrderService orderService,
                               BinanceExchangeInfoService exchangeInfoService,
                               TradeAccountRepository accountRepository,
                               TradePlanRepository planRepository,
@@ -47,7 +47,7 @@ public class BinancePlanService {
                               TradeScheduleLockRepository scheduleLockRepository,
                               TradePlanConfigRepository planConfigRepository,
                               StrategyResolver strategyResolver) {
-        this.binanceService = binanceService;
+        this.orderService = orderService;
         this.exchangeInfoService = exchangeInfoService;
         this.accountRepository = accountRepository;
         this.planRepository = planRepository;
@@ -88,7 +88,7 @@ public class BinancePlanService {
         System.out.println("No scheduler running anymore.");
     }
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 60000, initialDelay = 10000)
     public void checkPausedPlans() {
         if(shutdownRecognized || !scheduleLockRepository.lock(PAUSED_PLAN_CHECK_SCHEDULE_NAME)) {
             return;
@@ -133,7 +133,7 @@ public class BinancePlanService {
         }
     }
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 10000, initialDelay = 5000)
     public void checkOrders() {
         if(shutdownRecognized || !scheduleLockRepository.lock(PLAN_CHECK_SCHEDULE_NAME)) {
             return;
@@ -179,11 +179,11 @@ public class BinancePlanService {
                 if(step.getOrderId() == null || step.getStatus() == TradeStatus.CANCELLED) {
                     marketAndPriceCheck(account, plan, step);
                 } else {
-                    BinanceOrderResult orderResult = binanceService.getStepStatus(account, step);
+                    BinanceOrderResult orderResult = orderService.getStepStatus(account, step);
                     handlePartFilledOrder(account, plan, step, orderResult);
                 }
             } else {
-                BinanceOrderResult orderResult = binanceService.getStepStatus(account, step);
+                BinanceOrderResult orderResult = orderService.getStepStatus(account, step);
                 if("CANCELED".equals(orderResult.getStatus())) {
                     log.info("Order " + orderResult.getOrderId() + " was cancelled. Cancel one-market plan #" + plan.getId());
                     cancel(account, plan);
@@ -213,7 +213,7 @@ public class BinancePlanService {
     private void cancel(TradeAccount account, TradePlan plan) {
         for(TradeStep step: plan.getActiveSteps()) {
             if(step.getStatus() == TradeStatus.ACTIVE) {
-                binanceService.cancelStepAndIgnoreStatus(account, step);
+                orderService.cancelStepAndIgnoreStatus(account, step);
             }
         }
         plan.cancel();
@@ -222,7 +222,7 @@ public class BinancePlanService {
     private void handleFilledOrder(TradeAccount account, TradePlan plan, TradeStep step) {
         // update status and calc step in and out filling
         step.finish();
-        binanceService.addMarketInfoAsAuditLog(step);
+        orderService.addMarketInfoAsAuditLog(step);
 
         // update lastActionDate on plan
         plan.setLastActionDate(ZonedDateTime.now());
@@ -238,12 +238,12 @@ public class BinancePlanService {
                     firstStep.setNeedRestart(false);
                 }
                 // cancel firstStep; restart stepBack if firstStep got filling in the meantime
-                binanceService.cancelStepAndIgnoreStatus(account, firstStep);
+                orderService.cancelStepAndIgnoreStatus(account, firstStep);
                 double diffAmount = firstStep.getOutAmount() - step.getInAmount();
                 if(exchangeInfoService.isTradeBigEnough(step.getSymbol(), step.getOutCurrency(), diffAmount, step.getPrice())) {
                     // means that in the meantime firstStep got some filling
                     step.setInAmount(firstStep.getOutAmount());
-                    binanceService.openStepOrder(account, step);
+                    orderService.openStepOrder(account, step);
                     return;
                 }
             }
@@ -287,7 +287,7 @@ public class BinancePlanService {
         double restQty = Double.parseDouble(orderResult.getOrigQty()) - orderFilling;
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), restQty, price)) {
             if(step.getStatus() == TradeStatus.ACTIVE) {
-                binanceService.cancelStepAndIgnoreStatus(account, step);
+                orderService.cancelStepAndIgnoreStatus(account, step);
             }
             handleFilledOrder(account, plan, step);
             return;
@@ -320,7 +320,7 @@ public class BinancePlanService {
                 step.setCheckedMarketDate(ZonedDateTime.now());
                 if(newMarket == null || !newMarket.equals(step.getSymbol())) {
                     if(step.getStatus() == TradeStatus.ACTIVE && step.getOrderId() != null) {
-                        binanceService.cancelStepAndRestartOnError(account, step);
+                        orderService.cancelStepAndRestartOnError(account, step);
                     }
                     if(step.getOrderFilled() > 0.00000001) {
                         //There was filling in the meantime. restart step
@@ -367,7 +367,7 @@ public class BinancePlanService {
 
             if(step.getStatus() != TradeStatus.CANCELLED && step.getOrderId() != null) {
                 double orderFillingBeforeCancel = step.getOrderFilled();
-                BinanceOrderResult cancelResult = binanceService.cancelStepAndRestartOnError(account, step);
+                BinanceOrderResult cancelResult = orderService.cancelStepAndRestartOnError(account, step);
                 // check if there was a filling in meantime
                 if(Math.abs(step.getOrderFilled() - orderFillingBeforeCancel) > 0.00000001) {
                     log.info("Plan #" + plan.getId() + " cancelled step had filling in the meantime. Handle that now.");
@@ -382,7 +382,7 @@ public class BinancePlanService {
 
             // start the step again with new price
             step.setPrice(goodPrice);
-            binanceService.openStepOrder(account, step);
+            orderService.openStepOrder(account, step);
         }
     }
 
@@ -404,7 +404,7 @@ public class BinancePlanService {
             stepBack.setDirty();
             log.info("Plan #" + plan.getId() + " add traded coins to existing step-" + stepBack.getStep());
             // cancel stepBack then add traded coins to it, recalc priceThreshold and restart it
-            binanceService.cancelStepAndIgnoreStatus(account, stepBack);
+            orderService.cancelStepAndIgnoreStatus(account, stepBack);
 
             setThreshold(plan, stepBack, prevStep);
             stepBack.setPrice(0d);

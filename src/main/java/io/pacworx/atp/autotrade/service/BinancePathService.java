@@ -7,7 +7,6 @@ import io.pacworx.atp.exception.BinanceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -20,7 +19,7 @@ public class BinancePathService {
     private static final String SCHEDULE_NAME = "PATHCHECK";
     private static final String SCHEDULE_PAUSE_NAME = "PATHPAUSEDCHECK";
 
-    private final BinanceService binanceService;
+    private final BinanceOrderService orderService;
     private final BinanceDepthService depthService;
     private final TradePathRepository pathRepository;
     private final TradeAccountRepository accountRepository;
@@ -29,9 +28,10 @@ public class BinancePathService {
     private final BinanceExchangeInfoService exchangeInfoService;
     private final TradeAuditLogRepository auditLogRepository;
     private final TradeScheduleLockRepository scheduleLockRepository;
+    private final BinanceMarketService marketService;
 
     @Autowired
-    public BinancePathService(BinanceService binanceService,
+    public BinancePathService(BinanceOrderService orderService,
                               BinanceDepthService depthService,
                               TradePathRepository pathRepository,
                               TradeAccountRepository accountRepository,
@@ -39,8 +39,9 @@ public class BinancePathService {
                               TradeStepRepository stepRepository,
                               BinanceExchangeInfoService exchangeInfoService,
                               TradeAuditLogRepository auditLogRepository,
-                              TradeScheduleLockRepository scheduleLockRepository) {
-        this.binanceService = binanceService;
+                              TradeScheduleLockRepository scheduleLockRepository,
+                              BinanceMarketService marketService) {
+        this.orderService = orderService;
         this.depthService = depthService;
         this.pathRepository = pathRepository;
         this.accountRepository = accountRepository;
@@ -49,6 +50,7 @@ public class BinancePathService {
         this.exchangeInfoService = exchangeInfoService;
         this.auditLogRepository = auditLogRepository;
         this.scheduleLockRepository = scheduleLockRepository;
+        this.marketService = marketService;
     }
 
     /* SCHEDULER DISABLED!!! THIS IS DEPRECATED CODE */
@@ -63,7 +65,7 @@ public class BinancePathService {
             firstStep.setPlanId(path.getPlanId());
             path.addStep(firstStep);
 
-            binanceService.openStepOrder(account, firstStep);
+            orderService.openStepOrder(account, firstStep);
             saveSubplan(path);
         } else {
             if(path.getStatus() != TradePlanStatus.PAUSED) {
@@ -82,7 +84,7 @@ public class BinancePathService {
             TradeStep latestStep = path.getLatestStep();
             if(latestStep != null) {
                 if(latestStep.getStatus() == TradeStatus.ACTIVE) {
-                    binanceService.cancelOrder(account, latestStep.getSymbol(), latestStep.getOrderId());
+                    orderService.cancelOrder(account, latestStep.getSymbol(), latestStep.getOrderId());
                 }
                 latestStep.cancel();
             }
@@ -148,7 +150,7 @@ public class BinancePathService {
     private void checkStep(TradeAccount account, TradePath path, TradeStep step) {
         step.setDirty();
         try {
-            BinanceOrderResult orderResult = binanceService.getStepStatus(account, step);
+            BinanceOrderResult orderResult = orderService.getStepStatus(account, step);
             if ("FILLED".equals(orderResult.getStatus())) {
                 log.info("Order " + orderResult.getOrderId() + " from path plan #" + step.getPlanId() + " is filled. Setting up next path step.");
                 handleFilledOrder(account, path, step, orderResult);
@@ -235,7 +237,7 @@ public class BinancePathService {
         double origQty = Double.parseDouble(orderResult.getOrigQty());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), (origQty - executedQty), price)) {
             if(!"CANCELED".equals(orderResult.getStatus())) {
-                orderResult = binanceService.cancelStep(account, step);
+                orderResult = orderService.cancelStep(account, step);
             }
             handleFilledOrder(account, path, step, orderResult);
             return;
@@ -266,7 +268,7 @@ public class BinancePathService {
 
         if(routeFirstStep != null && !routeFirstStep.ticker.getSymbol().equals(step.getSymbol())) {
             log.info("Path #" + path.getPlanId() + " found a better route to reach " + path.getDestCurrency() + " in " + (path.getMaxSteps() - path.getStepsCompleted()) + " steps.");
-            BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
+            BinanceOrderResult cancelResult = orderService.cancelStep(account, step);
             // check if there was a filling in meantime
             String symbol = cancelResult.getSymbol();
             double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
@@ -285,7 +287,7 @@ public class BinancePathService {
             step.setPriceThreshold(routeFirstStep.tradePoint);
             step.setPrice(depthService.getGoodTradePrice(step));
 
-            binanceService.openStepOrder(account, step);
+            orderService.openStepOrder(account, step);
             saveSubplan(path);
         } else {
             if(routeFirstStep != null) {
@@ -300,7 +302,7 @@ public class BinancePathService {
         if(goodPrice != step.getPrice()) {
             log.info("Order " + step.getOrderId() + " best trade price has changed from " + orderResult.getPrice() + " to " + String.format("%.8f", goodPrice) + ". Will adjust it.");
             if(!"CANCELED".equals(orderResult.getStatus())) {
-                BinanceOrderResult cancelResult = binanceService.cancelStep(account, step);
+                BinanceOrderResult cancelResult = orderService.cancelStep(account, step);
                 // check if there was a filling in meantime
                 String symbol = cancelResult.getSymbol();
                 double executedQty = Double.parseDouble(cancelResult.getExecutedQty()) - step.getOrderFilled();
@@ -314,7 +316,7 @@ public class BinancePathService {
             }
             // start the step again with new price
             step.setPrice(goodPrice);
-            binanceService.openStepOrder(account, step);
+            orderService.openStepOrder(account, step);
             saveSubplan(path);
         }
     }
@@ -340,7 +342,7 @@ public class BinancePathService {
             }
             path.addStep(step);
 
-            binanceService.openStepOrder(account, step);
+            orderService.openStepOrder(account, step);
         } else {
             log.info("Cannot start next step for path plan #" + path.getPlanId() + " because there is no profitable route. PAUSE plan for now");
             path.setStatus(TradePlanStatus.PAUSED);
@@ -364,7 +366,7 @@ public class BinancePathService {
 
     private RouteCalculator.Route findBestRoute(TradePath path, String startCurrency, double startAmount) {
         int maxSteps = path.getMaxSteps() - path.getStepsCompleted();
-        List<BinanceTicker> tickers = Arrays.asList(binanceService.getAllTicker());
+        List<BinanceTicker> tickers = Arrays.asList(marketService.getAllTicker());
 
         RouteCalculator calculator = new RouteCalculator(maxSteps, startCurrency, startAmount, path.getDestCurrency(), tickers);
         RouteCalculator.Route bestRoute = calculator.searchBestRoute();

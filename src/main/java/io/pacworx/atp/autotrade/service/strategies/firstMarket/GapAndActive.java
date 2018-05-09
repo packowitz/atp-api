@@ -4,7 +4,7 @@ import io.pacworx.atp.autotrade.domain.TradePlan;
 import io.pacworx.atp.autotrade.domain.TradeStep;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTrade;
-import io.pacworx.atp.autotrade.service.BinanceService;
+import io.pacworx.atp.autotrade.service.BinanceMarketService;
 import io.pacworx.atp.autotrade.service.TradeUtil;
 import io.pacworx.atp.autotrade.service.strategies.MarketStrategy;
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +24,7 @@ public class GapAndActive implements MarketStrategy {
     private static final Logger log = LogManager.getLogger();
 
     @Autowired
-    private BinanceService binanceService;
+    private BinanceMarketService marketService;
 
     private final long halfHourInMillies = 30 * 60 * 1000;
 
@@ -38,7 +38,7 @@ public class GapAndActive implements MarketStrategy {
         }
         //check in chase gap falls under the configured minimum
         if(currentStep.getSymbol() != null) {
-            BinanceTicker ticker = binanceService.getTicker(currentStep.getSymbol());
+            BinanceTicker ticker = marketService.getTicker(currentStep.getSymbol());
             double minGap = Double.parseDouble(plan.getConfig().getFirstMarketStrategyParams());
             return ticker.getPerc() < minGap;
         }
@@ -48,7 +48,7 @@ public class GapAndActive implements MarketStrategy {
     public String getMarket(TradePlan plan, TradeStep currentStep) {
         String currency = plan.getConfig().getStartCurrency();
         double minGap = Double.parseDouble(plan.getConfig().getFirstMarketStrategyParams());
-        BinanceTicker[] ticker = binanceService.getAllTicker();
+        BinanceTicker[] ticker = marketService.getAllTicker();
 
         List<BinanceTicker> possibleMarkets;
         if(TradeUtil.isBaseCurrency(currency)) {
@@ -63,8 +63,8 @@ public class GapAndActive implements MarketStrategy {
         }
 
         if(!possibleMarkets.isEmpty()) {
-            //filter all obvious inactive markets (less than 2 trades per minutes avg in last 24h)
-            possibleMarkets = possibleMarkets.stream().filter(t -> t.getStats24h().getCount() >= 2880).collect(Collectors.toList());
+            //filter all new markets and obvious inactive markets (less than 2 trades per minutes avg in last 24h)
+            possibleMarkets = possibleMarkets.stream().filter(t -> t.getStats24h().getCount() >= 2880 && marketService.isMarketOldEnough(t.getSymbol())).collect(Collectors.toList());
         }
         if(possibleMarkets.size() > 1) {
             possibleMarkets = possibleMarkets.stream().sorted(Comparator.comparing(BinanceTicker::getPerc).reversed()).collect(Collectors.toList());
@@ -95,7 +95,7 @@ public class GapAndActive implements MarketStrategy {
 
     private double calcScore(BinanceTicker tick) {
         // Get last 200 trades
-        BinanceTrade[] last200trades = binanceService.getLastTrades(tick.getSymbol(), 200);
+        BinanceTrade[] last200trades = marketService.getLastTrades(tick.getSymbol(), 200);
         long timestamp = System.currentTimeMillis() - halfHourInMillies;
 
         //Activity check
@@ -135,24 +135,6 @@ public class GapAndActive implements MarketStrategy {
             volScore -= (int)Math.round((ratio - 0.1) * 200);
         }
 
-        //System.out.println(tick.getSymbol() + " - VolScore: " + volScore + " TV:" + (sellVolume + buyVolume) + " BV:" + buyVolume + " SV:" + sellVolume);
-
         return activityScore * volScore;
     }
-
-//    public static void main(String[] args) {
-//        BinanceService binanceService = new BinanceService(null);
-//        GapAndActive service = new GapAndActive();
-//        service.binanceService = binanceService;
-//
-//        TradePlanConfig config = new TradePlanConfig();
-//        config.setStartCurrency("BTC");
-//        config.setFirstMarketStrategyParams("0.004");
-//        TradePlan plan = new TradePlan();
-//        plan.setConfig(config);
-//
-//        long time = System.currentTimeMillis();
-//        System.out.println(service.getMarket(plan, null));
-//        System.out.println("Calculation took " + (System.currentTimeMillis() - time) + "ms");
-//    }
 }
