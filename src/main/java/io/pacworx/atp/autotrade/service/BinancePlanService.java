@@ -212,7 +212,7 @@ public class BinancePlanService {
 
     private void cancel(TradeAccount account, TradePlan plan) {
         for(TradeStep step: plan.getActiveSteps()) {
-            if(step.getStatus() == TradeStatus.ACTIVE) {
+            if(step.getStatus() == TradeStatus.ACTIVE && step.getOrderId() != null) {
                 orderService.cancelStepAndIgnoreStatus(account, step);
             }
         }
