@@ -1,10 +1,7 @@
 package io.pacworx.atp.autotrade.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.pacworx.atp.autotrade.domain.TradeAccount;
-import io.pacworx.atp.autotrade.domain.TradeOffer;
-import io.pacworx.atp.autotrade.domain.TradeStatus;
-import io.pacworx.atp.autotrade.domain.TradeStep;
+import io.pacworx.atp.autotrade.domain.*;
 import io.pacworx.atp.autotrade.domain.binance.BinanceAccount;
 import io.pacworx.atp.autotrade.domain.binance.BinanceOrderResult;
 import io.pacworx.atp.autotrade.domain.binance.BinanceTicker;
@@ -31,7 +28,9 @@ public class BinanceOrderService {
     private static final Logger log = LogManager.getLogger();
     private static final String SERVER = "https://api.binance.com/api";
 
+    public static final int ERROR_CODE_INVALID_QUANTITY = -1013;
     public static final int ERROR_CODE_TIME_DIFF = -1021;
+    public static final int ERROR_CODE_INSUFFICIENT_BALANCE = -2010;
     public static final int ERROR_CODE_UNKNOWN_ORDER = -2011;
     public static final int ERROR_CODE_ORDER_NOT_EXIST = -2013;
 
@@ -114,6 +113,9 @@ public class BinanceOrderService {
         } catch (BinanceException e) {
             if(e.getCode() == ERROR_CODE_TIME_DIFF) {
                 step.setNeedRestart(true);
+            } else {
+                String actionString = "create order " + offer.getSide() + " " + String.format("%.8f", offer.getQuantity()) + " " + offer.getSymbol() + " at " + String.format("%.8f", offer.getPrice());
+                TradeAuditLog.logBinanceException(step, e, actionString);
             }
             throw e;
         } catch (Exception e) {
@@ -215,6 +217,8 @@ public class BinanceOrderService {
             cancelOrder(account, step.getSymbol(), step.getOrderId());
         } catch(BinanceException e) {
             if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER && e.getCode() != ERROR_CODE_ORDER_NOT_EXIST) {
+                TradeAuditLog.logBinanceException(step, e, "cancel order");
+                e.setHandled(true);
                 throw e;
             }
         }

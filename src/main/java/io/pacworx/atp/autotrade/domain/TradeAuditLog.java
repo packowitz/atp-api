@@ -26,18 +26,18 @@ public class TradeAuditLog {
 
     public TradeAuditLog() {}
 
-    public static TradeAuditLog logBinanceException(TradeStep step, BinanceException e) {
+    public static void logBinanceException(TradeStep step, BinanceException e, String action) {
         TradeAuditLog log = new TradeAuditLog();
         log.stepId = step.getId();
         log.planId = step.getPlanId();
         log.level = "ERROR";
         log.timestamp = ZonedDateTime.now();
         log.title = "Binance Error for " + step.getOrderId();
-        log.message = e.getCode() + " - " + e.getMsg();
-        return log;
+        log.message = action + " ended with " + e.getCode() + " - " + e.getMsg();
+        step.addAuditLog(log);
     }
 
-    public static TradeAuditLog logException(TradeStep step, Exception e) {
+    public static void logException(TradeStep step, Exception e) {
         TradeAuditLog log = new TradeAuditLog();
         log.stepId = step.getId();
         log.planId = step.getPlanId();
@@ -45,7 +45,7 @@ public class TradeAuditLog {
         log.timestamp = ZonedDateTime.now();
         log.title = "Exception for " + step.getOrderId();
         log.message = e.getMessage();
-        return log;
+        step.addAuditLog(log);
     }
 
     public long getId() {

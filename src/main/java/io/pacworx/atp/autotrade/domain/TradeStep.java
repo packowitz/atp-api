@@ -286,6 +286,14 @@ public class TradeStep {
         return newAuditLogs;
     }
 
+    public void addAuditLog(TradeAuditLog log) {
+        if(this.newAuditLogs == null) {
+            this.newAuditLogs = new ArrayList<>();
+        }
+        this.newAuditLogs.add(log);
+        this.dirty = true;
+    }
+
     public void addInfoAuditLog(String title) {
         this.addInfoAuditLog(title, null);
     }
@@ -306,11 +314,7 @@ public class TradeStep {
         newAuditLog.setTitle(title);
         newAuditLog.setMessage(message);
 
-        if(this.newAuditLogs == null) {
-            this.newAuditLogs = new ArrayList<>();
-        }
-        this.newAuditLogs.add(newAuditLog);
-        this.dirty = true;
+        addAuditLog(newAuditLog);
     }
 
     public double getNewFilling() {

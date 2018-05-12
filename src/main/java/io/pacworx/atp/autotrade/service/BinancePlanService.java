@@ -198,14 +198,16 @@ public class BinancePlanService {
                 }
             }
         } catch (BinanceException e) {
-            log.warn("Order " + step.getOrderId() + " from one-market plan #" + plan.getId() + " failed to check status");
-            if(step.getId() != 0) {
-                auditLogRepository.save(TradeAuditLog.logBinanceException(step, e));
+            if(!e.isHandled()) {
+                log.warn("Order " + step.getOrderId() + " from plan #" + plan.getId() + " failed to check status");
+                if(step.getId() != 0) {
+                    TradeAuditLog.logBinanceException(step, e, "check order");
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             if(step.getId() != 0) {
-                auditLogRepository.save(TradeAuditLog.logException(step, e));
+                TradeAuditLog.logException(step, e);
             }
         }
     }
