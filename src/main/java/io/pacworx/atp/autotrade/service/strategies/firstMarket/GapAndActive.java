@@ -27,6 +27,7 @@ public class GapAndActive implements MarketStrategy {
     private BinanceMarketService marketService;
 
     private final long halfHourInMillies = 30 * 60 * 1000;
+    private final double MAX_GAP = 0.02;
 
     public boolean checkMarket(TradePlan plan, TradeStep currentStep) {
         if(currentStep.getCheckedMarketDate() == null) {
@@ -52,7 +53,7 @@ public class GapAndActive implements MarketStrategy {
 
         List<BinanceTicker> possibleMarkets;
         if(TradeUtil.isBaseCurrency(currency)) {
-            possibleMarkets = Arrays.stream(ticker).filter(t -> t.getPerc() >= minGap && t.getSymbol().endsWith(currency)).collect(Collectors.toList());
+            possibleMarkets = Arrays.stream(ticker).filter(t -> t.getPerc() >= minGap && t.getPerc() < MAX_GAP && t.getSymbol().endsWith(currency)).collect(Collectors.toList());
         } else {
             possibleMarkets = Arrays.stream(ticker).filter(t -> {
                 if(t.getPerc() >= minGap && t.getSymbol().startsWith(currency)) {
