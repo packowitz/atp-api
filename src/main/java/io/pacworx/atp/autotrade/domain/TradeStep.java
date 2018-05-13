@@ -80,6 +80,13 @@ public class TradeStep {
         this.dirty = true;
     }
 
+    public void pause() {
+        this.status = TradeStatus.PAUSED;
+        this.orderId = null;
+        this.needRestart = false;
+        this.dirty = true;
+    }
+
     public void setTradingMarket(String symbol) {
         this.symbol = symbol;
         this.side = TradeUtil.getSideOfMarket(symbol, inCurrency);
