@@ -35,6 +35,7 @@ public class TradeAuditLog {
         log.title = "Binance Error for " + step.getOrderId();
         log.message = action + " ended with " + e.getCode() + " - " + e.getMsg();
         step.addAuditLog(log);
+        e.setLogged();
     }
 
     public static void logException(TradeStep step, Exception e) {

@@ -3,7 +3,7 @@ package io.pacworx.atp.exception;
 public class BinanceException extends RuntimeException {
     private int code;
     private String msg;
-    private boolean handled;
+    private boolean logged;
 
     public BinanceException() {
         super();
@@ -25,11 +25,11 @@ public class BinanceException extends RuntimeException {
         this.msg = msg;
     }
 
-    public boolean isHandled() {
-        return handled;
+    public boolean isLogged() {
+        return logged;
     }
 
-    public void setHandled(boolean handled) {
-        this.handled = handled;
+    public void setLogged() {
+        this.logged = true;
     }
 }

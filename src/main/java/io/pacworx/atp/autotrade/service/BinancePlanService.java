@@ -198,10 +198,16 @@ public class BinancePlanService {
                 }
             }
         } catch (BinanceException e) {
-            if(!e.isHandled()) {
+            if(!e.isLogged()) {
                 log.warn("Order " + step.getOrderId() + " from plan #" + plan.getId() + " failed to check status");
                 if(step.getId() != 0) {
                     TradeAuditLog.logBinanceException(step, e, "check order");
+                }
+            }
+            if(e.getCode() == BinanceOrderService.ERROR_CODE_INSUFFICIENT_BALANCE) {
+                //If plan is to restart and there are insufficient funds then cancel the plan
+                if(step.getStep() == 1 && step.getOrderId() == null) {
+                    cancel(account, plan);
                 }
             }
         } catch (Exception e) {

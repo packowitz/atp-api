@@ -218,7 +218,6 @@ public class BinanceOrderService {
         } catch(BinanceException e) {
             if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER && e.getCode() != ERROR_CODE_ORDER_NOT_EXIST) {
                 TradeAuditLog.logBinanceException(step, e, "cancel order");
-                e.setHandled(true);
                 throw e;
             }
         }
