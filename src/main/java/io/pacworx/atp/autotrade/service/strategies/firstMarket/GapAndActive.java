@@ -26,8 +26,8 @@ public class GapAndActive implements MarketStrategy {
     @Autowired
     private BinanceMarketService marketService;
 
-    private final long halfHourInMillies = 30 * 60 * 1000;
-    private final double MAX_GAP = 0.02;
+    private static final long halfHourInMillies = 30 * 60 * 1000;
+    private static final double MAX_GAP = 0.02;
 
     public boolean checkMarket(TradePlan plan, TradeStep currentStep) {
         if(currentStep.getCheckedMarketDate() == null) {
@@ -37,11 +37,11 @@ public class GapAndActive implements MarketStrategy {
         if(currentStep.getCheckedMarketDate().plusMinutes(5).isBefore(ZonedDateTime.now())) {
             return true;
         }
-        //check in chase gap falls under the configured minimum
+        //check in chase gap falls under the configured minimum or exceeds the max gap
         if(currentStep.getSymbol() != null) {
             BinanceTicker ticker = marketService.getTicker(currentStep.getSymbol());
             double minGap = Double.parseDouble(plan.getConfig().getFirstMarketStrategyParams());
-            return ticker.getPerc() < minGap;
+            return ticker.getPerc() < minGap || ticker.getPerc() > MAX_GAP;
         }
         return false;
     }
