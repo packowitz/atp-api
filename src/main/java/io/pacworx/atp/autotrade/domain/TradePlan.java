@@ -194,10 +194,10 @@ public class TradePlan {
     }
 
     @JsonIgnore
-    public TradeStep getLatestCancelledStep() {
+    public TradeStep getLatestPausedStep() {
         if(steps != null) {
             for(TradeStep step: steps) {
-                if(step.getStatus() == TradeStatus.CANCELLED) {
+                if(step.getStatus() == TradeStatus.PAUSED) {
                     return step;
                 }
             }

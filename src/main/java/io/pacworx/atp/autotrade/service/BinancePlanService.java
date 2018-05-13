@@ -104,7 +104,7 @@ public class BinancePlanService {
                 loadPlanConfig(pausedPlan);
                 loadStepsToPlan(pausedPlan);
                 //get latest cancelled step and check if there is a new market for it
-                TradeStep step = pausedPlan.getLatestCancelledStep();
+                TradeStep step = pausedPlan.getLatestPausedStep();
                 MarketStrategy strategy;
                 if(step.getStep() == 1) {
                     strategy = strategyResolver.resolveFirstStepStrategy(pausedPlan.getConfig().getFirstMarketStrategy());
