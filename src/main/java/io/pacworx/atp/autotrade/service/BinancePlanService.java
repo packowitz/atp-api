@@ -176,7 +176,7 @@ public class BinancePlanService {
     private void checkStep(TradeAccount account, TradePlan plan, TradeStep step) {
         try {
             if(step.isNeedRestart()) {
-                if(step.getOrderId() == null || step.getStatus() == TradeStatus.CANCELLED) {
+                if(step.getOrderId() == null || step.getStatus() == TradeStatus.PAUSED) {
                     marketAndPriceCheck(account, plan, step);
                 } else {
                     BinanceOrderResult orderResult = orderService.getStepStatus(account, step);
@@ -338,6 +338,7 @@ public class BinancePlanService {
                             //no good trading market found atm -> pause plan
                             log.info("Plan #" + plan.getId() + " step-" + step.getStep() + " found no good market. Pause plan.");
                             step.addInfoAuditLog("Found no good market -> PAUSE ");
+                            step.setStatus(TradeStatus.PAUSED);
                             plan.setStatus(TradePlanStatus.PAUSED);
                             return;
                         } else {
@@ -401,7 +402,7 @@ public class BinancePlanService {
             firstStep.setNeedRestart(true);
             checkStep(account, plan, firstStep);
         } else {
-            firstStep.setStatus(TradeStatus.CANCELLED);
+            firstStep.setStatus(TradeStatus.PAUSED);
             plan.setStatus(TradePlanStatus.PAUSED);
         }
     }
@@ -427,7 +428,7 @@ public class BinancePlanService {
             stepBack.setNeedRestart(true);
             checkStep(account, plan, stepBack);
         } else {
-            stepBack.setStatus(TradeStatus.CANCELLED);
+            stepBack.setStatus(TradeStatus.PAUSED);
             plan.setStatus(TradePlanStatus.PAUSED);
         }
     }
