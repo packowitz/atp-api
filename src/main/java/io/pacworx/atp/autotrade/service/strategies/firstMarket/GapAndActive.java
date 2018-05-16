@@ -56,7 +56,7 @@ public class GapAndActive implements MarketStrategy {
             possibleMarkets = Arrays.stream(ticker).filter(t -> t.getPerc() >= minGap && t.getPerc() < MAX_GAP && t.getSymbol().endsWith(currency)).collect(Collectors.toList());
         } else {
             possibleMarkets = Arrays.stream(ticker).filter(t -> {
-                if(t.getPerc() >= minGap && t.getSymbol().startsWith(currency)) {
+                if(t.getPerc() >= minGap && t.getPerc() < MAX_GAP && t.getSymbol().startsWith(currency)) {
                     return TradeUtil.isBaseCurrency(t.getSymbol().substring(currency.length()));
                 }
                 return false;
@@ -64,8 +64,7 @@ public class GapAndActive implements MarketStrategy {
         }
 
         if(!possibleMarkets.isEmpty()) {
-            //filter all new markets and obvious inactive markets (less than 2 trades per minutes avg in last 24h)
-            possibleMarkets = possibleMarkets.stream().filter(t -> t.getStats24h().getCount() >= 2880 && marketService.isMarketOldEnough(t.getSymbol())).collect(Collectors.toList());
+            possibleMarkets = possibleMarkets.stream().filter(this::isMarketHealthy).collect(Collectors.toList());
         }
         if(possibleMarkets.size() > 1) {
             possibleMarkets = possibleMarkets.stream().sorted(Comparator.comparing(BinanceTicker::getPerc).reversed()).collect(Collectors.toList());
@@ -92,6 +91,29 @@ public class GapAndActive implements MarketStrategy {
             log.info("No good market found to trade " + currency);
         }
         return bestMarket;
+    }
+
+    private boolean isMarketHealthy(BinanceTicker ticker) {
+        if(ticker.getStats24h() == null) {
+            return false;
+        }
+        //market need to have at least 2 trades in avg in last 24h
+        if(ticker.getStats24h().getCount() < 2880) {
+            return false;
+        }
+        //market should not be in lower or upper 20% of low/high mark of last 24h
+        double range24h = Double.parseDouble(ticker.getStats24h().getHighPrice()) - Double.parseDouble(ticker.getStats24h().getLowPrice());
+        double bidRatio = (Double.parseDouble(ticker.getBidPrice()) - Double.parseDouble(ticker.getStats24h().getLowPrice())) / range24h;
+        double askRatio = (Double.parseDouble(ticker.getAskPrice()) - Double.parseDouble(ticker.getStats24h().getLowPrice())) / range24h;
+        if(range24h <= 0 || bidRatio <= 0.2 || askRatio >= 0.8) {
+            //System.out.println(ticker.getSymbol() + " excluded: (H " + ticker.getStats24h().getHighPrice() + "  L " + ticker.getStats24h().getLowPrice() + ") " + String.format("%.8f", range24h) + " -> B(" + ticker.getBidPrice() + ") " + bidRatio + "  A(" + ticker.getAskPrice() + ") " + askRatio);
+            return false;
+        }
+        //avoid new markets
+        if(!marketService.isMarketOldEnough(ticker.getSymbol())) {
+            return false;
+        }
+        return true;
     }
 
     private double calcScore(BinanceTicker tick) {
@@ -127,7 +149,7 @@ public class GapAndActive implements MarketStrategy {
             return -1;
         }
         double ratio = Math.abs((buyVolume / (sellVolume + buyVolume)) - 0.5); //0 best, 0.5 worst
-        if(ratio > 0.3) {
+        if(ratio > 0.25) {
             return -1;
         }
 
@@ -138,4 +160,20 @@ public class GapAndActive implements MarketStrategy {
 
         return activityScore * volScore;
     }
+
+//    public static void main(String[] args) {
+//        BinanceMarketService marketService = new BinanceMarketService();
+//        GapAndActive service = new GapAndActive();
+//        service.marketService = marketService;
+//
+//        TradePlanConfig config = new TradePlanConfig();
+//        config.setStartCurrency("BTC");
+//        config.setFirstMarketStrategyParams("0.0045");
+//        TradePlan plan = new TradePlan();
+//        plan.setConfig(config);
+//
+//        long time = System.currentTimeMillis();
+//        System.out.println(service.getMarket(plan, null));
+//        System.out.println("Calculation took " + (System.currentTimeMillis() - time) + "ms");
+//    }
 }
