@@ -94,7 +94,7 @@ public class GapAndActive implements MarketStrategy {
     }
 
     private boolean isMarketHealthy(BinanceTicker ticker) {
-        if(ticker.getStats24h() == null) {
+        if(marketService.isBlacklisted(ticker.getSymbol()) || ticker.getStats24h() == null) {
             return false;
         }
         //market need to have at least 2 trades in avg in last 24h

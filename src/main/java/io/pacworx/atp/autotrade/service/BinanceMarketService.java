@@ -19,6 +19,8 @@ public class BinanceMarketService {
     private static final String SERVER = "https://api.binance.com/api";
     private static final long WEEK_IN_MILLIS = 1000 * 60 * 60 * 24 * 7;
 
+    private static final List<String> BLACKLIST = Arrays.asList("BCN");
+
     private BinanceTicker[] tickerCache;
     private long tickerLoadTimestamp;
 
@@ -99,5 +101,10 @@ public class BinanceMarketService {
             }
         }
         return oldEnough;
+    }
+
+    public boolean isBlacklisted(String symbol) {
+        String altCoin = TradeUtil.getAltCoin(symbol);
+        return BLACKLIST.contains(altCoin);
     }
 }

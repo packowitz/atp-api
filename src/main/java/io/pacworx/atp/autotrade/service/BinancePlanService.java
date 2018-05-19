@@ -287,6 +287,7 @@ public class BinancePlanService {
         double price = Double.parseDouble(orderResult.getPrice());
         double orderFilling = Double.parseDouble(orderResult.getExecutedQty());
         if(!exchangeInfoService.isTradeBigEnough(symbol, TradeUtil.getAltCoin(symbol), orderFilling, price)) {
+            //TODO check if there is already a next step to add the small amount
             marketAndPriceCheck(account, plan, step);
             return;
         }
