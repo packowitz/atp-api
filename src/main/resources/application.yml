@@ -24,6 +24,7 @@ email:
     reply-to: no-reply@askthepeople.io
     jwt: anEmailJwt
     confirmation-url: ${http://localhost:8080/confirm/email?token=}
+analyer.api.url: ${ANALYZER_API_URL}
 
 ---
 

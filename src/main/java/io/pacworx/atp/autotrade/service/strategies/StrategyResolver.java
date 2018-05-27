@@ -1,5 +1,6 @@
 package io.pacworx.atp.autotrade.service.strategies;
 
+import io.pacworx.atp.autotrade.service.strategies.firstMarket.AnalyzerApiTest;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrategies;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.FixedMarket;
 import io.pacworx.atp.autotrade.service.strategies.firstMarket.GapAndActive;
@@ -19,6 +20,8 @@ public class StrategyResolver {
     private FixedMarket fixedMarket;
     @Autowired
     private GapAndActive gapAndActive;
+    @Autowired
+    private AnalyzerApiTest analyzerApiTest;
 
     //FirstStepPriceStrategies
     @Autowired
@@ -34,6 +37,7 @@ public class StrategyResolver {
         switch (strategy) {
             case FixedMarket: return fixedMarket;
             case GapAndActive: return gapAndActive;
+            case AnalyzerApiTest: return analyzerApiTest;
         }
         throw new RuntimeException("No first step strategy found for " + strategy.name());
     }
