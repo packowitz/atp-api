@@ -450,6 +450,7 @@ public class BinancePlanService {
         }
         step.setDirty();
         step.setPlanId(plan.getId());
+        step.setStartDate(ZonedDateTime.now());
         step.setCheckedMarketDate(ZonedDateTime.now());
         step.setPrice(0d);
         if(symbol != null) {
