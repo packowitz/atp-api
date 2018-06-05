@@ -42,4 +42,14 @@ public class TradeUtil {
     public static boolean isBuy(String side) {
         return "BUY".equalsIgnoreCase(side);
     }
+
+    public static boolean isBuy(String symbol, String availableCurrency) {
+        if(symbol.startsWith(availableCurrency)) {
+            return false;
+        }
+        if(symbol.endsWith(availableCurrency)) {
+            return true;
+        }
+        throw new RuntimeException("isBuy(symbol, cur) was called but cur " + availableCurrency + " is not part of symbol " + symbol);
+    }
 }

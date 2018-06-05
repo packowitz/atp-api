@@ -33,8 +33,8 @@ public class GapAndActive implements MarketStrategy {
         if(currentStep.getCheckedMarketDate() == null) {
             return true;
         }
-        //check at least every 5 minutes
-        if(currentStep.getCheckedMarketDate().plusMinutes(5).isBefore(ZonedDateTime.now())) {
+        //check at least every minute
+        if(currentStep.getCheckedMarketDate().plusMinutes(1).isBefore(ZonedDateTime.now())) {
             return true;
         }
         //check in chase gap falls under the configured minimum or exceeds the max gap
@@ -78,7 +78,7 @@ public class GapAndActive implements MarketStrategy {
                 break;
             }
             maxChecks --;
-            double score = calcScore(tick);
+            double score = calcScore(tick, TradeUtil.isBuy(tick.getSymbol(), currency));
             //log.info(tick.getSymbol() + " scored " + score + " with ticker gap: " + String.format("%.2f", 100d * tick.getPerc()) + "%");
             if(score > bestMarketScore) {
                 bestMarket = tick.getSymbol();
@@ -116,7 +116,7 @@ public class GapAndActive implements MarketStrategy {
         return true;
     }
 
-    private double calcScore(BinanceTicker tick) {
+    private double calcScore(BinanceTicker tick, boolean isBuy) {
         // Get last 200 trades
         BinanceTrade[] last200trades = marketService.getLastTrades(tick.getSymbol(), 200);
         long timestamp = System.currentTimeMillis() - halfHourInMillies;
@@ -132,20 +132,44 @@ public class GapAndActive implements MarketStrategy {
             activityScore = 100;
         }
 
-        //Volume check
+        //Volume and trend check
         List<BinanceTrade> last30trades = tradesLast30min.subList(Math.max(0, tradesLast30min.size() - 30), tradesLast30min.size());
-        int buys = 0, sells = 0;
+        int buys = 0, sells = 0, trend = 0;
         double sellVolume = 0d, buyVolume = 0d;
+        Double lastTradePrice = null;
         for (BinanceTrade trade : last30trades) {
             if (trade.getIsBuyerMaker()) {
                 sells++;
                 sellVolume += trade.getQty();
+                //check trend to go up
+                if(isBuy) {
+                    if(lastTradePrice != null) {
+                        if(trade.getPrice() > lastTradePrice) {
+                            trend ++;
+                        } else if(trade.getPrice() < lastTradePrice) {
+                            trend --;
+                        }
+                    }
+                    lastTradePrice = trade.getPrice();
+                }
             } else {
                 buys++;
                 buyVolume += trade.getQty();
+                //check trend to go down
+                if(!isBuy) {
+                    if(lastTradePrice != null) {
+                        if(trade.getPrice() < lastTradePrice) {
+                            trend ++;
+                        } else if(trade.getPrice() > lastTradePrice) {
+                            trend --;
+                        }
+                    }
+                    lastTradePrice = trade.getPrice();
+                }
             }
         }
-        if(buys < 5 || sells < 5) {
+        System.out.println(tick.getSymbol() + " has trend of " + trend);
+        if(buys < 5 || sells < 5 || trend <= 0) {
             return -1;
         }
         double ratio = Math.abs((buyVolume / (sellVolume + buyVolume)) - 0.5); //0 best, 0.5 worst
@@ -168,7 +192,7 @@ public class GapAndActive implements MarketStrategy {
 //
 //        TradePlanConfig config = new TradePlanConfig();
 //        config.setStartCurrency("BTC");
-//        config.setFirstMarketStrategyParams("0.0045");
+//        config.setFirstMarketStrategyParams("0.003");
 //        TradePlan plan = new TradePlan();
 //        plan.setConfig(config);
 //
