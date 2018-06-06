@@ -18,6 +18,7 @@ public class TradeAccount {
     private String broker;
     private String apiKey;
     private String privateKey;
+    private boolean activated;
 
     public long getId() {
         return id;
@@ -71,5 +72,13 @@ public class TradeAccount {
 
     public void setPrivateKey(String privateKey) {
         this.privateKey = privateKey;
+    }
+
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
     }
 }
