@@ -329,12 +329,16 @@ public class BinancePlanService {
                 step.setCheckedMarketDate(ZonedDateTime.now());
                 if(newMarket == null || !newMarket.equals(step.getSymbol())) {
                     if(step.getStatus() == TradeStatus.ACTIVE && step.getOrderId() != null) {
-                        orderService.cancelStepAndRestartOnError(account, step);
+                        BinanceOrderResult cancelResult = orderService.cancelStepAndRestartOnError(account, step);
+                        if(step.getOrderFilled() > 0.00000001) {
+                            handlePartFilledOrder(account, plan, step, cancelResult);
+                            if(step.getStatus() != TradeStatus.CANCELLED) {
+                                // if cancelled step was filled or restarted by partFilling then it doesn't need to restart anymore
+                                return;
+                            }
+                        }
                     }
-                    if(step.getOrderFilled() > 0.00000001) {
-                        //There was filling in the meantime. restart step
-                        step.setNeedRestart(true);
-                    } else {
+                    if(step.getOrderFilled() < 0.00000001) {
                         if(newMarket == null) {
                             //no good trading market found atm -> pause plan
                             log.info("Plan #" + plan.getId() + " step-" + step.getStep() + " found no good market. Pause plan.");

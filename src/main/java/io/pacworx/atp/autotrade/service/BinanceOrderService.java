@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class BinanceOrderService {
@@ -216,13 +217,19 @@ public class BinanceOrderService {
         try {
             cancelOrder(account, step.getSymbol(), step.getOrderId());
         } catch(BinanceException e) {
+            TradeAuditLog.logBinanceException(step, e, "cancel order");
             if(e.getCode() != ERROR_CODE_UNKNOWN_ORDER && e.getCode() != ERROR_CODE_ORDER_NOT_EXIST) {
-                TradeAuditLog.logBinanceException(step, e, "cancel order");
                 throw e;
             }
         }
         step.addInfoAuditLog("Order " + step.getOrderId() + " cancelled");
         step.cancel();
+        //Recognized that sometimes Binance returns an outdated status (especially when order was filled in the meantime). Waiting short time may help.
+        try {
+            TimeUnit.MILLISECONDS.sleep(500);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+        }
         return getStepStatus(account, step);
     }
 
