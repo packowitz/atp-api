@@ -272,7 +272,7 @@ public class BinancePlanService {
             plan.incRunsDone();
 
             // restart plan if auto restart is turned on
-            if(plan.getConfig().isAutoRestart()) {
+            if(plan.getConfig().isAutoRestart() && account.isActivated()) {
                 log.info("Restart plan #" + plan.getId());
                 startFirstStep(account, plan);
             } else {

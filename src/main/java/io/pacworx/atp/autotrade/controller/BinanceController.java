@@ -13,6 +13,7 @@ import io.pacworx.atp.autotrade.service.strategies.firstMarket.FirstMarketStrate
 import io.pacworx.atp.autotrade.service.strategies.firstStepPrice.FirstStepPriceStrategies;
 import io.pacworx.atp.autotrade.service.strategies.nextMarket.NextMarketStrategies;
 import io.pacworx.atp.exception.BadRequestException;
+import io.pacworx.atp.exception.ForbiddenException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,9 @@ public class BinanceController {
         TradeAccount binance = accountRepository.findByUserIdAndAndBroker(user.getId(), "binance");
         if(binance == null) {
             throw new BadRequestException("User doesn't have a binance account");
+        }
+        if(!binance.isActivated()) {
+            throw new ForbiddenException("Binance account is not activated");
         }
         TradePlan plan = new TradePlan(binance, TradePlanType.ONEMARKET);
         plan.setDescription("Trade " + config.getStartAmount() + " " + config.getStartCurrency());
